@@ -1,0 +1,38 @@
+{
+  "name": "scaffold-next-quality",
+  "version": "0.1.0",
+  "description": "Create a Next.js app with shadcn, strict quality tooling, agent docs, Claude hooks, and optional tests.",
+  "type": "module",
+  "bin": {
+    "scaffold-next-quality": "./dist/index.js"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "dev": "tsx src/index.ts",
+    "prepack": "npm run build",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "check": "npm run typecheck && npm run test && npm run build"
+  },
+  "dependencies": {
+    "@inquirer/prompts": "^7.10.1",
+    "commander": "^14.0.2",
+    "execa": "^9.6.0",
+    "fs-extra": "^11.3.2"
+  },
+  "devDependencies": {
+    "@types/fs-extra": "^11.0.4",
+    "@types/node": "^22.10.2",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.7"
+  },
+  "engines": {
+    "node": ">=20.9.0"
+  }
+}
