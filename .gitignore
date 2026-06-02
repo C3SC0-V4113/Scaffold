@@ -1,0 +1,34 @@
+﻿# dependencies
+node_modules/
+.pnp
+.pnp.*
+
+# build output
+dist/
+build/
+coverage/
+
+# package artifacts
+*.tgz
+*.tar.gz
+
+# logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# env files
+.env*
+
+# TypeScript
+*.tsbuildinfo
+
+# editor / OS
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Claude skill bridge; .agents/skills is the source of truth
+.claude/skills/
