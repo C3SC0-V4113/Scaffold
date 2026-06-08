@@ -33,9 +33,14 @@ pnpm-lock.yaml
 yarn.lock
 package-lock.json
 .agents/skills/architecture-decision-records
+.agents/skills/composition-patterns
+.agents/skills/next-best-practices
 .agents/skills/playwright-best-practices
 .agents/skills/playwright-cli
+.agents/skills/react-best-practices
+.agents/skills/shadcn
 .agents/skills/systematic-debugging
+.agents/skills/typescript-advanced-types
 .agents/skills/vitest
 .agents/skills/verification-before-completion
 `;

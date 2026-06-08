@@ -27,14 +27,11 @@ export interface Executor {
   symlinkOrJunction(target: string, linkPath: string): Promise<void>;
 }
 
-export interface SkillManifestEntry {
+export interface SkillInstallEntry {
   source: string;
-  sourceType: 'github';
-  skillPath: string;
-  computedHash?: string;
+  skill: string;
 }
 
-export interface SkillLock {
-  version: 1;
-  skills: Record<string, SkillManifestEntry>;
+export interface SkillInstallManifest {
+  skills: Record<string, SkillInstallEntry>;
 }

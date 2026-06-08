@@ -1,6 +1,10 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { runCreate } from '../src/commands/create.js';
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 describe('dry-run integration', () => {
   it('prints npm all-options operations without executing real commands', async () => {
@@ -18,10 +22,12 @@ describe('dry-run integration', () => {
     const output = log.mock.calls.map((call) => call.join(' ')).join('\n');
     expect(output).toContain('run npx create-next-app@latest my-app');
     expect(output).toContain('run npx shadcn@latest init --defaults');
+    expect(output).toContain('my-app\\skills.sh');
+    expect(output).toContain(
+      'run npx --yes skills@latest add vercel-labs/agent-skills --skill composition-patterns --skill react-best-practices --agent codex --copy --yes'
+    );
     expect(output).toContain('write');
     expect(output).toContain('link');
-
-    log.mockRestore();
   });
 
   it('prints pnpm operations with selected options', async () => {
@@ -40,8 +46,6 @@ describe('dry-run integration', () => {
     expect(output).toContain('run pnpm dlx create-next-app@latest my-app');
     expect(output).toContain('write');
     expect(output).not.toContain('vitest.config.mts');
-
-    log.mockRestore();
   });
 
   it('prints bun operations with selected options', async () => {
@@ -60,7 +64,5 @@ describe('dry-run integration', () => {
     expect(output).toContain('run bunx --bun create-next-app@latest my-app');
     expect(output).toContain('write');
     expect(output).not.toContain('playwright.config.ts');
-
-    log.mockRestore();
   });
 });
