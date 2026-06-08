@@ -58,11 +58,17 @@ export async function applyPackageJsonQualityConfig(
     '*.{json,md,mdx,css,scss,html,yml,yaml}': 'prettier --write',
   };
 
-  packageJson.overrides = {
-    ...packageJson.overrides,
-    'eslint-config-prettier': '^10.1.8',
-    'eslint-plugin-prettier': '^5.5.4',
-  };
+  if (packageJson.overrides) {
+    const overrides = { ...packageJson.overrides };
+    delete overrides['eslint-config-prettier'];
+    delete overrides['eslint-plugin-prettier'];
+
+    if (Object.keys(overrides).length > 0) {
+      packageJson.overrides = overrides;
+    } else {
+      delete packageJson.overrides;
+    }
+  }
 
   await writeProjectPackageJson(projectRoot, executor, packageJson);
 }
