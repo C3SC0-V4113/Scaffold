@@ -115,6 +115,14 @@ export async function installSkills(projectRoot: string, options: CreateOptions,
   await executor.writeFile(path.join(projectRoot, 'skills.sh'), renderSkillsScript(options));
 
   for (const { command, args } of buildSkillInstallCommands(options)) {
-    await executor.run(command, args, { cwd: projectRoot });
+    try {
+      await executor.run(command, args, { cwd: projectRoot });
+    } catch (error) {
+      console.warn(
+        `Skipping external skill install after failure: ${command} ${args.join(' ')}\n` +
+          `You can retry it from the generated skills.sh file.`
+      );
+      console.warn(error);
+    }
   }
 }

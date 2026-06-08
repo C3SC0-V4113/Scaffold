@@ -24,7 +24,7 @@ describe('dry-run integration', () => {
     expect(output).toContain('run npx shadcn@latest init --defaults');
     expect(output).toContain('my-app\\skills.sh');
     expect(output).toContain(
-      'run npx --yes skills@latest add vercel-labs/agent-skills --skill composition-patterns --skill react-best-practices --agent codex --copy --yes'
+      'run npx --yes skills@latest add https://github.com/vercel-labs/agent-skills --skill vercel-composition-patterns --skill vercel-react-best-practices --agent codex --copy --yes'
     );
     expect(output).toContain('write');
     expect(output).toContain('link');

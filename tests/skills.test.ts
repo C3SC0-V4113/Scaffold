@@ -1,7 +1,8 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import {
   buildSkillInstallCommands,
+  installSkills,
   renderSkillsScript,
   selectSkillNames,
 } from '../src/installers/skills.js';
@@ -10,6 +11,35 @@ import {
   renderProjectArchitectureSkill,
   renderProjectMinEvaluationSkill,
 } from '../src/templates/skills.js';
+import type { Executor } from '../src/types.js';
+
+class FailingRunExecutor implements Executor {
+  readonly writes = new Map<string, string>();
+
+  async run() {
+    throw new Error('network unavailable');
+  }
+
+  async ensureDir() {}
+
+  async pathExists() {
+    return false;
+  }
+
+  async readFile() {
+    return '';
+  }
+
+  async writeFile(path: string, content: string) {
+    this.writes.set(path, content);
+  }
+
+  async writeJson() {}
+
+  async remove() {}
+
+  async symlinkOrJunction() {}
+}
 
 describe('skill selection', () => {
   it('selects always-on skills', () => {
@@ -41,7 +71,7 @@ describe('external skill install script', () => {
     const script = renderSkillsScript({ unit: false, e2e: false });
 
     expect(script).toContain(
-      'npx --yes skills@latest add vercel-labs/agent-skills --skill composition-patterns --skill react-best-practices --agent codex --copy --yes'
+      'npx --yes skills@latest add https://github.com/vercel-labs/agent-skills --skill vercel-composition-patterns --skill vercel-react-best-practices --agent codex --copy --yes'
     );
     expect(script).toContain('--agent codex --copy --yes');
     expect(script).not.toContain('skills-lock.json');
@@ -62,6 +92,37 @@ describe('external skill install script', () => {
     expect(unselectedScript).not.toContain('--skill vitest');
     expect(unselectedScript).not.toContain('--skill playwright-best-practices');
     expect(unselectedScript).not.toContain('--skill playwright-cli');
+  });
+
+  it('continues project setup when an external skill install fails', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const executor = new FailingRunExecutor();
+
+    await expect(
+      installSkills(
+        'my-app',
+        {
+          targetDir: 'my-app',
+          packageManager: 'npm',
+          unit: false,
+          e2e: false,
+          commitlint: false,
+          yes: true,
+          dryRun: false,
+          skipInstall: false,
+          shadcnArgs: [],
+        },
+        executor
+      )
+    ).resolves.toBeUndefined();
+
+    expect([...executor.writes.keys()]).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining('project-architecture'),
+        expect.stringContaining('skills.sh'),
+      ])
+    );
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('Skipping external skill install'));
   });
 });
 

@@ -31,12 +31,12 @@ export const externalSkillManifest: SkillInstallManifest = {
       skill: 'typescript-advanced-types',
     },
     'vercel-composition-patterns': {
-      source: 'vercel-labs/agent-skills',
-      skill: 'composition-patterns',
+      source: 'https://github.com/vercel-labs/agent-skills',
+      skill: 'vercel-composition-patterns',
     },
     'vercel-react-best-practices': {
-      source: 'vercel-labs/agent-skills',
-      skill: 'react-best-practices',
+      source: 'https://github.com/vercel-labs/agent-skills',
+      skill: 'vercel-react-best-practices',
     },
     'verification-before-completion': {
       source: 'obra/superpowers',
