@@ -110,5 +110,16 @@ export async function runCreate(targetDir: string, flags: RawCreateFlags) {
     for (const operation of executor.operations) {
       console.log(operation);
     }
+    return;
+  }
+
+  // Normalize formatting of files emitted by create-next-app, shadcn, and the
+  // templates (line endings/quote style differ across tools and OSes) so the
+  // generated app is Prettier-clean, then run its own quality gate as a
+  // self-test. Both are skipped when no dependencies were installed (the gate
+  // would fail spuriously without Prettier/ESLint/etc.).
+  if (!options.skipInstall) {
+    await executor.run(options.packageManager, ['run', 'format'], { cwd: projectRoot });
+    await executor.run(options.packageManager, ['run', 'check'], { cwd: projectRoot });
   }
 }

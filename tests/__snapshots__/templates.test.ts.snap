@@ -1,7 +1,8 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
 exports[`template snapshots > snapshots ESLint and React Doctor config 1`] = `
-"import { defineConfig, globalIgnores } from 'eslint/config';
+"import vitest from '@vitest/eslint-plugin';
+import { defineConfig, globalIgnores } from 'eslint/config';
 import nextVitals from 'eslint-config-next/core-web-vitals';
 import nextTs from 'eslint-config-next/typescript';
 import eslintConfigPrettier from 'eslint-config-prettier/flat';
@@ -10,7 +11,6 @@ import playwrightPlugin from 'eslint-plugin-playwright';
 import reactDoctor from 'eslint-plugin-react-doctor';
 import reactYouMightNotNeedAnEffect from 'eslint-plugin-react-you-might-not-need-an-effect';
 import testingLibraryPlugin from 'eslint-plugin-testing-library';
-import vitest from '@vitest/eslint-plugin';
 
 const eslintConfig = defineConfig([
   ...nextVitals,
@@ -110,6 +110,15 @@ const eslintConfig = defineConfig([
       'playwright/**/*.{js,jsx,ts,tsx,mjs,mts,cjs,cts}',
     ],
     ...playwrightPlugin.configs['flat/recommended'],
+  },
+  {
+    // Generated shadcn/ui primitives intentionally co-export variant helpers
+    // (e.g. \`buttonVariants\`) alongside their component. Mirrors the
+    // \`components/ui/**\` exemption in doctor.config.json.
+    files: ['components/ui/**/*.{jsx,tsx}'],
+    rules: {
+      'react-doctor/only-export-components': 'off',
+    },
   },
   eslintConfigPrettier,
   globalIgnores([
@@ -248,6 +257,70 @@ Do not use \`next lint\`; use the ESLint CLI.
 ## Claude Code
 
 \`CLAUDE.md\` points to this file. \`.claude/skills\` should link to \`.agents/skills\`.
+"
+`;
+
+exports[`template snapshots > snapshots the generated app shell 1`] = `
+"import { Geist, Geist_Mono } from 'next/font/google';
+import Script from 'next/script';
+
+import type { Metadata } from 'next';
+
+import './globals.css';
+
+const geistSans = Geist({
+  variable: '--font-geist-sans',
+  subsets: ['latin'],
+});
+
+const geistMono = Geist_Mono({
+  variable: '--font-geist-mono',
+  subsets: ['latin'],
+});
+
+export const metadata: Metadata = {
+  title: 'My App',
+  description: 'My App web application.',
+};
+
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  return (
+    <html lang="en" className={\`\${geistSans.variable} \${geistMono.variable} h-full antialiased\`}>
+      <body className="flex min-h-full flex-col">
+        {process.env.NODE_ENV === 'development' && (
+          <Script src="https://unpkg.com/react-scan/dist/auto.global.js" crossOrigin="anonymous" />
+        )}
+        {children}
+      </body>
+    </html>
+  );
+}
+"
+`;
+
+exports[`template snapshots > snapshots the generated app shell 2`] = `
+"import { Cat } from 'lucide-react';
+
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'My App',
+  description: 'My App web application starting point.',
+};
+
+export default function Home() {
+  return (
+    <main className="flex min-h-screen flex-col items-center justify-center gap-4 p-8 text-center">
+      <Cat className="size-10 text-zinc-700 dark:text-zinc-300" aria-hidden />
+      <h1 className="text-2xl font-semibold tracking-tight">My App</h1>
+      <p className="text-sm text-zinc-500">Edit app/page.tsx to start building.</p>
+    </main>
+  );
+}
 "
 `;
 

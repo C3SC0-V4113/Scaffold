@@ -4,12 +4,15 @@ import { getPackageManagerCommands } from '../package-manager.js';
 import {
   commitMsgHook,
   commitlintConfig,
+  gitAttributes,
   preCommitHook,
   prePushHook,
   prettierConfig,
   prettierIgnore,
   reactDoctorConfig,
+  renderHomePage,
   renderQualityWorkflow,
+  renderRootLayout,
 } from '../templates/files.js';
 import { renderEslintConfig } from '../templates/eslint.js';
 import type { CreateOptions, Executor } from '../types.js';
@@ -63,31 +66,14 @@ async function appendGitIgnore(projectRoot: string, executor: Executor) {
   await executor.writeFile(gitIgnorePath, `${nextLines.join('\n')}\n`);
 }
 
-async function injectReactScanScript(projectRoot: string, executor: Executor) {
-  const layoutPath = path.join(projectRoot, 'app', 'layout.tsx');
-  if (!(await executor.pathExists(layoutPath))) {
-    return;
-  }
+async function writeAppShell(projectRoot: string, executor: Executor) {
+  const projectName = path.basename(projectRoot);
 
-  const layout = await executor.readFile(layoutPath);
-  if (layout.includes('react-scan') || layout.includes('auto.global.js')) {
-    return;
-  }
-
-  const importLine = "import Script from 'next/script';\n";
-  const withImport = layout.includes("from 'next/script'")
-    ? layout
-    : layout.replace(/(import[\s\S]+?;\n)/, `$1${importLine}`);
-  const script = `{process.env.NODE_ENV === 'development' ? (
-        <Script
-          src="https://unpkg.com/react-scan/dist/auto.global.js"
-          strategy="afterInteractive"
-        />
-      ) : null}
-      `;
-  const withScript = withImport.replace(/(<body[^>]*>)(\s*)/, `$1$2${script}`);
-
-  await executor.writeFile(layoutPath, withScript);
+  await executor.writeFile(
+    path.join(projectRoot, 'app', 'layout.tsx'),
+    renderRootLayout(projectName)
+  );
+  await executor.writeFile(path.join(projectRoot, 'app', 'page.tsx'), renderHomePage(projectName));
 }
 
 export async function installQualityLayer(
@@ -100,7 +86,8 @@ export async function installQualityLayer(
   await executor.writeFile(path.join(projectRoot, 'eslint.config.mjs'), renderEslintConfig(options));
   await executor.writeFile(path.join(projectRoot, '.prettierrc'), prettierConfig);
   await executor.writeFile(path.join(projectRoot, '.prettierignore'), prettierIgnore);
-  await executor.writeFile(path.join(projectRoot, 'react-doctor.config.json'), reactDoctorConfig);
+  await executor.writeFile(path.join(projectRoot, '.gitattributes'), gitAttributes);
+  await executor.writeFile(path.join(projectRoot, 'doctor.config.json'), reactDoctorConfig);
   await appendGitIgnore(projectRoot, executor);
 
   await executor.writeFile(
@@ -129,14 +116,7 @@ export async function installQualityLayer(
     const commands = getPackageManagerCommands(options.packageManager);
     const install = commands.addDev(buildDevDependencies(options));
     await executor.run(install.command, install.args, { cwd: projectRoot });
-
-    const scanInit = commands.exec('react-scan', ['init', '-y', '--skip-install']);
-    try {
-      await executor.run(scanInit.command, scanInit.args, { cwd: projectRoot });
-    } catch (error) {
-      console.warn(`react-scan init failed; falling back to layout injection. ${String(error)}`);
-    }
   }
 
-  await injectReactScanScript(projectRoot, executor);
+  await writeAppShell(projectRoot, executor);
 }

@@ -41,8 +41,13 @@ export class RealExecutor implements Executor {
 
   async symlinkOrJunction(target: string, linkPath: string) {
     await fs.remove(linkPath);
+    await fs.ensureDir(pathModule.dirname(linkPath));
+
+    // Relative target so the link survives cloning/moving the repo or another
+    // machine. Junctions (Windows fallback) require an absolute target.
+    const relativeTarget = pathModule.relative(pathModule.dirname(linkPath), target);
     try {
-      await fs.symlink(target, linkPath, 'dir');
+      await fs.symlink(relativeTarget, linkPath, 'dir');
       return;
     } catch (error) {
       if (process.platform !== 'win32') {

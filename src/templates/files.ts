@@ -32,18 +32,98 @@ out
 pnpm-lock.yaml
 yarn.lock
 package-lock.json
-.agents/skills/architecture-decision-records
-.agents/skills/composition-patterns
-.agents/skills/next-best-practices
-.agents/skills/playwright-best-practices
-.agents/skills/playwright-cli
-.agents/skills/react-best-practices
-.agents/skills/shadcn
-.agents/skills/systematic-debugging
-.agents/skills/typescript-advanced-types
-.agents/skills/vitest
-.agents/skills/verification-before-completion
+# Agent skills are vendored/managed by the skills CLI (see skills-lock.json) and
+# already excluded from ESLint and React Doctor; ignore the whole tree so Prettier
+# never churns third-party skill content or drifts on per-skill folder names.
+.agents
 `;
+
+export const gitAttributes = `* text=auto eol=lf
+`;
+
+export function humanizeProjectName(name: string) {
+  const cleaned = name
+    .replace(/[-_]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  if (!cleaned) {
+    return 'App';
+  }
+
+  return cleaned
+    .split(' ')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+}
+
+export function renderRootLayout(projectName: string) {
+  const appName = humanizeProjectName(projectName);
+
+  return `import { Geist, Geist_Mono } from 'next/font/google';
+import Script from 'next/script';
+
+import type { Metadata } from 'next';
+
+import './globals.css';
+
+const geistSans = Geist({
+  variable: '--font-geist-sans',
+  subsets: ['latin'],
+});
+
+const geistMono = Geist_Mono({
+  variable: '--font-geist-mono',
+  subsets: ['latin'],
+});
+
+export const metadata: Metadata = {
+  title: '${appName}',
+  description: '${appName} web application.',
+};
+
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  return (
+    <html lang="en" className={\`\${geistSans.variable} \${geistMono.variable} h-full antialiased\`}>
+      <body className="flex min-h-full flex-col">
+        {process.env.NODE_ENV === 'development' && (
+          <Script src="https://unpkg.com/react-scan/dist/auto.global.js" crossOrigin="anonymous" />
+        )}
+        {children}
+      </body>
+    </html>
+  );
+}
+`;
+}
+
+export function renderHomePage(projectName: string) {
+  const appName = humanizeProjectName(projectName);
+
+  return `import { Cat } from 'lucide-react';
+
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: '${appName}',
+  description: '${appName} web application starting point.',
+};
+
+export default function Home() {
+  return (
+    <main className="flex min-h-screen flex-col items-center justify-center gap-4 p-8 text-center">
+      <Cat className="size-10 text-zinc-700 dark:text-zinc-300" aria-hidden />
+      <h1 className="text-2xl font-semibold tracking-tight">${appName}</h1>
+      <p className="text-sm text-zinc-500">Edit app/page.tsx to start building.</p>
+    </main>
+  );
+}
+`;
+}
 
 export const reactDoctorConfig = `{
   "ignore": {

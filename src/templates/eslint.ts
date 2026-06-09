@@ -1,14 +1,14 @@
 import type { CreateOptions } from '../types.js';
 
 export function renderEslintConfig(options: Pick<CreateOptions, 'unit' | 'e2e'>) {
-  return `import { defineConfig, globalIgnores } from 'eslint/config';
+  return `${options.unit ? "import vitest from '@vitest/eslint-plugin';\n" : ''}import { defineConfig, globalIgnores } from 'eslint/config';
 import nextVitals from 'eslint-config-next/core-web-vitals';
 import nextTs from 'eslint-config-next/typescript';
 import eslintConfigPrettier from 'eslint-config-prettier/flat';
 import importPlugin from 'eslint-plugin-import';
 ${options.e2e ? "import playwrightPlugin from 'eslint-plugin-playwright';\n" : ''}import reactDoctor from 'eslint-plugin-react-doctor';
 import reactYouMightNotNeedAnEffect from 'eslint-plugin-react-you-might-not-need-an-effect';
-${options.unit ? "import testingLibraryPlugin from 'eslint-plugin-testing-library';\nimport vitest from '@vitest/eslint-plugin';\n" : ''}
+${options.unit ? "import testingLibraryPlugin from 'eslint-plugin-testing-library';\n" : ''}
 const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
@@ -108,7 +108,16 @@ ${options.unit ? `  {
     ],
     ...playwrightPlugin.configs['flat/recommended'],
   },
-` : ''}  eslintConfigPrettier,
+` : ''}  {
+    // Generated shadcn/ui primitives intentionally co-export variant helpers
+    // (e.g. \`buttonVariants\`) alongside their component. Mirrors the
+    // \`components/ui/**\` exemption in doctor.config.json.
+    files: ['components/ui/**/*.{jsx,tsx}'],
+    rules: {
+      'react-doctor/only-export-components': 'off',
+    },
+  },
+  eslintConfigPrettier,
   globalIgnores([
     '.next/**',
     'out/**',
