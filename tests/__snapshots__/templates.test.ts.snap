@@ -368,11 +368,11 @@ Set-Location -LiteralPath $projectRoot
 
 $reactDoctor = Join-Path $projectRoot 'node_modules\\.bin\\react-doctor.cmd'
 if (Test-Path -LiteralPath $reactDoctor) {
-  & cmd /c "\`"$reactDoctor\`" --verbose --diff --fail-on warning --no-score"
+  & cmd /c "\`"$reactDoctor\`" --verbose --diff --blocking warning --no-score"
   exit $LASTEXITCODE
 }
 
-& cmd /c 'npx --yes react-doctor@latest --verbose --diff --fail-on warning --no-score'
+& cmd /c 'npx --yes react-doctor@latest --verbose --diff --blocking warning --no-score'
 exit $LASTEXITCODE
 "
 `;
