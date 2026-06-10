@@ -1,6 +1,6 @@
 {
   "name": "purrfold",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Scaffold a production-ready frontend app with shadcn, strict quality tooling, agent docs, Claude hooks, and optional tests. Starts with Next.js. 🐱",
   "type": "module",
   "bin": {
@@ -8,7 +8,8 @@
   },
   "files": [
     "dist",
-    "README.md"
+    "README.md",
+    "llms.txt"
   ],
   "keywords": [
     "scaffold",
@@ -35,13 +36,16 @@
     "url": "https://github.com/C3SC0-V4113/Scaffold/issues"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
+    "build": "tsup",
     "dev": "tsx src/index.ts",
     "prepack": "npm run build",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "check": "npm run typecheck && npm run test && npm run build",
+    "changeset": "changeset",
+    "changeset:version": "changeset version",
+    "release": "changeset publish",
     "prepublishOnly": "npm run check"
   },
   "dependencies": {
@@ -51,8 +55,10 @@
     "fs-extra": "^11.3.2"
   },
   "devDependencies": {
+    "@changesets/cli": "^2.31.0",
     "@types/fs-extra": "^11.0.4",
     "@types/node": "^22.10.2",
+    "tsup": "^8.5.1",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "vitest": "^4.1.7"
