@@ -7,7 +7,7 @@ import type { PackageManager } from './types.js';
 const program = new Command();
 
 program
-  .name('scaffold-next-quality')
+  .name('purrfold')
   .description('Create a latest Next.js app with shadcn, quality tooling, skills, docs, and hooks.')
   .argument('<target-dir>', 'Directory for the generated Next.js app')
   .option('--pm <pm>', 'Package manager: npm, pnpm, or bun')

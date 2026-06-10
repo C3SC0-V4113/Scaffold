@@ -1,9 +1,9 @@
-﻿# scaffold-next-quality
+﻿# purrfold 🐱
 
-`scaffold-next-quality` creates a new latest Next.js app and applies a production-oriented quality baseline: shadcn setup, strict ESLint, Prettier, Husky, React Doctor, React Scan, agent docs, Claude compatibility, and optional testing/commit tooling.
+`purrfold` creates a new latest Next.js app and applies a production-oriented quality baseline: shadcn setup, strict ESLint, Prettier, Husky, React Doctor, React Scan, agent docs, Claude compatibility, and optional testing/commit tooling.
 
 ```bash
-npx scaffold-next-quality@latest my-app
+npx purrfold@latest my-app
 ```
 
 V1 only supports new projects created with `create-next-app@latest`. It does not retrofit existing apps or support non-Next frameworks.
@@ -21,7 +21,7 @@ V1 only supports new projects created with `create-next-app@latest`. It does not
 ## Usage
 
 ```bash
-scaffold-next-quality <target-dir> [options]
+purrfold <target-dir> [options]
 ```
 
 Options:
@@ -60,7 +60,7 @@ Create a local package and run it with `npx`:
 npm pack
 mkdir ..\cli-smoke-tests
 cd ..\cli-smoke-tests
-npx ..\scaffold-next-quality\scaffold-next-quality-0.1.0.tgz my-app --yes --unit --e2e --commitlint
+npx ..\scaffold-next-quality\purrfold-0.1.0.tgz my-app --yes --unit --e2e --commitlint
 ```
 
 Then validate the generated app:

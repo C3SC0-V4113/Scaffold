@@ -1,15 +1,39 @@
 {
-  "name": "scaffold-next-quality",
+  "name": "purrfold",
   "version": "0.1.0",
-  "description": "Create a Next.js app with shadcn, strict quality tooling, agent docs, Claude hooks, and optional tests.",
+  "description": "Scaffold a production-ready frontend app with shadcn, strict quality tooling, agent docs, Claude hooks, and optional tests. Starts with Next.js. 🐱",
   "type": "module",
   "bin": {
-    "scaffold-next-quality": "./dist/index.js"
+    "purrfold": "./dist/index.js"
   },
   "files": [
     "dist",
     "README.md"
   ],
+  "keywords": [
+    "scaffold",
+    "scaffolding",
+    "cli",
+    "create-next-app",
+    "nextjs",
+    "shadcn",
+    "eslint",
+    "prettier",
+    "react-doctor",
+    "quality",
+    "react",
+    "frontend"
+  ],
+  "author": "Valle-Aracari <jose.valle@aracaristudios.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/C3SC0-V4113/Scaffold.git"
+  },
+  "homepage": "https://github.com/C3SC0-V4113/Scaffold#readme",
+  "bugs": {
+    "url": "https://github.com/C3SC0-V4113/Scaffold/issues"
+  },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "dev": "tsx src/index.ts",
@@ -17,7 +41,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "check": "npm run typecheck && npm run test && npm run build"
+    "check": "npm run typecheck && npm run test && npm run build",
+    "prepublishOnly": "npm run check"
   },
   "dependencies": {
     "@inquirer/prompts": "^7.10.1",
