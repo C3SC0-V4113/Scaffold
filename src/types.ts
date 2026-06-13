@@ -1,5 +1,11 @@
 export type PackageManager = 'npm' | 'pnpm' | 'bun';
 
+/** Icon libraries purrfold can wire into the generated home page. */
+export type IconLibrary = 'lucide' | 'phosphor' | 'tabler';
+
+/** shadcn MCP clients purrfold can initialize when explicitly requested. */
+export type ShadcnMcpClient = 'claude' | 'codex' | 'opencode';
+
 export interface CreateOptions {
   targetDir: string;
   packageManager: PackageManager;
@@ -10,6 +16,10 @@ export interface CreateOptions {
   dryRun: boolean;
   skipInstall: boolean;
   shadcnArgs: string[];
+  /** Whether to initialize shadcn MCP for supported local AI clients. */
+  mcp: boolean;
+  /** Forced icon library (from `--icons`); when unset, purrfold respects shadcn's choice. */
+  icons?: IconLibrary;
 }
 
 export interface RunOptions {

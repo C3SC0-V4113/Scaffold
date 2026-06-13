@@ -31,7 +31,9 @@ npx purrfold@latest <target-dir> [options]
 - `--yes` — non-interactive defaults (no prompts). **Always include this when running for the user.**
 - `--dry-run` — print operations without writing or installing.
 - `--skip-install` — generate files without installing extra quality deps.
-- `--shadcn-args <args...>` — extra args forwarded to `shadcn init`.
+- `--shadcn-args <args...>` — extra args forwarded to `shadcn init`, including `--preset <id>`.
+- `--mcp` / `--no-mcp` — optionally install shadcn MCP for Claude, Codex, and OpenCode (default: skipped).
+- `--icons <lucide|phosphor|tabler>` — icon library for the home-page cat (default: shadcn's choice, else lucide).
 
 To fetch the canonical option schema at runtime: `npx purrfold@latest info --json`.
 
@@ -44,6 +46,9 @@ To fetch the canonical option schema at runtime: `npx purrfold@latest info --jso
 | "with e2e" / "add Playwright" | `npx purrfold@latest <dir> --e2e --yes` |
 | "the full setup" / "everything" | `npx purrfold@latest <dir> --unit --e2e --commitlint --yes` |
 | "use pnpm/bun" | `npx purrfold@latest <dir> --pm pnpm --yes` |
+| "use phosphor/tabler icons" | `npx purrfold@latest <dir> --icons phosphor --yes` |
+| "install shadcn MCP" | `npx purrfold@latest <dir> --mcp --yes` |
+| "use a shadcn preset" | `npx purrfold@latest <dir> --shadcn-args --preset b3REw8vwo --yes` |
 | "just show me what it would do" | `npx purrfold@latest <dir> --yes --dry-run` |
 
 ## Notes

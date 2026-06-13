@@ -22,6 +22,7 @@ describe('dry-run integration', () => {
     const output = log.mock.calls.map((call) => call.join(' ')).join('\n');
     expect(output).toContain('run npx create-next-app@latest my-app');
     expect(output).toContain('run npx shadcn@latest init --defaults');
+    expect(output).not.toContain('mcp init --client');
     expect(output).toContain('my-app\\skills.sh');
     expect(output).toContain(
       'run npx --yes skills@latest add https://github.com/vercel-labs/agent-skills --skill vercel-composition-patterns --skill vercel-react-best-practices --agent codex --copy --yes'
@@ -64,5 +65,26 @@ describe('dry-run integration', () => {
     expect(output).toContain('run bunx --bun create-next-app@latest my-app');
     expect(output).toContain('write');
     expect(output).not.toContain('playwright.config.ts');
+  });
+
+  it('prints MCP setup commands only when requested and preserves shadcn presets', async () => {
+    const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    await runCreate('my-app', {
+      pm: 'pnpm',
+      unit: false,
+      e2e: false,
+      commitlint: false,
+      yes: true,
+      dryRun: true,
+      shadcnArgs: ['--preset', 'b3REw8vwo'],
+      mcp: true,
+    });
+
+    const output = log.mock.calls.map((call) => call.join(' ')).join('\n');
+    expect(output).toContain('run pnpm dlx shadcn@latest init --defaults --preset b3REw8vwo');
+    expect(output).toContain('run pnpm dlx shadcn@latest mcp init --client claude');
+    expect(output).toContain('run pnpm dlx shadcn@latest mcp init --client codex');
+    expect(output).toContain('run pnpm dlx shadcn@latest mcp init --client opencode');
   });
 });

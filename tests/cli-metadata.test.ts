@@ -17,6 +17,9 @@ describe('cli metadata', () => {
       '--dry-run',
       '--skip-install',
       '--shadcn-args',
+      '--mcp',
+      '--no-mcp',
+      '--icons',
     ];
 
     for (const flag of flags) {
@@ -36,6 +39,8 @@ describe('cli metadata', () => {
     expect(
       commands.some((command) => command.includes('--no-unit') && command.includes('--no-e2e'))
     ).toBe(true);
+    expect(commands.some((command) => command.includes('--mcp'))).toBe(true);
+    expect(commands.some((command) => command.includes('--preset b3REw8vwo'))).toBe(true);
   });
 
   it('exposes the install command', () => {

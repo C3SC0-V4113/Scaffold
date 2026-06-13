@@ -4,6 +4,7 @@ import { renderEslintConfig } from '../src/templates/eslint.js';
 import {
   designDoc,
   humanizeProjectName,
+  mergePnpmHardening,
   reactDoctorConfig,
   renderAgents,
   renderHomePage,
@@ -28,6 +29,7 @@ describe('template snapshots', () => {
     dryRun: false,
     skipInstall: false,
     shadcnArgs: [],
+    mcp: false,
   };
 
   it('snapshots generated docs', () => {
@@ -39,6 +41,32 @@ describe('template snapshots', () => {
   it('snapshots ESLint and React Doctor config', () => {
     expect(renderEslintConfig({ unit: true, e2e: true })).toMatchSnapshot();
     expect(reactDoctorConfig).toMatchSnapshot();
+  });
+
+  it('produces an ESLint config that survives pnpm and ignores vendored ui', () => {
+    const config = renderEslintConfig({ unit: true, e2e: true });
+
+    // eslint-config-next already registers the `import` plugin; re-registering it
+    // breaks pnpm ("Cannot redefine plugin import").
+    expect(config).not.toContain("from 'eslint-plugin-import'");
+    expect(config).not.toMatch(/plugins:\s*{\s*import:/);
+    // We still keep the ordering rules and resolver settings.
+    expect(config).toContain("'import/order'");
+    expect(config).toContain("'import/resolver'");
+    // Generated shadcn primitives are not linted (radix/react import order, etc.).
+    expect(config).toContain("'components/ui/**'");
+  });
+
+  it('keeps import plugin registration available for future base frameworks', () => {
+    const config = renderEslintConfig({
+      unit: true,
+      e2e: false,
+      registerImportPlugin: true,
+    });
+
+    expect(config).toContain("import importPlugin from 'eslint-plugin-import'");
+    expect(config).toContain('import: importPlugin');
+    expect(config).toContain("'import/order'");
   });
 
   it('snapshots the generated app shell', () => {
@@ -59,6 +87,34 @@ describe('template snapshots', () => {
     expect(page).toContain("import { Cat } from 'lucide-react'");
     expect(page).toContain('<h1');
     expect(page).toContain('export const metadata');
+  });
+
+  it('documents shadcn MCP setup and preset compatibility', () => {
+    const readme = renderReadme({ ...options, packageManager: 'pnpm', mcp: true });
+    const agents = renderAgents({ ...options, packageManager: 'pnpm', mcp: true });
+
+    expect(readme).toContain('pnpm dlx shadcn@latest mcp init --client claude');
+    expect(readme).toContain('pnpm dlx shadcn@latest mcp init --client codex');
+    expect(readme).toContain('pnpm dlx shadcn@latest mcp init --client opencode');
+    expect(readme).toContain('~/.codex/config.toml');
+    expect(readme).toContain('args = ["dlx", "shadcn@latest", "mcp"]');
+    expect(readme).toContain('--shadcn-args --preset b3REw8vwo');
+    expect(agents).toContain('shadcn presets are supported');
+  });
+
+  it('merges pnpm hardening without dropping existing keys', () => {
+    const existing = 'ignoredBuiltDependencies:\n  - sharp\n  - unrs-resolver\n';
+    const merged = mergePnpmHardening(existing);
+
+    expect(merged).toContain('ignoredBuiltDependencies:');
+    expect(merged).toContain('  - sharp');
+    expect(merged).toContain('minimumReleaseAge:');
+    expect(merged).toContain('trustPolicy: no-downgrade');
+    expect(merged).toContain('blockExoticSubdeps: true');
+
+    // Idempotent: re-merging does not duplicate keys.
+    const twice = mergePnpmHardening(merged);
+    expect(twice.match(/trustPolicy:/g)).toHaveLength(1);
   });
 
   it('humanizes project directory names', () => {

@@ -34,6 +34,9 @@ export function buildProgram(): Command {
     .option('--dry-run', 'Print operations without writing files or installing packages')
     .option('--skip-install', 'Generate quality files without installing additional packages')
     .option('--shadcn-args <args...>', 'Additional arguments forwarded to shadcn init')
+    .option('--mcp', 'Install shadcn MCP for Claude, Codex, and OpenCode')
+    .option('--no-mcp', 'Skip shadcn MCP setup')
+    .option('--icons <library>', 'Icon library for the home page: lucide, phosphor, or tabler')
     .action(async (targetDir: string, rawOptions: Record<string, unknown>) => {
       await runCreate(targetDir, {
         pm: rawOptions.pm as PackageManager | undefined,
@@ -44,6 +47,8 @@ export function buildProgram(): Command {
         dryRun: rawOptions.dryRun as boolean | undefined,
         skipInstall: rawOptions.skipInstall as boolean | undefined,
         shadcnArgs: rawOptions.shadcnArgs as string[] | undefined,
+        mcp: rawOptions.mcp as boolean | undefined,
+        icons: rawOptions.icons as string | undefined,
       });
     });
 

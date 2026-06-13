@@ -14,6 +14,10 @@ describe('package manager command mapping', () => {
       command: 'npx',
       args: ['shadcn@latest', 'init'],
     });
+    expect(commands.shadcnMcp('codex')).toEqual({
+      command: 'npx',
+      args: ['shadcn@latest', 'mcp', 'init', '--client', 'codex'],
+    });
     expect(commands.addDev(['vitest'])).toEqual({
       command: 'npm',
       args: ['install', '--save-dev', 'vitest'],
@@ -31,6 +35,10 @@ describe('package manager command mapping', () => {
       command: 'pnpm',
       args: ['dlx', 'shadcn@latest', 'init'],
     });
+    expect(commands.shadcnMcp('claude')).toEqual({
+      command: 'pnpm',
+      args: ['dlx', 'shadcn@latest', 'mcp', 'init', '--client', 'claude'],
+    });
     expect(commands.addDev(['vitest'])).toEqual({
       command: 'pnpm',
       args: ['add', '-D', 'vitest'],
@@ -47,6 +55,10 @@ describe('package manager command mapping', () => {
     expect(commands.shadcn(['init'])).toEqual({
       command: 'bunx',
       args: ['--bun', 'shadcn@latest', 'init'],
+    });
+    expect(commands.shadcnMcp('opencode')).toEqual({
+      command: 'bunx',
+      args: ['--bun', 'shadcn@latest', 'mcp', 'init', '--client', 'opencode'],
     });
     expect(commands.addDev(['vitest'])).toEqual({
       command: 'bun',

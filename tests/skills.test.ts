@@ -111,6 +111,7 @@ describe('external skill install script', () => {
           dryRun: false,
           skipInstall: false,
           shadcnArgs: [],
+          mcp: false,
         },
         executor
       )

@@ -33,7 +33,9 @@ Options:
 - `--yes`: use non-interactive defaults.
 - `--dry-run`: print operations without writing files or installing packages.
 - `--skip-install`: generate quality files without installing additional quality dependencies.
-- `--shadcn-args <args...>`: forward extra arguments to `shadcn init`.
+- `--shadcn-args <args...>`: forward extra arguments to `shadcn init`, including `--preset <id>`.
+- `--mcp` / `--no-mcp`: optionally install shadcn MCP for Claude, Codex, and OpenCode. Defaults to off.
+- `--icons <lucide|phosphor|tabler>`: icon library for the home-page cat. Defaults to shadcn's choice (or lucide). If shadcn is configured with an unsupported icon library, purrfold normalizes it to lucide.
 
 Dry-run examples:
 
@@ -63,6 +65,9 @@ Map a user's intent to the right command:
 | No testing at all | `npx purrfold@latest my-app --no-unit --no-e2e --yes` |
 | Full setup (unit + e2e + commitlint) | `npx purrfold@latest my-app --unit --e2e --commitlint --yes` |
 | A specific package manager | `npx purrfold@latest my-app --pm pnpm --yes` |
+| A specific icon library for the cat | `npx purrfold@latest my-app --icons phosphor --yes` |
+| shadcn MCP for Claude/Codex/OpenCode | `npx purrfold@latest my-app --mcp --yes` |
+| A shadcn preset | `npx purrfold@latest my-app --shadcn-args --preset b3REw8vwo --yes` |
 | Preview without writing | `npx purrfold@latest my-app --yes --dry-run` |
 
 Always pass `--yes` when running non-interactively so purrfold does not block on prompts.
@@ -84,6 +89,18 @@ npm run check
 ```
 
 `npm run check` runs typecheck, tests, and the `tsup` build.
+
+### Smoke matrix
+
+`npm run smoke` builds the CLI and generates real apps across package managers,
+shadcn presets, testing, and commitlint combinations; each generated app
+self-tests via its own `check`. It is heavy and network-bound, so run it
+manually before a release:
+
+```bash
+npm run smoke
+npm run smoke -- --work-dir E:\Repositorios\smoke --keep
+```
 
 ## Local Smoke Test
 

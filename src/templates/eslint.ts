@@ -1,12 +1,20 @@
 import type { CreateOptions } from '../types.js';
 
-export function renderEslintConfig(options: Pick<CreateOptions, 'unit' | 'e2e'>) {
+interface EslintConfigOptions extends Pick<CreateOptions, 'unit' | 'e2e'> {
+  /**
+   * Next's ESLint config already registers the `import` plugin. Future base
+   * frameworks (Astro, TanStack Start, etc.) may not, so keep registration as an
+   * explicit generator switch instead of removing support from the template.
+   */
+  registerImportPlugin?: boolean;
+}
+
+export function renderEslintConfig(options: EslintConfigOptions) {
   return `${options.unit ? "import vitest from '@vitest/eslint-plugin';\n" : ''}import { defineConfig, globalIgnores } from 'eslint/config';
 import nextVitals from 'eslint-config-next/core-web-vitals';
 import nextTs from 'eslint-config-next/typescript';
 import eslintConfigPrettier from 'eslint-config-prettier/flat';
-import importPlugin from 'eslint-plugin-import';
-${options.e2e ? "import playwrightPlugin from 'eslint-plugin-playwright';\n" : ''}import reactDoctor from 'eslint-plugin-react-doctor';
+${options.registerImportPlugin ? "import importPlugin from 'eslint-plugin-import';\n" : ''}${options.e2e ? "import playwrightPlugin from 'eslint-plugin-playwright';\n" : ''}import reactDoctor from 'eslint-plugin-react-doctor';
 import reactYouMightNotNeedAnEffect from 'eslint-plugin-react-you-might-not-need-an-effect';
 ${options.unit ? "import testingLibraryPlugin from 'eslint-plugin-testing-library';\n" : ''}
 const eslintConfig = defineConfig([
@@ -16,11 +24,15 @@ const eslintConfig = defineConfig([
   reactDoctor.configs.next,
   reactYouMightNotNeedAnEffect.configs.recommended,
   {
-    files: ['**/*.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
-    plugins: {
+${options.registerImportPlugin ? `    // Register the \`import\` plugin for base frameworks that do not provide it.
+` : `    // The \`import\` plugin is already registered by eslint-config-next; we only
+    // add resolver settings and ordering rules here. Re-registering the plugin
+    // breaks under pnpm's isolated node_modules ("Cannot redefine plugin import").
+`}    files: ['**/*.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
+${options.registerImportPlugin ? `    plugins: {
       import: importPlugin,
     },
-    settings: {
+` : ''}    settings: {
       'import/resolver': {
         typescript: true,
         node: true,
@@ -108,16 +120,7 @@ ${options.unit ? `  {
     ],
     ...playwrightPlugin.configs['flat/recommended'],
   },
-` : ''}  {
-    // Generated shadcn/ui primitives intentionally co-export variant helpers
-    // (e.g. \`buttonVariants\`) alongside their component. Mirrors the
-    // \`components/ui/**\` exemption in doctor.config.json.
-    files: ['components/ui/**/*.{jsx,tsx}'],
-    rules: {
-      'react-doctor/only-export-components': 'off',
-    },
-  },
-  eslintConfigPrettier,
+` : ''}  eslintConfigPrettier,
   globalIgnores([
     '.next/**',
     'out/**',
@@ -125,6 +128,10 @@ ${options.unit ? `  {
     'next-env.d.ts',
     '.agents/**',
     '.claude/**',
+    // Generated shadcn/ui primitives are vendored (radix/cva imports, dual
+    // exports). They are type-checked by tsc and formatted by Prettier, but
+    // not linted. Mirrors the \`components/ui/**\` exemption in doctor.config.json.
+    'components/ui/**',
     'coverage/**',
     'playwright-report/**',
     'test-results/**',

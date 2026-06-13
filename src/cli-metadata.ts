@@ -59,8 +59,19 @@ export const cliOptions: CliOption[] = [
   },
   {
     flags: '--shadcn-args <args...>',
-    description: 'Extra arguments forwarded verbatim to `shadcn init`.',
+    description:
+      'Extra arguments forwarded verbatim to `shadcn init` (including `--preset <id>`).',
     default: 'none',
+  },
+  {
+    flags: '--mcp / --no-mcp',
+    description: 'Install shadcn MCP for Claude, Codex, and OpenCode.',
+    default: 'skipped',
+  },
+  {
+    flags: '--icons <lucide|phosphor|tabler>',
+    description: 'Icon library used for the cat on the home page.',
+    default: "shadcn's choice, otherwise lucide",
   },
 ];
 
@@ -80,6 +91,18 @@ export const cliScenarios: CliScenario[] = [
   {
     intent: 'Use a specific package manager (pnpm or bun)',
     command: 'npx purrfold@latest my-app --pm pnpm --yes',
+  },
+  {
+    intent: 'Pick the icon library for the home page cat',
+    command: 'npx purrfold@latest my-app --icons phosphor --yes',
+  },
+  {
+    intent: 'Initialize shadcn MCP for Claude, Codex, and OpenCode',
+    command: 'npx purrfold@latest my-app --mcp --yes',
+  },
+  {
+    intent: 'Use a shadcn preset',
+    command: 'npx purrfold@latest my-app --shadcn-args --preset b3REw8vwo --yes',
   },
   {
     intent: 'Preview what would happen without writing anything',

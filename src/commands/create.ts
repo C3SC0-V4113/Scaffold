@@ -4,10 +4,12 @@ import { DryRunExecutor, RealExecutor } from '../executor.js';
 import { installDocsAndClaude } from '../installers/docs.js';
 import { createNextApp } from '../installers/next.js';
 import { installQualityLayer } from '../installers/quality.js';
+import { installShadcnMcp } from '../installers/shadcn-mcp.js';
 import { initializeShadcn } from '../installers/shadcn.js';
 import { installSkills } from '../installers/skills.js';
 import { installTestingFiles } from '../installers/testing.js';
-import type { CreateOptions, PackageManager } from '../types.js';
+import { supportedIconLibraries } from '../templates/icons.js';
+import type { CreateOptions, IconLibrary, PackageManager } from '../types.js';
 
 export interface RawCreateFlags {
   pm?: PackageManager;
@@ -18,6 +20,8 @@ export interface RawCreateFlags {
   dryRun?: boolean;
   skipInstall?: boolean;
   shadcnArgs?: string[];
+  mcp?: boolean;
+  icons?: string;
 }
 
 const packageManagers = ['npm', 'pnpm', 'bun'] as const;
@@ -35,6 +39,20 @@ function assertPackageManager(packageManager: string): asserts packageManager is
   if (!packageManagers.includes(packageManager as PackageManager)) {
     throw new Error(`Unsupported package manager "${packageManager}". Use npm, pnpm, or bun.`);
   }
+}
+
+function resolveIconOption(icons: string | undefined): IconLibrary | undefined {
+  if (icons === undefined) {
+    return undefined;
+  }
+
+  if (!supportedIconLibraries.includes(icons as IconLibrary)) {
+    throw new Error(
+      `Unsupported icon library "${icons}". Use ${supportedIconLibraries.join(', ')}.`
+    );
+  }
+
+  return icons as IconLibrary;
 }
 
 async function resolvePackageManager(flags: RawCreateFlags): Promise<PackageManager> {
@@ -92,6 +110,13 @@ export async function resolveCreateOptions(
     dryRun: flags.dryRun ?? false,
     skipInstall: flags.skipInstall ?? false,
     shadcnArgs: flags.shadcnArgs ?? [],
+    mcp: await resolveBoolean(
+      flags.mcp,
+      yes,
+      false,
+      'Install shadcn MCP for Claude, Codex, and OpenCode?'
+    ),
+    icons: resolveIconOption(flags.icons),
   };
 }
 
@@ -101,6 +126,7 @@ export async function runCreate(targetDir: string, flags: RawCreateFlags) {
 
   const projectRoot = await createNextApp(options, executor);
   await initializeShadcn(projectRoot, options, executor);
+  await installShadcnMcp(projectRoot, options, executor);
   await installQualityLayer(projectRoot, options, executor);
   await installTestingFiles(projectRoot, options, executor);
   await installSkills(projectRoot, options, executor);

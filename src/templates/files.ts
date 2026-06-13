@@ -1,4 +1,5 @@
-import type { CreateOptions } from '../types.js';
+import type { CreateOptions, IconLibrary, PackageManager } from '../types.js';
+import { getCatRender } from './icons.js';
 
 export const prettierConfig = `{
   "semi": true,
@@ -40,6 +41,28 @@ package-lock.json
 
 export const gitAttributes = `* text=auto eol=lf
 `;
+
+/**
+ * Merge React Doctor's required pnpm supply-chain hardening settings into an
+ * existing `pnpm-workspace.yaml` (created by create-next-app) without dropping
+ * keys like `ignoredBuiltDependencies`. Satisfies `react-doctor/require-pnpm-hardening`.
+ */
+export function mergePnpmHardening(existing: string): string {
+  const settings: Array<[string, string]> = [
+    ['minimumReleaseAge', 'minimumReleaseAge: 1440'],
+    ['trustPolicy', 'trustPolicy: no-downgrade'],
+    ['blockExoticSubdeps', 'blockExoticSubdeps: true'],
+  ];
+
+  let content = existing.replace(/\s+$/, '');
+  for (const [key, line] of settings) {
+    if (!new RegExp(`^${key}\\s*:`, 'm').test(content)) {
+      content += `${content.length > 0 ? '\n' : ''}${line}`;
+    }
+  }
+
+  return `${content}\n`;
+}
 
 export function humanizeProjectName(name: string) {
   const cleaned = name
@@ -101,10 +124,11 @@ export default function RootLayout({
 `;
 }
 
-export function renderHomePage(projectName: string) {
+export function renderHomePage(projectName: string, iconLibrary: IconLibrary = 'lucide') {
   const appName = humanizeProjectName(projectName);
+  const { importLine, markup } = getCatRender(iconLibrary);
 
-  return `import { Cat } from 'lucide-react';
+  return `${importLine}
 
 import type { Metadata } from 'next';
 
@@ -115,10 +139,10 @@ export const metadata: Metadata = {
 
 export default function Home() {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center gap-4 p-8 text-center">
-      <Cat className="size-10 text-zinc-700 dark:text-zinc-300" aria-hidden />
+    <main className="bg-background text-foreground flex min-h-screen flex-col items-center justify-center gap-4 p-8 text-center">
+      ${markup}
       <h1 className="text-2xl font-semibold tracking-tight">${appName}</h1>
-      <p className="text-sm text-zinc-500">Edit app/page.tsx to start building.</p>
+      <p className="text-muted-foreground text-sm">Edit app/page.tsx to start building.</p>
     </main>
   );
 }
@@ -363,8 +387,63 @@ test('loads the home page', async ({ page }) => {
 });
 `;
 
+function shadcnMcpCommand(packageManager: PackageManager, client: 'claude' | 'codex' | 'opencode') {
+  if (packageManager === 'pnpm') {
+    return `pnpm dlx shadcn@latest mcp init --client ${client}`;
+  }
+
+  if (packageManager === 'bun') {
+    return `bunx --bun shadcn@latest mcp init --client ${client}`;
+  }
+
+  return `npx shadcn@latest mcp init --client ${client}`;
+}
+
+function shadcnMcpToml(packageManager: PackageManager) {
+  if (packageManager === 'pnpm') {
+    return `[mcp_servers.shadcn]
+command = "pnpm"
+args = ["dlx", "shadcn@latest", "mcp"]`;
+  }
+
+  if (packageManager === 'bun') {
+    return `[mcp_servers.shadcn]
+command = "bunx"
+args = ["--bun", "shadcn@latest", "mcp"]`;
+  }
+
+  return `[mcp_servers.shadcn]
+command = "npx"
+args = ["shadcn@latest", "mcp"]`;
+}
+
+function renderShadcnMcpGuide(options: Pick<CreateOptions, 'packageManager' | 'mcp'>) {
+  const status = options.mcp
+    ? 'purrfold attempted shadcn MCP setup during scaffold.'
+    : 'shadcn MCP setup was not run by default because some clients may update user-level tool config.';
+
+  return `## shadcn MCP
+
+${status}
+
+Manual setup commands for this package manager:
+
+\`\`\`bash
+${shadcnMcpCommand(options.packageManager, 'claude')}
+${shadcnMcpCommand(options.packageManager, 'codex')}
+${shadcnMcpCommand(options.packageManager, 'opencode')}
+\`\`\`
+
+Codex may require user-level configuration in \`~/.codex/config.toml\`:
+
+\`\`\`toml
+${shadcnMcpToml(options.packageManager)}
+\`\`\`
+`;
+}
+
 export function renderReadme(
-  options: Pick<CreateOptions, 'packageManager' | 'unit' | 'e2e' | 'commitlint'>
+  options: Pick<CreateOptions, 'packageManager' | 'unit' | 'e2e' | 'commitlint' | 'mcp'>
 ) {
   const run = options.packageManager === 'npm' ? 'npm run' : `${options.packageManager} run`;
 
@@ -395,6 +474,18 @@ ${run} check
 - ESLint flat config with strict Next.js, React, import ordering, and Prettier integration.
 - React Doctor and React Scan.
 ${options.unit ? '- Vitest and React Testing Library.\n' : ''}${options.e2e ? '- Playwright E2E testing.\n' : ''}${options.commitlint ? '- Conventional commit linting.\n' : ''}
+${renderShadcnMcpGuide(options)}
+## shadcn Presets
+
+purrfold forwards additional shadcn CLI arguments, including official presets:
+
+\`\`\`bash
+npx purrfold@latest my-app --shadcn-args --preset b3REw8vwo --yes
+npx purrfold@latest my-app --shadcn-args --preset b1sSLwZVp --yes
+npx purrfold@latest my-app --shadcn-args --preset b2qMI9ufY --yes
+npx purrfold@latest my-app --shadcn-args --preset b5eH0WVTX --yes
+\`\`\`
+
 ## Agent Docs
 
 - \`AGENTS.md\`: agent workflow and quality gates.
@@ -430,7 +521,7 @@ This file is the UI/UX source of truth for this app.
 `;
 
 export function renderAgents(
-  options: Pick<CreateOptions, 'packageManager' | 'unit' | 'e2e' | 'commitlint'>
+  options: Pick<CreateOptions, 'packageManager' | 'unit' | 'e2e' | 'commitlint' | 'mcp'>
 ) {
   const run = options.packageManager === 'npm' ? 'npm run' : `${options.packageManager} run`;
 
@@ -461,6 +552,24 @@ Do not use \`next lint\`; use the ESLint CLI.
 - Next.js guidance: \`.agents/skills/next-best-practices/SKILL.md\`
 - Minimum evaluation: \`.agents/skills/project-min-evaluation/SKILL.md\`
 ${options.unit ? '- Vitest guidance: `.agents/skills/vitest/SKILL.md`\n' : ''}${options.e2e ? '- Playwright guidance: `.agents/skills/playwright-best-practices/SKILL.md`\n' : ''}${options.commitlint ? '- Commit messages are checked with commitlint.\n' : ''}
+## shadcn MCP
+
+${options.mcp ? 'shadcn MCP setup was requested during scaffold.' : 'shadcn MCP setup is optional and was not run by default.'}
+
+\`\`\`bash
+${shadcnMcpCommand(options.packageManager, 'claude')}
+${shadcnMcpCommand(options.packageManager, 'codex')}
+${shadcnMcpCommand(options.packageManager, 'opencode')}
+\`\`\`
+
+For Codex, verify \`~/.codex/config.toml\` if MCP is not available:
+
+\`\`\`toml
+${shadcnMcpToml(options.packageManager)}
+\`\`\`
+
+shadcn presets are supported through \`--shadcn-args --preset <id>\`.
+
 ## Claude Code
 
 \`CLAUDE.md\` points to this file. \`.claude/skills\` should link to \`.agents/skills\`.

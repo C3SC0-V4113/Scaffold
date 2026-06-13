@@ -24,7 +24,9 @@ fails if it is not green.
 - `--yes` — non-interactive defaults (no prompts).
 - `--dry-run` — print operations without writing or installing.
 - `--skip-install` — generate files without installing extra quality deps.
-- `--shadcn-args <args...>` — extra args forwarded to `shadcn init`.
+- `--shadcn-args <args...>` — extra args forwarded to `shadcn init`, including `--preset <id>`.
+- `--mcp` / `--no-mcp` — optionally install shadcn MCP for Claude, Codex, and OpenCode (default: skipped).
+- `--icons <lucide|phosphor|tabler>` — icon library for the home-page cat (default: shadcn's choice, else lucide).
 
 For a structured schema an agent can parse, run:
 
@@ -40,6 +42,9 @@ npx purrfold@latest info --json
 | No testing at all | `npx purrfold@latest my-app --no-unit --no-e2e --yes` |
 | Full setup (unit + e2e + commitlint) | `npx purrfold@latest my-app --unit --e2e --commitlint --yes` |
 | A specific package manager | `npx purrfold@latest my-app --pm pnpm --yes` |
+| A specific icon library for the cat | `npx purrfold@latest my-app --icons phosphor --yes` |
+| shadcn MCP for Claude/Codex/OpenCode | `npx purrfold@latest my-app --mcp --yes` |
+| A shadcn preset | `npx purrfold@latest my-app --shadcn-args --preset b3REw8vwo --yes` |
 | Preview without writing | `npx purrfold@latest my-app --yes --dry-run` |
 
 ## Notes for agents
