@@ -1,27 +1,39 @@
 import { describe, expect, it } from 'vitest';
 
-import { buildDevDependencies, buildScripts } from '../src/installers/config-model.js';
+import { buildDevDependencies, buildScripts, pinnedSpecifier } from '../src/installers/config-model.js';
 
 describe('quality config model', () => {
-  it('includes optional dependency groups', () => {
+  it('includes optional dependency groups as pinned specifiers', () => {
     expect(buildDevDependencies({ unit: true, e2e: true, commitlint: true })).toEqual(
-      expect.arrayContaining([
-        'react-doctor',
-        'react-scan',
-        'vitest',
-        '@testing-library/react',
-        'eslint-plugin-testing-library',
-        '@playwright/test',
-        'eslint-plugin-playwright',
-        '@commitlint/cli',
-      ])
+      expect.arrayContaining(
+        [
+          'react-doctor',
+          'react-scan',
+          'vitest',
+          '@testing-library/react',
+          'eslint-plugin-testing-library',
+          '@playwright/test',
+          'eslint-plugin-playwright',
+          '@commitlint/cli',
+        ].map(pinnedSpecifier)
+      )
     );
   });
 
   it('omits optional dependency groups when disabled', () => {
     expect(buildDevDependencies({ unit: false, e2e: false, commitlint: false })).not.toEqual(
-      expect.arrayContaining(['vitest', '@playwright/test', '@commitlint/cli'])
+      expect.arrayContaining(
+        ['vitest', '@playwright/test', '@commitlint/cli'].map(pinnedSpecifier)
+      )
     );
+  });
+
+  it('pins every installed dev dependency to an exact version', () => {
+    const deps = buildDevDependencies({ unit: true, e2e: true, commitlint: true });
+
+    for (const dep of deps) {
+      expect(dep).toMatch(/@\d+\.\d+\.\d+$/);
+    }
   });
 
   it('generates package-manager-specific scripts', () => {

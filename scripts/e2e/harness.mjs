@@ -161,10 +161,10 @@ export function assertGeneratedApp(projectRoot, expected) {
   }
 
   if (expected.commitlint) {
-    assertPath(projectRoot, 'commitlint.config.cjs');
+    assertPath(projectRoot, 'commitlint.config.js');
     assertPath(projectRoot, '.husky/commit-msg');
   } else {
-    assertPath(projectRoot, 'commitlint.config.cjs', false);
+    assertPath(projectRoot, 'commitlint.config.js', false);
     assertPath(projectRoot, '.husky/commit-msg', false);
   }
 
@@ -181,20 +181,103 @@ export function assertGeneratedApp(projectRoot, expected) {
   }
 }
 
-export async function hasNodePty() {
+async function loadNodePty() {
   try {
-    await import('node-pty');
-    return true;
+    return await import('node-pty');
   } catch {
-    return false;
+    return null;
   }
 }
 
-async function runTtyScenario(scenario) {
-  if (!(await hasNodePty())) {
+export async function hasNodePty() {
+  return (await loadNodePty()) !== null;
+}
+
+// eslint-disable-next-line no-control-regex
+const ANSI_PATTERN = /\[[0-9;?]*[ -/]*[@-~]/g;
+
+function stripAnsi(text) {
+  return text.replace(ANSI_PATTERN, '');
+}
+
+/**
+ * Drive purrfold's own interactive prompts inside a pseudo-terminal. Keystrokes
+ * from `scenario.input` are fed one at a time with a small delay so @inquirer
+ * has time to render and consume each answer before the next arrives.
+ */
+function runInteractivePtyScenario(pty, scenario, context, cliPath, options) {
+  const targetName = `${options.prefix ?? 'e2e'}-${scenario.name}-${context.stamp}`;
+  const keys = [...(scenario.input ?? '')];
+
+  return new Promise((resolve, reject) => {
+    const child = pty.spawn(process.execPath, [cliPath, targetName, ...scenario.args], {
+      name: 'xterm-color',
+      cols: 100,
+      rows: 30,
+      cwd: context.workDir,
+      env: { ...process.env, ...context.env },
+    });
+
+    let output = '';
+    let settled = false;
+    const finish = (fn) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      fn();
+    };
+
+    const timer = setTimeout(() => {
+      child.kill();
+      finish(() => reject(new Error(`${scenario.name} timed out after 120s\n--- output ---\n${stripAnsi(output)}`)));
+    }, 120000);
+
+    const feed = (index) => {
+      if (settled || index >= keys.length) return;
+      child.write(keys[index]);
+      setTimeout(() => feed(index + 1), 250);
+    };
+    setTimeout(() => feed(0), 600);
+
+    child.onData((data) => {
+      output += data;
+    });
+
+    child.onExit(({ exitCode }) => {
+      finish(() => {
+        const clean = stripAnsi(output);
+        try {
+          for (const expected of scenario.expectOutput ?? []) {
+            assertIncludes(clean, expected, scenario.name);
+          }
+          for (const unexpected of scenario.rejectOutput ?? []) {
+            assertNotIncludes(clean, unexpected, scenario.name);
+          }
+          if (exitCode !== 0) {
+            throw new Error(`${scenario.name} exited with ${exitCode}\n--- output ---\n${clean}`);
+          }
+          resolve({ name: targetName, output: clean });
+        } catch (error) {
+          reject(error);
+        }
+      });
+    });
+  });
+}
+
+async function runTtyScenario(scenario, context, cliPath, options) {
+  const pty = await loadNodePty();
+  if (!pty) {
     throw new Error(`${scenario.name} requires node-pty. Install dev dependency node-pty when registry access is available.`);
   }
-  throw new Error(`${scenario.name} TTY automation is reserved for the node-pty adapter implementation.`);
+
+  if (scenario.kind === 'interactive') {
+    return runInteractivePtyScenario(pty, scenario, context, cliPath, options);
+  }
+
+  // external-shadcn drives the real upstream shadcn CLI over the network and has
+  // no defined assertions yet; keep it gated until its contract is specified.
+  throw new Error(`${scenario.name} (${scenario.kind}) TTY automation is not implemented yet.`);
 }
 
 export async function runScenario(scenario, context, cliPath, options = {}) {

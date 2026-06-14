@@ -22,7 +22,7 @@ import {
   resolveIconLibrary,
 } from '../templates/icons.js';
 import type { CreateOptions, Executor, IconLibrary } from '../types.js';
-import { buildDevDependencies } from './config-model.js';
+import { buildDevDependencies, pinnedSpecifier } from './config-model.js';
 import { applyPackageJsonQualityConfig, readProjectPackageJson } from './package-json.js';
 
 function runCommand(packageManager: string) {
@@ -115,7 +115,7 @@ async function reconcileIconLibrary(
   const commands = getPackageManagerCommands(options.packageManager);
 
   if (!(keep in dependencies)) {
-    const add = commands.add([keep]);
+    const add = commands.add([pinnedSpecifier(keep)]);
     await executor.run(add.command, add.args, { cwd: projectRoot });
   }
 

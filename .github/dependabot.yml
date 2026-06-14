@@ -1,0 +1,27 @@
+# Dependabot keeps the purrfold CLI's own dependencies current. It opens one PR
+# per update so each bump can be reviewed and run through `npm run check` before
+# merging.
+#
+# NOTE: the versions purrfold pins for the apps it *generates* live in
+# src/installers/config-model.ts (DEPENDENCY_VERSIONS) as TypeScript literals.
+# Dependabot cannot see those — it only tracks real package.json manifests. To
+# bump a generated-app pin, edit DEPENDENCY_VERSIONS and run the CLI E2E suite
+# (`npm run test:e2e:cli`). See AGENTS.md for the full rationale.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 10
+    groups:
+      dev-dependencies:
+        dependency-type: development
+        update-types:
+          - minor
+          - patch
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly

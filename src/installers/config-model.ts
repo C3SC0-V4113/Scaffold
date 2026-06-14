@@ -1,5 +1,64 @@
 import type { CreateOptions } from '../types.js';
 
+/**
+ * Single source of truth for the versions purrfold pins when it installs
+ * generated-app dependencies. We install with explicit `name@version`
+ * specifiers (not bare names) because bare `bun add` / `pnpm add` / `npm i`
+ * resolve to the absolute latest, which can escape create-next-app's existing
+ * ranges and pull in a breaking major. The original symptom: bun resolved
+ * `eslint` to v10, which removed `context.getFilename()` — still called by
+ * `eslint-plugin-react` (a transitive dep of eslint-config-next) — so
+ * `eslint .` crashed. npm/pnpm stayed on the `^9` range create-next-app set,
+ * so only bun broke. Pinning here keeps all three package managers in lockstep.
+ *
+ * Bumping a pin is a deliberate act: change the version, then run the CLI E2E
+ * suite (`npm run test:e2e:cli`) so an incompatible upgrade is caught here, not
+ * in a generated project. create-next-app and shadcn stay on @latest by design.
+ */
+export const DEPENDENCY_VERSIONS: Record<string, string> = {
+  // ESLint stays on v9 until eslint-plugin-react ships v10 support.
+  eslint: '9.39.4',
+  'eslint-config-next': '16.2.9',
+  'eslint-config-prettier': '10.1.8',
+  'eslint-plugin-import': '2.32.0',
+  'eslint-import-resolver-typescript': '4.4.5',
+  'eslint-plugin-react-doctor': '0.5.4',
+  'eslint-plugin-react-you-might-not-need-an-effect': '1.0.0',
+  prettier: '3.8.4',
+  'prettier-plugin-tailwindcss': '0.8.0',
+  husky: '9.1.7',
+  'lint-staged': '16.4.0',
+  'react-doctor': '0.5.4',
+  'react-scan': '0.5.7',
+  vitest: '4.1.8',
+  '@vitejs/plugin-react': '6.0.2',
+  jsdom: '29.1.1',
+  '@testing-library/react': '16.3.2',
+  '@testing-library/dom': '10.4.1',
+  'eslint-plugin-testing-library': '7.16.2',
+  '@vitest/eslint-plugin': '1.6.20',
+  '@playwright/test': '1.60.0',
+  'eslint-plugin-playwright': '2.10.4',
+  '@commitlint/cli': '21.0.2',
+  '@commitlint/config-conventional': '21.0.2',
+  'lucide-react': '1.18.0',
+  '@phosphor-icons/react': '2.1.10',
+  '@tabler/icons-react': '3.44.0',
+};
+
+/**
+ * Turn a bare package name into a pinned `name@version` install specifier.
+ * Throws if the dependency has no registered pin so an unpinned dependency can
+ * never silently ship.
+ */
+export function pinnedSpecifier(name: string): string {
+  const version = DEPENDENCY_VERSIONS[name];
+  if (!version) {
+    throw new Error(`No pinned version registered for "${name}". Add it to DEPENDENCY_VERSIONS.`);
+  }
+  return `${name}@${version}`;
+}
+
 export const coreDevDependencies = [
   'eslint',
   'eslint-config-next',
@@ -39,7 +98,7 @@ export function buildDevDependencies(options: Pick<CreateOptions, 'unit' | 'e2e'
     ...(options.unit ? unitDevDependencies : []),
     ...(options.e2e ? e2eDevDependencies : []),
     ...(options.commitlint ? commitlintDevDependencies : []),
-  ];
+  ].map(pinnedSpecifier);
 }
 
 export function buildScripts(options: Pick<CreateOptions, 'packageManager' | 'unit' | 'e2e'>) {
