@@ -1,0 +1,96 @@
+import path from 'node:path';
+import { pathToFileURL } from 'node:url';
+
+import { describe, expect, it } from 'vitest';
+
+type CliE2eScenario = {
+  name: string;
+  kind: 'real' | 'dry-run' | 'interactive' | 'external-shadcn';
+  packageManager?: 'npm' | 'pnpm' | 'bun';
+  args?: string[];
+  quick?: boolean;
+  requires?: string[];
+  requiresTty?: boolean;
+  expect?: {
+    unit: boolean;
+    e2e: boolean;
+    commitlint: boolean;
+    pnpm: boolean;
+    mcp: boolean;
+  };
+  expectOutput?: string[];
+  rejectOutput?: string[];
+};
+
+type ScenariosModule = {
+  cliE2eScenarios: CliE2eScenario[];
+  scenarioNames: () => string[];
+  selectScenarios: (options?: { quick?: boolean; names?: string[] }) => CliE2eScenario[];
+};
+
+async function loadScenarios(): Promise<ScenariosModule> {
+  const url = pathToFileURL(path.join(process.cwd(), 'scripts/e2e/scenarios.mjs')).href;
+  return (await import(url)) as ScenariosModule;
+}
+
+describe('CLI E2E scenario definitions', () => {
+  it('keeps scenario names unique and selectable', async () => {
+    const { scenarioNames, selectScenarios } = await loadScenarios();
+    const names = scenarioNames();
+
+    expect(new Set(names).size).toBe(names.length);
+    expect(selectScenarios({ names: ['npm-default-unit'] }).map((scenario) => scenario.name)).toEqual([
+      'npm-default-unit',
+    ]);
+  });
+
+  it('covers the planned package-manager and shadcn preset matrix', async () => {
+    const { cliE2eScenarios } = await loadScenarios();
+
+    expect(cliE2eScenarios).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ name: 'npm-default-unit', packageManager: 'npm' }),
+        expect.objectContaining({ name: 'pnpm-b3-commitlint', packageManager: 'pnpm' }),
+        expect.objectContaining({ name: 'npm-b1-no-tests', packageManager: 'npm' }),
+        expect.objectContaining({ name: 'pnpm-b2-e2e', packageManager: 'pnpm' }),
+        expect.objectContaining({ name: 'bun-b5-minimal', packageManager: 'bun' }),
+      ])
+    );
+
+    const args = cliE2eScenarios.flatMap((scenario) => scenario.args ?? []);
+    for (const preset of ['b3REw8vwo', 'b1sSLwZVp', 'b2qMI9ufY', 'b5eH0WVTX']) {
+      expect(args).toContain(preset);
+    }
+  });
+
+  it('keeps heavy real and TTY scenarios out of the quick E2E subset', async () => {
+    const { selectScenarios } = await loadScenarios();
+    const quick = selectScenarios({ quick: true });
+
+    expect(quick.length).toBeGreaterThan(0);
+    expect(quick.every((scenario) => scenario.kind === 'dry-run')).toBe(true);
+    expect(quick.every((scenario) => !scenario.requiresTty)).toBe(true);
+  });
+
+  it('documents MCP dry-run commands for every supported client', async () => {
+    const { cliE2eScenarios } = await loadScenarios();
+    const scenario = cliE2eScenarios.find((item) => item.name === 'dry-run-mcp-preset-pnpm');
+
+    expect(scenario?.expectOutput).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining('mcp init --client claude'),
+        expect.stringContaining('mcp init --client codex'),
+        expect.stringContaining('mcp init --client opencode'),
+      ])
+    );
+  });
+
+  it('marks external interactive prompt coverage as TTY-gated', async () => {
+    const { cliE2eScenarios } = await loadScenarios();
+    const interactive = cliE2eScenarios.filter((scenario) => scenario.requiresTty);
+
+    expect(interactive.map((scenario) => scenario.name)).toEqual(
+      expect.arrayContaining(['interactive-purrfold-prompts', 'external-shadcn-interactive'])
+    );
+  });
+});

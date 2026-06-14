@@ -58,3 +58,6 @@ To fetch the canonical option schema at runtime: `npx purrfold@latest info --jso
   minutes; if it fails, the scaffold was not green — surface the error.
 - The default command is `create`; `purrfold my-app` and `purrfold create my-app`
   are equivalent.
+- Maintainers can validate dry-run CLI coverage with `npm run test:e2e:cli:quick`.
+  The full real-app CLI matrix is `npm run test:e2e:cli -- --work-dir E:\Repositorios\smoke --keep`
+  and is intentionally outside `npm run check`.

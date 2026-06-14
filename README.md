@@ -90,11 +90,31 @@ npm run check
 
 `npm run check` runs typecheck, tests, and the `tsup` build.
 
+### CLI E2E tests
+
+Heavy CLI E2E tests live outside `npm run check` so the normal gate stays fast
+and deterministic.
+
+```bash
+npm run test:e2e:cli:quick
+npm run test:e2e:cli -- --work-dir E:\Repositorios\smoke --keep
+```
+
+The quick suite builds the local CLI and verifies dry-run command generation,
+including shadcn MCP commands and preset forwarding. The full suite generates
+real apps for npm, pnpm, and bun, checks generated files, and runs each
+generated app's package-manager `run check`.
+
+TTY-driven prompt coverage for purrfold/shadcn interactive flows is modeled in
+the scenario matrix and can be enabled with `--require-tty` once a pseudo-TTY
+adapter such as `node-pty` is available locally.
+
 ### Smoke matrix
 
 `npm run smoke` builds the CLI and generates real apps across package managers,
 shadcn presets, testing, and commitlint combinations; each generated app
-self-tests via its own `check`. It is heavy and network-bound, so run it
+uses the same scenario definitions as the CLI E2E suite and self-tests via its
+own `check`. It is heavy and network-bound, so run it
 manually before a release:
 
 ```bash

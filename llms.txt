@@ -52,3 +52,6 @@ npx purrfold@latest info --json
 - Always pass `--yes` when running non-interactively so purrfold does not block on prompts.
 - `<target-dir>` is required and becomes the project folder name.
 - The default command is `create`; `purrfold my-app` and `purrfold create my-app` are equivalent.
+- Maintainers can run `npm run test:e2e:cli:quick` for dry-run CLI coverage and
+  `npm run test:e2e:cli -- --work-dir E:\Repositorios\smoke --keep` for the
+  heavy real-app matrix. Heavy CLI E2E is intentionally outside `npm run check`.
