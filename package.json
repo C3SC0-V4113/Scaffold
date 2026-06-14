@@ -53,7 +53,7 @@
     "prepublishOnly": "npm run check"
   },
   "dependencies": {
-    "@inquirer/prompts": "^7.10.1",
+    "@inquirer/prompts": "^8.5.2",
     "commander": "^14.0.2",
     "execa": "^9.6.0",
     "fs-extra": "^11.3.2"
