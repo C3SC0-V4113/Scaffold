@@ -201,6 +201,30 @@ function stripAnsi(text) {
 }
 
 /**
+ * Terminate a node-pty child and its descendants. On Windows `IPty.kill()` over
+ * ConPTY does not reliably tear down the whole process tree (the wedge that hung
+ * the full suite), so follow up with `taskkill /T /F` on the pid. Best-effort:
+ * failures are swallowed so the caller's promise always settles.
+ */
+function killPtyChild(child) {
+  try {
+    child.kill();
+  } catch {
+    // already gone
+  }
+
+  if (process.platform === 'win32' && child.pid) {
+    try {
+      execFileSync('taskkill', ['/PID', String(child.pid), '/T', '/F'], { stdio: 'ignore' });
+    } catch {
+      // process tree already gone
+    }
+  }
+}
+
+const EXTERNAL_SHADCN_TIMEOUT_MS = 20 * 60 * 1000;
+
+/**
  * Drive purrfold's own interactive prompts inside a pseudo-terminal. Keystrokes
  * from `scenario.input` are fed one at a time with a small delay so @inquirer
  * has time to render and consume each answer before the next arrives.
@@ -228,7 +252,7 @@ function runInteractivePtyScenario(pty, scenario, context, cliPath, options) {
     };
 
     const timer = setTimeout(() => {
-      child.kill();
+      killPtyChild(child);
       finish(() => reject(new Error(`${scenario.name} timed out after 120s\n--- output ---\n${stripAnsi(output)}`)));
     }, 120000);
 
@@ -265,6 +289,96 @@ function runInteractivePtyScenario(pty, scenario, context, cliPath, options) {
   });
 }
 
+/**
+ * Drive a real, no-`--yes` purrfold generation whose embedded create-next-app
+ * and shadcn init run interactively. Each entry in `scenario.interactions`
+ * fires once the first time its `waitFor` marker appears, answering that prompt.
+ * An idle fallback sends Enter when the process stalls on an unanticipated
+ * prompt so a single new prompt does not hang the whole run. On exit the
+ * generated app is asserted just like a `real` scenario; purrfold runs its own
+ * `check` before exiting, so a zero exit already means the app's gate passed.
+ */
+function runExternalShadcnPtyScenario(pty, scenario, context, cliPath, options) {
+  const targetName = `${options.prefix ?? 'e2e'}-${scenario.name}-${context.stamp}`;
+  const interactions = (scenario.interactions ?? []).map((interaction) => ({
+    ...interaction,
+    fired: false,
+  }));
+
+  return new Promise((resolve, reject) => {
+    const child = pty.spawn(process.execPath, [cliPath, targetName, ...scenario.args], {
+      name: 'xterm-color',
+      cols: 100,
+      rows: 30,
+      cwd: context.workDir,
+      env: { ...process.env, ...context.env },
+    });
+
+    let output = '';
+    let lastDataAt = Date.now();
+    let idleNudges = 0;
+    let settled = false;
+
+    const finish = (fn) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      clearInterval(idleCheck);
+      fn();
+    };
+
+    const timer = setTimeout(() => {
+      killPtyChild(child);
+      finish(() => reject(new Error(`${scenario.name} timed out after 20m\n--- output ---\n${stripAnsi(output)}`)));
+    }, EXTERNAL_SHADCN_TIMEOUT_MS);
+
+    // Unanticipated prompt fallback: if nothing is emitted for a while and the
+    // process is still running, nudge with Enter. Stray Enters during installs
+    // are ignored, so this only matters when a prompt is actually waiting.
+    const idleCheck = setInterval(() => {
+      if (settled) return;
+      if (Date.now() - lastDataAt > 20000 && idleNudges < 6) {
+        idleNudges += 1;
+        child.write('\r');
+        lastDataAt = Date.now();
+      }
+    }, 5000);
+
+    child.onData((data) => {
+      output += data;
+      lastDataAt = Date.now();
+      const clean = stripAnsi(output);
+      for (const interaction of interactions) {
+        if (!interaction.fired && clean.includes(interaction.waitFor)) {
+          interaction.fired = true;
+          setTimeout(() => {
+            if (!settled) child.write(interaction.send);
+          }, 100);
+        }
+      }
+    });
+
+    child.onExit(({ exitCode }) => {
+      finish(() => {
+        const clean = stripAnsi(output);
+        try {
+          if (exitCode !== 0) {
+            throw new Error(`${scenario.name} exited with ${exitCode}\n--- output ---\n${clean}`);
+          }
+          for (const expected of scenario.expectOutput ?? []) {
+            assertIncludes(clean, expected, scenario.name);
+          }
+          const projectRoot = path.join(context.workDir, targetName);
+          assertGeneratedApp(projectRoot, scenario.expect);
+          resolve({ name: targetName, output: clean });
+        } catch (error) {
+          reject(error);
+        }
+      });
+    });
+  });
+}
+
 async function runTtyScenario(scenario, context, cliPath, options) {
   const pty = await loadNodePty();
   if (!pty) {
@@ -275,8 +389,10 @@ async function runTtyScenario(scenario, context, cliPath, options) {
     return runInteractivePtyScenario(pty, scenario, context, cliPath, options);
   }
 
-  // external-shadcn drives the real upstream shadcn CLI over the network and has
-  // no defined assertions yet; keep it gated until its contract is specified.
+  if (scenario.kind === 'external-shadcn') {
+    return runExternalShadcnPtyScenario(pty, scenario, context, cliPath, options);
+  }
+
   throw new Error(`${scenario.name} (${scenario.kind}) TTY automation is not implemented yet.`);
 }
 

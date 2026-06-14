@@ -98,16 +98,31 @@ and deterministic.
 ```bash
 npm run test:e2e:cli:quick
 npm run test:e2e:cli -- --work-dir E:\Repositorios\smoke --keep
+npm run test:e2e:cli:heavy
 ```
 
 The quick suite builds the local CLI and verifies dry-run command generation,
-including shadcn MCP commands and preset forwarding. The full suite generates
-real apps for npm, pnpm, and bun, checks generated files, and runs each
-generated app's package-manager `run check`.
+including shadcn MCP commands and preset forwarding. The default suite
+(`test:e2e:cli`) generates real apps for npm, pnpm, and bun, checks generated
+files, and runs each generated app's package-manager `run check`.
 
-TTY-driven prompt coverage for purrfold/shadcn interactive flows is modeled in
-the scenario matrix and can be enabled with `--require-tty` once a pseudo-TTY
-adapter such as `node-pty` is available locally.
+Extra-heavy scenarios (`heavy: true`) are excluded from the default suite
+because they are network-bound, slow, and timing-fragile. Run them on demand
+with `npm run test:e2e:cli:heavy`, or target one with
+`npm run test:e2e:cli -- --scenario external-shadcn-interactive`. Today this
+covers `external-shadcn-interactive`, a full no-`--yes` generation that drives
+create-next-app and the external shadcn CLI through their own interactive
+prompts.
+
+TTY-driven prompt coverage runs through a `node-pty` adapter. `node-pty` is a
+dev dependency and ships a native addon, so it must compile on the host (Windows
+needs the standard Node build toolchain). When it is installed, the TTY
+scenarios run; when it is missing they skip gracefully and never affect
+`npm run check`. Pass `--require-tty` to turn a missing-`node-pty` skip into a
+hard failure (the `heavy` command sets it, since these scenarios require a PTY).
+On a timeout the adapter force-kills the PTY child's process tree
+(`taskkill /T /F` on Windows) so a stuck interactive run fails the scenario
+instead of wedging the whole suite.
 
 ### Smoke matrix
 

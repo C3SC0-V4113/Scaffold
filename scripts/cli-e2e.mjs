@@ -3,17 +3,19 @@ import { buildCli, cleanupContext, createRunContext, readListFlag, runScenario }
 import { selectScenarios } from './e2e/scenarios.mjs';
 
 const quick = process.argv.includes('--quick');
+const heavy = process.argv.includes('--heavy');
 const failOnTtyMissing = process.argv.includes('--require-tty');
 const names = readListFlag(process.argv, '--scenario');
-const context = createRunContext(process.argv, quick ? 'purrfold-e2e-quick-' : 'purrfold-e2e-');
-const scenarios = selectScenarios({ quick, names });
+const prefix = quick ? 'purrfold-e2e-quick-' : heavy ? 'purrfold-e2e-heavy-' : 'purrfold-e2e-';
+const context = createRunContext(process.argv, prefix);
+const scenarios = selectScenarios({ quick, heavy, names });
 const cliPath = buildCli();
 const results = [];
 
 for (const scenario of scenarios) {
   console.log(`\n=== ${scenario.name} ===`);
   try {
-    const result = await runScenario(scenario, context, cliPath, { prefix: quick ? 'quick' : 'e2e' });
+    const result = await runScenario(scenario, context, cliPath, { prefix: quick ? 'quick' : heavy ? 'heavy' : 'e2e' });
     results.push({ name: result?.name ?? scenario.name, ok: true });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);

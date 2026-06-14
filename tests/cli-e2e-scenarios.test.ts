@@ -25,7 +25,7 @@ type CliE2eScenario = {
 type ScenariosModule = {
   cliE2eScenarios: CliE2eScenario[];
   scenarioNames: () => string[];
-  selectScenarios: (options?: { quick?: boolean; names?: string[] }) => CliE2eScenario[];
+  selectScenarios: (options?: { quick?: boolean; heavy?: boolean; names?: string[] }) => CliE2eScenario[];
 };
 
 async function loadScenarios(): Promise<ScenariosModule> {
@@ -70,6 +70,23 @@ describe('CLI E2E scenario definitions', () => {
     expect(quick.length).toBeGreaterThan(0);
     expect(quick.every((scenario) => scenario.kind === 'dry-run')).toBe(true);
     expect(quick.every((scenario) => !scenario.requiresTty)).toBe(true);
+  });
+
+  it('excludes extra-heavy scenarios from the default suite but keeps them reachable', async () => {
+    const { selectScenarios } = await loadScenarios();
+
+    const defaultNames = selectScenarios().map((scenario) => scenario.name);
+    expect(defaultNames).not.toContain('external-shadcn-interactive');
+    expect(defaultNames.length).toBeGreaterThan(0);
+
+    const heavyNames = selectScenarios({ heavy: true }).map((scenario) => scenario.name);
+    expect(heavyNames).toContain('external-shadcn-interactive');
+    expect(heavyNames.every((name) => !defaultNames.includes(name))).toBe(true);
+
+    const byName = selectScenarios({ names: ['external-shadcn-interactive'] }).map(
+      (scenario) => scenario.name
+    );
+    expect(byName).toEqual(['external-shadcn-interactive']);
   });
 
   it('documents MCP dry-run commands for every supported client', async () => {
