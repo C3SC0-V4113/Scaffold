@@ -1,6 +1,6 @@
 {
   "name": "purrfold",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Scaffold a production-ready frontend app with shadcn, strict quality tooling, agent docs, Claude hooks, and optional tests. Starts with Next.js. 🐱",
   "type": "module",
   "bin": {
