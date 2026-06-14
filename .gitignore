@@ -32,3 +32,5 @@ Thumbs.db
 
 # Claude skill bridge; .agents/skills is the source of truth
 .claude/skills/
+.atl/.skill-registry.cache.json
+.atl/skill-registry.md
