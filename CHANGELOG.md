@@ -1,5 +1,11 @@
 # purrfold
 
+## 0.2.2
+
+### Patch Changes
+
+- Pin the generated Vitest stack to a Next.js-guide-compatible Vite 7 setup (`@vitejs/plugin-react` 5, `vite`, and `vite-tsconfig-paths`) and run optional shadcn MCP setup after quality dependencies so npm avoids the Babel peer-resolution conflict seen with plugin-react 6 and shadcn presets.
+
 ## 0.2.1
 
 ### Patch Changes
