@@ -1,5 +1,11 @@
 # purrfold
 
+## 0.2.3
+
+### Patch Changes
+
+- Fix generated `vitest.config.mts` import ordering so generated apps pass ESLint `import/order` during `npm run check`.
+
 ## 0.2.2
 
 ### Patch Changes

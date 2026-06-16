@@ -109,6 +109,18 @@ describe('template snapshots', () => {
     expect(vitestConfig).toContain('plugins: [tsconfigPaths(), react()]');
   });
 
+  it('keeps generated Vitest config imports in ESLint import/order order', () => {
+    const reactIndex = vitestConfig.indexOf("import react from '@vitejs/plugin-react'");
+    const tsconfigPathsIndex = vitestConfig.indexOf(
+      "import tsconfigPaths from 'vite-tsconfig-paths'"
+    );
+    const vitestIndex = vitestConfig.indexOf("import { defineConfig } from 'vitest/config'");
+
+    expect(reactIndex).toBeGreaterThanOrEqual(0);
+    expect(tsconfigPathsIndex).toBeGreaterThan(reactIndex);
+    expect(vitestIndex).toBeGreaterThan(tsconfigPathsIndex);
+  });
+
   it('merges pnpm hardening without dropping existing keys', () => {
     const existing = 'ignoredBuiltDependencies:\n  - sharp\n  - unrs-resolver\n';
     const merged = mergePnpmHardening(existing);
