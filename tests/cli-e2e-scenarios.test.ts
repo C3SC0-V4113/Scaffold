@@ -58,7 +58,7 @@ describe('CLI E2E scenario definitions', () => {
     );
 
     const args = cliE2eScenarios.flatMap((scenario) => scenario.args ?? []);
-    for (const preset of ['b3REw8vwo', 'b1sSLwZVp', 'b2qMI9ufY', 'b5eH0WVTX']) {
+    for (const preset of ['b3REw8vwo', 'b1sSLwZVp', 'b2qMI9ufY', 'b5eH0WVTX', 'b6FS5q9aq']) {
       expect(args).toContain(preset);
     }
   });
@@ -99,6 +99,32 @@ describe('CLI E2E scenario definitions', () => {
         expect.stringContaining('mcp init --client codex'),
         expect.stringContaining('mcp init --client opencode'),
       ])
+    );
+  });
+
+  it('covers the reported npm shadcn preset + MCP command in quick E2E', async () => {
+    const { cliE2eScenarios, selectScenarios } = await loadScenarios();
+    const scenario = cliE2eScenarios.find((item) => item.name === 'dry-run-reported-b6-mcp-npm');
+
+    expect(selectScenarios({ quick: true }).map((item) => item.name)).toContain(
+      'dry-run-reported-b6-mcp-npm'
+    );
+    expect(scenario).toMatchObject({
+      kind: 'dry-run',
+      packageManager: 'npm',
+      quick: true,
+      args: ['--yes', '--dry-run', '--mcp', '--shadcn-args', '--preset', 'b6FS5q9aq'],
+    });
+    expect(scenario?.expectOutput).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining('shadcn@latest init --defaults --preset b6FS5q9aq'),
+        expect.stringContaining('@vitejs/plugin-react@5.1.2'),
+        expect.stringContaining('vite-tsconfig-paths@5.1.4'),
+        expect.stringContaining('mcp init --client claude'),
+      ])
+    );
+    expect(scenario?.rejectOutput).toEqual(
+      expect.arrayContaining(['@vitejs/plugin-react@6.0.2', 'vite@7.2.7'])
     );
   });
 

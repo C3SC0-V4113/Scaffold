@@ -63,6 +63,25 @@
     quick: true,
   },
   {
+    name: 'dry-run-reported-b6-mcp-npm',
+    kind: 'dry-run',
+    packageManager: 'npm',
+    // Mirrors the reported command:
+    // npx purrfold@latest tlh-portal --shadcn-args --preset b6FS5q9aq --yes --mcp
+    args: ['--yes', '--dry-run', '--mcp', '--shadcn-args', '--preset', 'b6FS5q9aq'],
+    expectOutput: [
+      'run npx shadcn@latest init --defaults --preset b6FS5q9aq',
+      'vitest@4.1.8',
+      '@vitejs/plugin-react@5.1.2',
+      'vite-tsconfig-paths@5.1.4',
+      'run npx shadcn@latest mcp init --client claude',
+      'run npx shadcn@latest mcp init --client codex',
+      'run npx shadcn@latest mcp init --client opencode',
+    ],
+    rejectOutput: ['@vitejs/plugin-react@6.0.2', 'vite@7.2.7'],
+    quick: true,
+  },
+  {
     name: 'interactive-purrfold-prompts',
     kind: 'interactive',
     packageManager: 'npm',

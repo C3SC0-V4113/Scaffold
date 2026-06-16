@@ -31,7 +31,8 @@ export const DEPENDENCY_VERSIONS: Record<string, string> = {
   'react-doctor': '0.5.4',
   'react-scan': '0.5.7',
   vitest: '4.1.8',
-  '@vitejs/plugin-react': '6.0.2',
+  '@vitejs/plugin-react': '5.1.2',
+  'vite-tsconfig-paths': '5.1.4',
   jsdom: '29.1.1',
   '@testing-library/react': '16.3.2',
   '@testing-library/dom': '10.4.1',
@@ -78,6 +79,7 @@ export const coreDevDependencies = [
 export const unitDevDependencies = [
   'vitest',
   '@vitejs/plugin-react',
+  'vite-tsconfig-paths',
   'jsdom',
   '@testing-library/react',
   '@testing-library/dom',

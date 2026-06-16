@@ -22,6 +22,8 @@ describe('dry-run integration', () => {
     const output = log.mock.calls.map((call) => call.join(' ')).join('\n');
     expect(output).toContain('run npx create-next-app@latest my-app');
     expect(output).toContain('run npx shadcn@latest init --defaults');
+    expect(output).toContain('@vitejs/plugin-react@5.1.2');
+    expect(output).not.toContain('@vitejs/plugin-react@6.0.2');
     expect(output).not.toContain('mcp init --client');
     expect(output).toContain('my-app\\skills.sh');
     expect(output).toContain(
@@ -82,6 +84,32 @@ describe('dry-run integration', () => {
     });
 
     const output = log.mock.calls.map((call) => call.join(' ')).join('\n');
+    expect(output).toContain('run pnpm dlx shadcn@latest init --defaults --preset b3REw8vwo');
+    expect(output).toContain('run pnpm dlx shadcn@latest mcp init --client claude');
+    expect(output).toContain('run pnpm dlx shadcn@latest mcp init --client codex');
+    expect(output).toContain('run pnpm dlx shadcn@latest mcp init --client opencode');
+  });
+
+  it('runs MCP setup after quality dependencies when requested', async () => {
+    const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    await runCreate('my-app', {
+      pm: 'pnpm',
+      unit: true,
+      e2e: false,
+      commitlint: false,
+      yes: true,
+      dryRun: true,
+      shadcnArgs: ['--preset', 'b3REw8vwo'],
+      mcp: true,
+    });
+
+    const output = log.mock.calls.map((call) => call.join(' ')).join('\n');
+    const qualityInstallIndex = output.indexOf('pnpm add -D');
+    const mcpIndex = output.indexOf('pnpm dlx shadcn@latest mcp init --client claude');
+
+    expect(qualityInstallIndex).toBeGreaterThan(-1);
+    expect(mcpIndex).toBeGreaterThan(qualityInstallIndex);
     expect(output).toContain('run pnpm dlx shadcn@latest init --defaults --preset b3REw8vwo');
     expect(output).toContain('run pnpm dlx shadcn@latest mcp init --client claude');
     expect(output).toContain('run pnpm dlx shadcn@latest mcp init --client codex');

@@ -10,6 +10,8 @@ describe('quality config model', () => {
           'react-doctor',
           'react-scan',
           'vitest',
+          '@vitejs/plugin-react',
+          'vite-tsconfig-paths',
           '@testing-library/react',
           'eslint-plugin-testing-library',
           '@playwright/test',
@@ -17,6 +19,14 @@ describe('quality config model', () => {
           '@commitlint/cli',
         ].map(pinnedSpecifier)
       )
+    );
+    expect(
+      buildDevDependencies({ unit: true, e2e: false, commitlint: false }).some((dependency) =>
+        dependency === '@vitejs/plugin-react@6.0.2'
+      )
+    ).toBe(false);
+    expect(buildDevDependencies({ unit: true, e2e: false, commitlint: false })).not.toEqual(
+      expect.arrayContaining(['vite@7.2.7'])
     );
   });
 

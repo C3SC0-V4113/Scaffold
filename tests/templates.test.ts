@@ -11,6 +11,7 @@ import {
   renderQualityWorkflow,
   renderReadme,
   renderRootLayout,
+  vitestConfig,
 } from '../src/templates/files.js';
 import {
   claudeReactDoctorHook,
@@ -100,6 +101,12 @@ describe('template snapshots', () => {
     expect(readme).toContain('args = ["dlx", "shadcn@latest", "mcp"]');
     expect(readme).toContain('--shadcn-args --preset b3REw8vwo');
     expect(agents).toContain('shadcn presets are supported');
+  });
+
+  it('follows the Next.js Vitest guide with React and tsconfig-paths plugins', () => {
+    expect(vitestConfig).toContain("import react from '@vitejs/plugin-react'");
+    expect(vitestConfig).toContain("import tsconfigPaths from 'vite-tsconfig-paths'");
+    expect(vitestConfig).toContain('plugins: [tsconfigPaths(), react()]');
   });
 
   it('merges pnpm hardening without dropping existing keys', () => {

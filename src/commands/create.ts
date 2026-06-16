@@ -126,11 +126,11 @@ export async function runCreate(targetDir: string, flags: RawCreateFlags) {
 
   const projectRoot = await createNextApp(options, executor);
   await initializeShadcn(projectRoot, options, executor);
-  await installShadcnMcp(projectRoot, options, executor);
   await installQualityLayer(projectRoot, options, executor);
   await installTestingFiles(projectRoot, options, executor);
   await installSkills(projectRoot, options, executor);
   await installDocsAndClaude(projectRoot, options, executor);
+  await installShadcnMcp(projectRoot, options, executor);
 
   if (executor instanceof DryRunExecutor) {
     for (const operation of executor.operations) {

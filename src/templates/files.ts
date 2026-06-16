@@ -301,18 +301,12 @@ ${setupPackageManager}
 `;
 }
 
-export const vitestConfig = `import { fileURLToPath } from 'node:url';
-
-import react from '@vitejs/plugin-react';
+export const vitestConfig = `import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vitest/config';
-
-const rootDirectory = fileURLToPath(new URL('.', import.meta.url));
+import tsconfigPaths from 'vite-tsconfig-paths';
 
 export default defineConfig({
-  plugins: [react()],
-  resolve: {
-    alias: [{ find: '@', replacement: rootDirectory }],
-  },
+  plugins: [tsconfigPaths(), react()],
   test: {
     environment: 'jsdom',
     include: ['tests/unit/**/*.test.{ts,tsx}', 'tests/integration/**/*.test.{ts,tsx}'],
