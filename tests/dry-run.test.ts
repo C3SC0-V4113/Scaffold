@@ -25,7 +25,7 @@ describe('dry-run integration', () => {
     expect(output).toContain('@vitejs/plugin-react@5.1.2');
     expect(output).not.toContain('@vitejs/plugin-react@6.0.2');
     expect(output).not.toContain('mcp init --client');
-    expect(output).toContain('my-app\\skills.sh');
+    expect(output.replaceAll('\\', '/')).toContain('my-app/skills.sh');
     expect(output).toContain(
       'run npx --yes skills@latest add https://github.com/vercel-labs/agent-skills --skill vercel-composition-patterns --skill vercel-react-best-practices --agent codex --copy --yes'
     );
