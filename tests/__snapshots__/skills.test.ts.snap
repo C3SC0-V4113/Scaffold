@@ -14,9 +14,10 @@ Use this skill when a change touches UI, component structure, app behavior, them
 
 1. Keep the app server-first unless interactivity requires a client island.
 2. Read relevant Next.js docs in \`node_modules/next/dist/docs/\` before changing framework APIs.
-3. Respect \`DESIGN.md\` for visual and UX decisions.
-4. Use shadcn primitives and semantic tokens before custom styling.
-5. Add tests proportional to risk.
+3. Use Purrfold-installed Next.js workflow skills in \`.agents/skills/\` for Cache Components and dev-loop work when present; rerun \`./skills.sh\` if they are missing.
+4. Respect \`DESIGN.md\` for visual and UX decisions.
+5. Use shadcn primitives and semantic tokens before custom styling.
+6. Add tests proportional to risk.
 
 ## Pre-Close Checklist
 

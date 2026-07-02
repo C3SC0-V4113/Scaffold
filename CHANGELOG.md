@@ -1,5 +1,11 @@
 # purrfold
 
+## 0.2.5
+
+### Patch Changes
+
+- Clarify generated agent guidance so Next.js docs, Next-generated rules, and Purrfold-installed workflow skills are referenced as separate sources.
+
 ## 0.2.4
 
 ### Patch Changes
