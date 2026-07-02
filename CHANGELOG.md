@@ -1,5 +1,11 @@
 # purrfold
 
+## 0.2.4
+
+### Patch Changes
+
+- Replace the removed `next-best-practices` skill with current Next.js workflow skills and generated guidance that points agents to bundled Next.js docs.
+
 ## 0.2.3
 
 ### Patch Changes

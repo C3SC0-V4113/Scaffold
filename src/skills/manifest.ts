@@ -6,9 +6,17 @@ export const externalSkillManifest: SkillInstallManifest = {
       source: 'wshobson/agents',
       skill: 'architecture-decision-records',
     },
-    'next-best-practices': {
-      source: 'vercel-labs/next-skills',
-      skill: 'next-best-practices',
+    'next-cache-components-adoption': {
+      source: 'vercel/next.js',
+      skill: 'next-cache-components-adoption',
+    },
+    'next-cache-components-optimizer': {
+      source: 'vercel/next.js',
+      skill: 'next-cache-components-optimizer',
+    },
+    'next-dev-loop': {
+      source: 'vercel/next.js',
+      skill: 'next-dev-loop',
     },
     'playwright-best-practices': {
       source: 'currents-dev/playwright-best-practices-skill',

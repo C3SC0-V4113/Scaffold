@@ -46,13 +46,18 @@ describe('skill selection', () => {
     expect(selectSkillNames({ unit: false, e2e: false })).toEqual(
       expect.arrayContaining([
         'architecture-decision-records',
-        'next-best-practices',
+        'next-cache-components-adoption',
+        'next-cache-components-optimizer',
+        'next-dev-loop',
         'project-architecture',
         'project-min-evaluation',
         'react-doctor',
         'shadcn',
         'verification-before-completion',
       ])
+    );
+    expect(selectSkillNames({ unit: false, e2e: false })).not.toEqual(
+      expect.arrayContaining(['next-best-practices'])
     );
   });
 
@@ -73,6 +78,10 @@ describe('external skill install script', () => {
     expect(script).toContain(
       'npx --yes skills@latest add https://github.com/vercel-labs/agent-skills --skill vercel-composition-patterns --skill vercel-react-best-practices --agent codex --copy --yes'
     );
+    expect(script).toContain(
+      'npx --yes skills@latest add vercel/next.js --skill next-cache-components-adoption --skill next-cache-components-optimizer --skill next-dev-loop --agent codex --copy --yes'
+    );
+    expect(script).not.toContain('next-best-practices');
     expect(script).toContain('--agent codex --copy --yes');
     expect(script).not.toContain('skills-lock.json');
   });

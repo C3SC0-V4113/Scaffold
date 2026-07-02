@@ -543,7 +543,10 @@ Do not use \`next lint\`; use the ESLint CLI.
 
 - Architecture and scripts: \`README.md\`
 - Design rules: \`DESIGN.md\`
-- Next.js guidance: \`.agents/skills/next-best-practices/SKILL.md\`
+- Next.js reference docs: \`node_modules/next/dist/docs/\`
+- Next.js agent rules: generated \`AGENTS.md\` / \`CLAUDE.md\`
+- Next.js workflow skills: \`.agents/skills/next-cache-components-adoption/SKILL.md\`, \`.agents/skills/next-cache-components-optimizer/SKILL.md\`, and \`.agents/skills/next-dev-loop/SKILL.md\`
+- If bundled Next.js docs are missing, run \`npx @next/codemod@canary agents-md\`.
 - Minimum evaluation: \`.agents/skills/project-min-evaluation/SKILL.md\`
 ${options.unit ? '- Vitest guidance: `.agents/skills/vitest/SKILL.md`\n' : ''}${options.e2e ? '- Playwright guidance: `.agents/skills/playwright-best-practices/SKILL.md`\n' : ''}${options.commitlint ? '- Commit messages are checked with commitlint.\n' : ''}
 ## shadcn MCP

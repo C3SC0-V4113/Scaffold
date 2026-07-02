@@ -11,7 +11,9 @@ import type { CreateOptions, Executor, SkillInstallEntry } from '../types.js';
 
 const alwaysExternalSkills = [
   'architecture-decision-records',
-  'next-best-practices',
+  'next-cache-components-adoption',
+  'next-cache-components-optimizer',
+  'next-dev-loop',
   'shadcn',
   'systematic-debugging',
   'typescript-advanced-types',
