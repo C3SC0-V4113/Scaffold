@@ -1,5 +1,11 @@
 # purrfold
 
+## 0.2.6
+
+### Patch Changes
+
+- Clarify generated guidance to describe the installed Next.js workflow skills as Purrfold-supported skills from `vercel/next.js`.
+
 ## 0.2.5
 
 ### Patch Changes

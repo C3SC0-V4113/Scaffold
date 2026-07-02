@@ -275,9 +275,9 @@ Do not use \`next lint\`; use the ESLint CLI.
 - Design rules: \`DESIGN.md\`
 - Next.js reference docs: \`node_modules/next/dist/docs/\`
 - Next.js agent rules: generated \`AGENTS.md\` / \`CLAUDE.md\`
-- Purrfold-installed Next.js workflow skills: \`.agents/skills/next-cache-components-adoption/SKILL.md\`, \`.agents/skills/next-cache-components-optimizer/SKILL.md\`, and \`.agents/skills/next-dev-loop/SKILL.md\`
+- Purrfold-installed supported Next.js workflow skills from \`vercel/next.js\`: \`.agents/skills/next-cache-components-adoption/SKILL.md\`, \`.agents/skills/next-cache-components-optimizer/SKILL.md\`, and \`.agents/skills/next-dev-loop/SKILL.md\`
 - If bundled Next.js docs are missing, run \`npx @next/codemod@canary agents-md\`.
-- If Purrfold-installed workflow skills are missing, rerun \`./skills.sh\`.
+- If Purrfold-installed supported workflow skills are missing, rerun \`./skills.sh\`.
 - Minimum evaluation: \`.agents/skills/project-min-evaluation/SKILL.md\`
 - Vitest guidance: \`.agents/skills/vitest/SKILL.md\`
 - Playwright guidance: \`.agents/skills/playwright-best-practices/SKILL.md\`
