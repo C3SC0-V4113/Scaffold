@@ -1,4 +1,5 @@
 import path from 'node:path';
+import { readFileSync } from 'node:fs';
 
 import { describe, expect, it } from 'vitest';
 
@@ -34,6 +35,14 @@ class MemoryExecutor implements Executor {
 }
 
 describe('package.json quality config', () => {
+  it('declares the node floor that matches the installed runtime deps', () => {
+    const packageJson = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')) as {
+      engines?: { node?: string };
+    };
+
+    expect(packageJson.engines?.node).toBe('>=22.13.0');
+  });
+
   it('does not add npm-conflicting prettier overrides for new projects', async () => {
     const executor = new MemoryExecutor();
 
