@@ -82,6 +82,10 @@ describe('quality config model', () => {
     expect(scripts.typecheck).toBe('astro check');
     expect(scripts.scan).toBe('astro dev');
     expect(scripts['scan:init']).toBe('astro dev --background');
-    expect(scripts.check).toBe('npm run lint && npm run typecheck && npm run format:check && npm run test');
+    expect(scripts.doctor).toBe('astro check && react-doctor . --yes --blocking warning');
+    expect(scripts['doctor:ci']).toBe('astro check && react-doctor . --yes --blocking warning');
+    expect(scripts.check).toBe(
+      'npm run lint && npm run typecheck && npm run format:check && npm run test && npm run doctor:ci'
+    );
   });
 });

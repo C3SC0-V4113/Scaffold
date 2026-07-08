@@ -41,3 +41,4 @@
 - Astro now has a catalog entry for `astrolicious/agent-skills` (`astro`) as the framework-specific external skill.
 - Astro root layout now injects React Scan via the Vite-style script tag in the `<head>`.
 - Astro React Scan is gated to development only, matching the Next.js runtime guard.
+- Astro doctor gates now combine `astro check` with `react-doctor` so React islands stay covered.

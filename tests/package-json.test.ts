@@ -100,7 +100,9 @@ describe('package.json quality config', () => {
         typecheck: 'astro check',
         scan: 'astro dev',
         'scan:init': 'astro dev --background',
-        check: 'pnpm run lint && pnpm run typecheck && pnpm run format:check && pnpm run test',
+        doctor: 'astro check && react-doctor . --yes --blocking warning',
+        'doctor:ci': 'astro check && react-doctor . --yes --blocking warning',
+        check: 'pnpm run lint && pnpm run typecheck && pnpm run format:check && pnpm run test && pnpm run doctor:ci',
       }),
     });
   });
