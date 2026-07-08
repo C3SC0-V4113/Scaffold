@@ -1,3 +1,5 @@
+export type Framework = 'next' | 'astro';
+
 export type PackageManager = 'npm' | 'pnpm' | 'bun';
 
 /** Icon libraries purrfold can wire into the generated home page. */
@@ -8,6 +10,7 @@ export type ShadcnMcpClient = 'claude' | 'codex' | 'opencode';
 
 export interface CreateOptions {
   targetDir: string;
+  framework: Framework;
   packageManager: PackageManager;
   unit: boolean;
   e2e: boolean;

@@ -6,6 +6,7 @@ describe('cli metadata', () => {
   it('documents every create flag', () => {
     const text = cliOptions.map((option) => option.flags).join(' ');
     const flags = [
+      '--framework',
       '--pm',
       '--unit',
       '--no-unit',

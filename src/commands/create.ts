@@ -1,6 +1,7 @@
 import { confirm, select } from '@inquirer/prompts';
 
 import { DryRunExecutor, RealExecutor } from '../executor.js';
+import { defaultFramework, frameworkRegistry, isFramework } from '../frameworks/registry.js';
 import { installDocsAndClaude } from '../installers/docs.js';
 import { createNextApp } from '../installers/next.js';
 import { installQualityLayer } from '../installers/quality.js';
@@ -13,6 +14,7 @@ import type { CreateOptions, IconLibrary, PackageManager } from '../types.js';
 
 export interface RawCreateFlags {
   pm?: PackageManager;
+  framework?: string;
   unit?: boolean;
   e2e?: boolean;
   commitlint?: boolean;
@@ -94,6 +96,32 @@ async function resolveBoolean(
   return confirm({ message, default: defaultValue });
 }
 
+async function resolveFramework(flags: RawCreateFlags): Promise<CreateOptions['framework']> {
+  if (flags.framework) {
+    if (!isFramework(flags.framework)) {
+      throw new Error(
+        `Unsupported framework "${flags.framework}". Use ${frameworkRegistry.map((item) => item.value).join(', ')}.`
+      );
+    }
+
+    return flags.framework;
+  }
+
+  if (flags.yes ?? false) {
+    return defaultFramework;
+  }
+
+  return select({
+    message: 'Framework',
+    default: defaultFramework,
+    choices: frameworkRegistry.map((framework) => ({
+      name: framework.label,
+      value: framework.value,
+      description: framework.description,
+    })),
+  });
+}
+
 export async function resolveCreateOptions(
   targetDir: string,
   flags: RawCreateFlags
@@ -102,6 +130,7 @@ export async function resolveCreateOptions(
 
   return {
     targetDir,
+    framework: await resolveFramework(flags),
     packageManager: await resolvePackageManager(flags),
     unit: await resolveBoolean(flags.unit, yes, true, 'Install Vitest + React Testing Library?'),
     e2e: await resolveBoolean(flags.e2e, yes, false, 'Install Playwright E2E testing?'),

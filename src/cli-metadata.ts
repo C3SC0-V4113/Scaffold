@@ -23,6 +23,11 @@ export const installCommand = 'npx purrfold@latest <target-dir>';
 
 export const cliOptions: CliOption[] = [
   {
+    flags: '--framework <next|astro>',
+    description: 'Select the framework to scaffold.',
+    default: 'next (or prompts, with Next as the default)',
+  },
+  {
     flags: '--pm <npm|pnpm|bun>',
     description: 'Package manager used to scaffold and install.',
     default: 'prompts, or npm with --yes',
@@ -79,6 +84,10 @@ export const cliScenarios: CliScenario[] = [
   {
     intent: 'Scaffold a new app with the recommended defaults (unit tests, no e2e/commitlint)',
     command: 'npx purrfold@latest my-app --yes',
+  },
+  {
+    intent: 'Scaffold an Astro app explicitly from the first prompt',
+    command: 'npx purrfold@latest my-app --framework astro --yes',
   },
   {
     intent: 'Scaffold without any testing (no unit and no e2e)',

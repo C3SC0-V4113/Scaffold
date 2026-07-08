@@ -22,6 +22,7 @@ import {
 describe('template snapshots', () => {
   const options = {
     targetDir: 'my-app',
+    framework: 'next' as const,
     packageManager: 'npm' as const,
     unit: true,
     e2e: true,

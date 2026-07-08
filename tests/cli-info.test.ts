@@ -28,6 +28,7 @@ describe('purrfold info command', () => {
     expect(schema.install).toContain('npx purrfold@latest');
 
     const flagText = schema.options.map((option) => option.flags).join(' ');
+    expect(flagText).toContain('--framework');
     expect(flagText).toContain('--no-unit');
     expect(flagText).toContain('--no-e2e');
 

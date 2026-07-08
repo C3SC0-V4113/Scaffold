@@ -112,6 +112,7 @@ describe('external skill install script', () => {
         'my-app',
         {
           targetDir: 'my-app',
+          framework: 'next',
           packageManager: 'npm',
           unit: false,
           e2e: false,

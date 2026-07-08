@@ -4,7 +4,7 @@ import { Command } from 'commander';
 
 import { cliOptions, cliScenarios, installCommand } from './cli-metadata.js';
 import { runCreate } from './commands/create.js';
-import type { PackageManager } from './types.js';
+import type { Framework, PackageManager } from './types.js';
 
 const require = createRequire(import.meta.url);
 const { version } = require('../package.json') as { version: string };
@@ -24,6 +24,7 @@ export function buildProgram(): Command {
     .description('Create a new app in <target-dir>')
     .argument('<target-dir>', 'Directory for the generated app')
     .option('--pm <pm>', 'Package manager: npm, pnpm, or bun')
+    .option('--framework <framework>', 'Framework: next or astro')
     .option('--unit', 'Install Vitest and React Testing Library')
     .option('--no-unit', 'Skip Vitest and React Testing Library')
     .option('--e2e', 'Install Playwright E2E testing')
@@ -38,9 +39,10 @@ export function buildProgram(): Command {
     .option('--no-mcp', 'Skip shadcn MCP setup')
     .option('--icons <library>', 'Icon library for the home page: lucide, phosphor, or tabler')
     .action(async (targetDir: string, rawOptions: Record<string, unknown>) => {
-      await runCreate(targetDir, {
-        pm: rawOptions.pm as PackageManager | undefined,
-        unit: rawOptions.unit as boolean | undefined,
+        await runCreate(targetDir, {
+          pm: rawOptions.pm as PackageManager | undefined,
+          framework: rawOptions.framework as Framework | undefined,
+          unit: rawOptions.unit as boolean | undefined,
         e2e: rawOptions.e2e as boolean | undefined,
         commitlint: rawOptions.commitlint as boolean | undefined,
         yes: rawOptions.yes as boolean | undefined,
