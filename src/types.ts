@@ -2,6 +2,8 @@ export type Framework = 'next' | 'astro';
 
 export type PackageManager = 'npm' | 'pnpm' | 'bun';
 
+export type AstroServerAdapter = 'node' | 'vercel' | 'netlify' | 'cloudflare';
+
 /** Icon libraries purrfold can wire into the generated home page. */
 export type IconLibrary = 'lucide' | 'phosphor' | 'tabler';
 
@@ -12,6 +14,8 @@ export interface CreateOptions {
   targetDir: string;
   framework: Framework;
   packageManager: PackageManager;
+  ssr: boolean;
+  astroAdapter?: AstroServerAdapter;
   unit: boolean;
   e2e: boolean;
   commitlint: boolean;

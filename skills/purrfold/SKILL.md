@@ -26,6 +26,8 @@ npx purrfold@latest <target-dir> [options]
 
 - `--pm <npm|pnpm|bun>` — package manager (default: npm with `--yes`).
 - `--framework <next|astro>` — framework to scaffold (default: Next.js).
+- `--ssr` — enable Astro SSR instead of a static build (default: off).
+- `--adapter <node|vercel|netlify|cloudflare>` — Astro SSR adapter (default: cloudflare when SSR is enabled).
 - `--unit` / `--no-unit` — Vitest + React Testing Library (default: included).
 - `--e2e` / `--no-e2e` — Playwright e2e (default: skipped).
 - `--commitlint` / `--no-commitlint` — commitlint + commit-msg hook (default: skipped).
@@ -44,6 +46,7 @@ To fetch the canonical option schema at runtime: `npx purrfold@latest info --jso
 | --- | --- |
 | "scaffold/create a new app" (defaults) | `npx purrfold@latest <dir> --yes` |
 | "use Astro" / "scaffold Astro" | `npx purrfold@latest <dir> --framework astro --yes` |
+| "use Astro SSR" / "scaffold Astro SSR" | `npx purrfold@latest <dir> --framework astro --ssr --adapter cloudflare --yes` |
 | "without testing" / "no tests" | `npx purrfold@latest <dir> --no-unit --no-e2e --yes` |
 | "with e2e" / "add Playwright" | `npx purrfold@latest <dir> --e2e --yes` |
 | "the full setup" / "everything" | `npx purrfold@latest <dir> --unit --e2e --commitlint --yes` |

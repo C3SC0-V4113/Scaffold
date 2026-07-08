@@ -28,6 +28,16 @@ export const cliOptions: CliOption[] = [
     default: 'next (or prompts, with Next as the default)',
   },
   {
+    flags: '--ssr',
+    description: 'Enable Astro SSR instead of a static build.',
+    default: 'off',
+  },
+  {
+    flags: '--adapter <node|vercel|netlify|cloudflare>',
+    description: 'Astro SSR adapter to install when SSR is enabled.',
+    default: 'cloudflare when SSR is enabled',
+  },
+  {
     flags: '--pm <npm|pnpm|bun>',
     description: 'Package manager used to scaffold and install.',
     default: 'prompts, or npm with --yes',
@@ -88,6 +98,10 @@ export const cliScenarios: CliScenario[] = [
   {
     intent: 'Scaffold an Astro app explicitly from the first prompt',
     command: 'npx purrfold@latest my-app --framework astro --yes',
+  },
+  {
+    intent: 'Scaffold an Astro SSR app with the Cloudflare adapter',
+    command: 'npx purrfold@latest my-app --framework astro --ssr --adapter cloudflare --yes',
   },
   {
     intent: 'Scaffold without any testing (no unit and no e2e)',

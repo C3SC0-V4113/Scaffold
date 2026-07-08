@@ -29,6 +29,8 @@ describe('purrfold info command', () => {
 
     const flagText = schema.options.map((option) => option.flags).join(' ');
     expect(flagText).toContain('--framework');
+    expect(flagText).toContain('--ssr');
+    expect(flagText).toContain('--adapter');
     expect(flagText).toContain('--no-unit');
     expect(flagText).toContain('--no-e2e');
 
@@ -36,6 +38,7 @@ describe('purrfold info command', () => {
     expect(
       commands.some((command) => command.includes('--no-unit') && command.includes('--no-e2e'))
     ).toBe(true);
+    expect(commands.some((command) => command.includes('--ssr') && command.includes('--adapter'))).toBe(true);
   });
 
   it('prints a human-readable summary without --json', async () => {

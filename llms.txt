@@ -19,6 +19,8 @@ fails if it is not green.
 
 - `--pm <npm|pnpm|bun>` — package manager (default: prompts, or npm with `--yes`).
 - `--framework <next|astro>` — scaffold framework (default: Next.js).
+- `--ssr` — enable Astro SSR instead of a static build (default: off).
+- `--adapter <node|vercel|netlify|cloudflare>` — Astro SSR adapter (default: cloudflare when SSR is enabled).
 - `--unit` / `--no-unit` — Vitest + React Testing Library (default: included).
 - `--e2e` / `--no-e2e` — Playwright e2e (default: skipped).
 - `--commitlint` / `--no-commitlint` — commitlint + commit-msg hook (default: skipped).
@@ -41,6 +43,7 @@ npx purrfold@latest info --json
 | --- | --- |
 | Defaults (unit tests, no e2e/commitlint) | `npx purrfold@latest my-app --yes` |
 | Scaffold Astro instead of Next.js | `npx purrfold@latest my-app --framework astro --yes` |
+| Scaffold Astro SSR with the Cloudflare adapter | `npx purrfold@latest my-app --framework astro --ssr --adapter cloudflare --yes` |
 | No testing at all | `npx purrfold@latest my-app --no-unit --no-e2e --yes` |
 | Full setup (unit + e2e + commitlint) | `npx purrfold@latest my-app --unit --e2e --commitlint --yes` |
 | A specific package manager | `npx purrfold@latest my-app --pm pnpm --yes` |

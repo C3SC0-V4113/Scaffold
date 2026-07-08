@@ -7,6 +7,8 @@ describe('cli metadata', () => {
     const text = cliOptions.map((option) => option.flags).join(' ');
     const flags = [
       '--framework',
+      '--ssr',
+      '--adapter',
       '--pm',
       '--unit',
       '--no-unit',
@@ -42,6 +44,9 @@ describe('cli metadata', () => {
     ).toBe(true);
     expect(commands.some((command) => command.includes('--mcp'))).toBe(true);
     expect(commands.some((command) => command.includes('--preset b3REw8vwo'))).toBe(true);
+    expect(
+      commands.some((command) => command.includes('--framework astro --ssr --adapter cloudflare'))
+    ).toBe(true);
   });
 
   it('exposes the install command', () => {

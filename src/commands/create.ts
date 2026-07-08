@@ -11,11 +11,13 @@ import { initializeShadcn } from '../installers/shadcn.js';
 import { installSkills } from '../installers/skills.js';
 import { installTestingFiles } from '../installers/testing.js';
 import { supportedIconLibraries } from '../templates/icons.js';
-import type { CreateOptions, IconLibrary, PackageManager } from '../types.js';
+import type { AstroServerAdapter, CreateOptions, IconLibrary, PackageManager } from '../types.js';
 
 export interface RawCreateFlags {
   pm?: PackageManager;
   framework?: string;
+  ssr?: boolean;
+  adapter?: string;
   unit?: boolean;
   e2e?: boolean;
   commitlint?: boolean;
@@ -28,6 +30,7 @@ export interface RawCreateFlags {
 }
 
 const packageManagers = ['npm', 'pnpm', 'bun'] as const;
+const astroAdapters = ['node', 'vercel', 'netlify', 'cloudflare'] as const;
 
 export function detectPackageManager(): PackageManager {
   const userAgent = process.env.npm_config_user_agent ?? '';
@@ -56,6 +59,24 @@ function resolveIconOption(icons: string | undefined): IconLibrary | undefined {
   }
 
   return icons as IconLibrary;
+}
+
+function isAstroAdapter(value: string): value is AstroServerAdapter {
+  return astroAdapters.includes(value as AstroServerAdapter);
+}
+
+function resolveAstroAdapterOption(adapter: string | undefined): AstroServerAdapter | undefined {
+  if (adapter === undefined) {
+    return undefined;
+  }
+
+  if (!isAstroAdapter(adapter)) {
+    throw new Error(
+      `Unsupported Astro adapter "${adapter}". Use ${astroAdapters.join(', ')}.`
+    );
+  }
+
+  return adapter;
 }
 
 async function resolvePackageManager(flags: RawCreateFlags): Promise<PackageManager> {
@@ -131,14 +152,35 @@ export async function resolveCreateOptions(
   const framework = await resolveFramework(flags);
   const packageManager = await resolvePackageManager(flags);
 
+  if (framework !== 'astro' && (flags.ssr !== undefined || flags.adapter !== undefined)) {
+    throw new Error('--ssr and --adapter are only available when --framework astro is selected.');
+  }
+
   if (framework === 'astro' && packageManager === 'bun') {
     throw new Error('Astro scaffolding is not available with bun yet. Use npm or pnpm.');
   }
+
+  const ssrEnabled =
+    framework === 'astro' && (flags.adapter !== undefined || (await resolveBoolean(flags.ssr, yes, false, 'Enable Astro SSR?')));
+  const astroAdapter =
+    framework === 'astro' && ssrEnabled
+      ? resolveAstroAdapterOption(flags.adapter) ??
+        (yes ? 'cloudflare' : await select<AstroServerAdapter>({
+          message: 'Astro SSR adapter',
+          default: 'cloudflare',
+          choices: astroAdapters.map((adapter) => ({
+            name: adapter,
+            value: adapter,
+          })),
+        }))
+      : undefined;
 
   return {
     targetDir,
     framework,
     packageManager,
+    ssr: ssrEnabled,
+    astroAdapter,
     unit: await resolveBoolean(flags.unit, yes, true, 'Install Vitest + React Testing Library?'),
     e2e: await resolveBoolean(flags.e2e, yes, false, 'Install Playwright E2E testing?'),
     commitlint: await resolveBoolean(flags.commitlint, yes, false, 'Install commitlint?'),

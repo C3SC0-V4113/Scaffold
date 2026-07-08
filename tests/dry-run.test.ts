@@ -72,6 +72,27 @@ describe('dry-run integration', () => {
     expect(output).not.toContain('create-next-app@latest');
   });
 
+  it('prints Astro SSR adapter operations when SSR is enabled', async () => {
+    const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    await runCreate('my-app', {
+      framework: 'astro',
+      pm: 'pnpm',
+      ssr: true,
+      unit: true,
+      e2e: false,
+      commitlint: false,
+      yes: true,
+      dryRun: true,
+    });
+
+    const output = log.mock.calls.map((call) => call.join(' ')).join('\n');
+    expect(output).toContain('run pnpm create astro@latest my-app');
+    expect(output).toContain('run pnpm add @astrojs/cloudflare@14.1.2');
+    expect(output).toContain('write');
+    expect(output).toContain('astro.config.mjs');
+  });
+
   it('prints bun operations with selected options', async () => {
     const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
 

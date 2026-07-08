@@ -1,4 +1,9 @@
+import path from 'node:path';
+
+import { DryRunExecutor } from '../executor.js';
+import { getPackageManagerCommands } from '../package-manager.js';
 import type { CreateOptions, Executor } from '../types.js';
+import { pinnedSpecifier } from './config-model.js';
 import { validateTargetDir } from './next.js';
 
 const createAstroBaseArgs = [
@@ -9,6 +14,108 @@ const createAstroBaseArgs = [
   'react',
   '--git',
 ];
+
+const astroAdapterPackages = {
+  node: '@astrojs/node',
+  vercel: '@astrojs/vercel',
+  netlify: '@astrojs/netlify',
+  cloudflare: '@astrojs/cloudflare',
+} as const;
+
+function getLineEnding(text: string) {
+  return text.includes('\r\n') ? '\r\n' : '\n';
+}
+
+function hasTrailingNewline(text: string) {
+  return /\r?\n$/.test(text);
+}
+
+function buildAdapterImport(adapter: NonNullable<CreateOptions['astroAdapter']>) {
+  return adapter === 'node'
+    ? `import node from '${astroAdapterPackages.node}';`
+    : `import ${adapter} from '${astroAdapterPackages[adapter]}';`;
+}
+
+function buildAdapterConfigLines(adapter: NonNullable<CreateOptions['astroAdapter']>) {
+  if (adapter === 'node') {
+    return [
+      "  output: 'server',",
+      "  adapter: node({ mode: 'standalone' }),",
+      '  server: {',
+      '    host: true,',
+      '  },',
+    ];
+  }
+
+  return ["  output: 'server',", `  adapter: ${adapter}(),`];
+}
+
+export function rewriteAstroConfigForAdapter(
+  current: string,
+  adapter: NonNullable<CreateOptions['astroAdapter']>
+) {
+  const lineEnding = getLineEnding(current);
+  const trailingNewline = hasTrailingNewline(current);
+  const lines = current.split(/\r?\n/);
+  const adapterImport = buildAdapterImport(adapter);
+
+  if (!lines.includes(adapterImport)) {
+    const importIndex = lines.findIndex((line) =>
+      /^\s*import\s+\{\s*defineConfig\s*\}\s+from\s+['"]astro\/config['"];?\s*$/.test(
+        line
+      )
+    );
+
+    if (importIndex >= 0) {
+      lines.splice(importIndex + 1, 0, adapterImport);
+    } else {
+      lines.unshift(adapterImport);
+    }
+  }
+
+  const defineConfigIndex = lines.findIndex((line) =>
+    /^\s*export\s+default\s+defineConfig\(\{\s*$/.test(line)
+  );
+
+  if (defineConfigIndex < 0) {
+    throw new Error('Could not locate export default defineConfig({ in astro.config.mjs.');
+  }
+
+  lines.splice(defineConfigIndex + 1, 0, ...buildAdapterConfigLines(adapter));
+
+  const rewritten = lines.join(lineEnding);
+  return trailingNewline ? `${rewritten}${lineEnding}` : rewritten;
+}
+
+async function installAstroAdapter(projectRoot: string, options: CreateOptions, executor: Executor) {
+  if (!options.ssr || options.astroAdapter === undefined) {
+    return;
+  }
+
+  const commands = getPackageManagerCommands(options.packageManager);
+  const install = commands.add([pinnedSpecifier(astroAdapterPackages[options.astroAdapter])]);
+  await executor.run(install.command, install.args, { cwd: projectRoot });
+
+  const configPath = path.join(projectRoot, 'astro.config.mjs');
+  if (executor instanceof DryRunExecutor) {
+    await executor.writeFile(configPath);
+    return;
+  }
+
+  if (!(await executor.pathExists(configPath))) {
+    throw new Error('Expected astro.config.mjs to exist after creating the Astro app.');
+  }
+
+  const current = await executor.readFile(configPath);
+  if (
+    (options.astroAdapter === 'node' && current.includes("adapter: node({ mode: 'standalone' })")) ||
+    (options.astroAdapter !== 'node' && current.includes(`adapter: ${options.astroAdapter}()`))
+  ) {
+    return;
+  }
+
+  await executor.writeFile(configPath, rewriteAstroConfigForAdapter(current, options.astroAdapter));
+}
 
 function assertAstroPackageManager(packageManager: CreateOptions['packageManager']) {
   if (packageManager === 'bun') {
@@ -31,6 +138,8 @@ export async function createAstroApp(options: CreateOptions, executor: Executor)
   ];
 
   await executor.run(command, args);
+
+  await installAstroAdapter(projectRoot, options, executor);
 
   return projectRoot;
 }

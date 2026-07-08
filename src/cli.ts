@@ -25,6 +25,8 @@ export function buildProgram(): Command {
     .argument('<target-dir>', 'Directory for the generated app')
     .option('--pm <pm>', 'Package manager: npm, pnpm, or bun')
     .option('--framework <framework>', 'Framework: next or astro')
+    .option('--ssr', 'Enable Astro SSR')
+    .option('--adapter <node|vercel|netlify|cloudflare>', 'Astro SSR adapter')
     .option('--unit', 'Install Vitest and React Testing Library')
     .option('--no-unit', 'Skip Vitest and React Testing Library')
     .option('--e2e', 'Install Playwright E2E testing')
@@ -39,10 +41,12 @@ export function buildProgram(): Command {
     .option('--no-mcp', 'Skip shadcn MCP setup')
     .option('--icons <library>', 'Icon library for the home page: lucide, phosphor, or tabler')
     .action(async (targetDir: string, rawOptions: Record<string, unknown>) => {
-        await runCreate(targetDir, {
-          pm: rawOptions.pm as PackageManager | undefined,
-          framework: rawOptions.framework as Framework | undefined,
-          unit: rawOptions.unit as boolean | undefined,
+      await runCreate(targetDir, {
+        pm: rawOptions.pm as PackageManager | undefined,
+        framework: rawOptions.framework as Framework | undefined,
+        ssr: rawOptions.ssr as boolean | undefined,
+        adapter: rawOptions.adapter as string | undefined,
+        unit: rawOptions.unit as boolean | undefined,
         e2e: rawOptions.e2e as boolean | undefined,
         commitlint: rawOptions.commitlint as boolean | undefined,
         yes: rawOptions.yes as boolean | undefined,

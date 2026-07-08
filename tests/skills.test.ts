@@ -135,6 +135,7 @@ describe('external skill install script', () => {
           targetDir: 'my-app',
           framework: 'next',
           packageManager: 'npm',
+          ssr: false,
           unit: false,
           e2e: false,
           commitlint: false,

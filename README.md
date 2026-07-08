@@ -28,6 +28,8 @@ Options:
 
 - `--pm npm|pnpm|bun`: choose the package manager.
 - `--framework next|astro`: choose the framework. Defaults to Next.js.
+- `--ssr`: enable Astro SSR instead of a static build.
+- `--adapter node|vercel|netlify|cloudflare`: choose the Astro SSR adapter when SSR is enabled. Defaults to cloudflare.
 - `--unit` / `--no-unit`: include or skip Vitest + React Testing Library.
 - `--e2e` / `--no-e2e`: include or skip Playwright.
 - `--commitlint` / `--no-commitlint`: include or skip commitlint.
@@ -64,6 +66,7 @@ Map a user's intent to the right command:
 | --- | --- |
 | Defaults (unit tests, no e2e/commitlint) | `npx purrfold@latest my-app --yes` |
 | Scaffold Astro instead of Next.js | `npx purrfold@latest my-app --framework astro --yes` |
+| Scaffold Astro SSR with the Cloudflare adapter | `npx purrfold@latest my-app --framework astro --ssr --adapter cloudflare --yes` |
 | No testing at all | `npx purrfold@latest my-app --no-unit --no-e2e --yes` |
 | Full setup (unit + e2e + commitlint) | `npx purrfold@latest my-app --unit --e2e --commitlint --yes` |
 | A specific package manager | `npx purrfold@latest my-app --pm pnpm --yes` |
