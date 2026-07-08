@@ -187,6 +187,9 @@ import '../styles/global.css';
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width" />
+    {process.env.NODE_ENV === 'development' && (
+      <script crossOrigin="anonymous" src="//unpkg.com/react-scan/dist/auto.global.js"></script>
+    )}
     <slot name="head" />
   </head>
   <body>

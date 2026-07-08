@@ -39,3 +39,5 @@
 - Astro keeps shared React-related skills but drops Next-only workflow skills from auto-installation.
 - Skill grouping is now organized as framework-agnostic, React-specific, and framework-specific buckets to keep the installer logic readable.
 - Astro now has a catalog entry for `astrolicious/agent-skills` (`astro`) as the framework-specific external skill.
+- Astro root layout now injects React Scan via the Vite-style script tag in the `<head>`.
+- Astro React Scan is gated to development only, matching the Next.js runtime guard.

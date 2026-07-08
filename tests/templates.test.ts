@@ -114,6 +114,8 @@ describe('template snapshots', () => {
 
     expect(page).toContain("import Layout from '../layouts/main.astro'");
     expect(astroRootLayout).toContain("import '../styles/global.css'");
+    expect(astroRootLayout).toContain("process.env.NODE_ENV === 'development'");
+    expect(astroRootLayout).toContain('//unpkg.com/react-scan/dist/auto.global.js');
     expect(astroRootLayout).toContain('<slot />');
   });
 
