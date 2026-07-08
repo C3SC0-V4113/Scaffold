@@ -39,4 +39,13 @@ export default defineConfig({
     expect(next).toContain('server: {');
     expect(next).toContain('host: true,');
   });
+
+  it('fails fast when the Astro config shape is unexpected', () => {
+    const current = `export default {};
+`;
+
+    expect(() => rewriteAstroConfigForAdapter(current, 'cloudflare')).toThrow(
+      'Unexpected astro.config.mjs shape. Expected an Astro config with defineConfig({ ... }).'
+    );
+  });
 });

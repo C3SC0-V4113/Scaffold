@@ -50,6 +50,21 @@ function buildAdapterConfigLines(adapter: NonNullable<CreateOptions['astroAdapte
   return ["  output: 'server',", `  adapter: ${adapter}(),`];
 }
 
+function validateAstroConfigShape(lines: string[]) {
+  const hasDefineConfigImport = lines.some((line) =>
+    /^\s*import\s+\{\s*defineConfig\s*\}\s+from\s+['"]astro\/config['"];?\s*$/.test(line)
+  );
+  const hasDefineConfigExport = lines.some((line) =>
+    /^\s*export\s+default\s+defineConfig\(\{\s*$/.test(line)
+  );
+
+  if (!hasDefineConfigImport || !hasDefineConfigExport) {
+    throw new Error(
+      'Unexpected astro.config.mjs shape. Expected an Astro config with defineConfig({ ... }).'
+    );
+  }
+}
+
 export function rewriteAstroConfigForAdapter(
   current: string,
   adapter: NonNullable<CreateOptions['astroAdapter']>
@@ -57,13 +72,12 @@ export function rewriteAstroConfigForAdapter(
   const lineEnding = getLineEnding(current);
   const trailingNewline = hasTrailingNewline(current);
   const lines = current.split(/\r?\n/);
+  validateAstroConfigShape(lines);
   const adapterImport = buildAdapterImport(adapter);
 
   if (!lines.includes(adapterImport)) {
     const importIndex = lines.findIndex((line) =>
-      /^\s*import\s+\{\s*defineConfig\s*\}\s+from\s+['"]astro\/config['"];?\s*$/.test(
-        line
-      )
+      /^\s*import\s+\{\s*defineConfig\s*\}\s+from\s+['"]astro\/config['"];?\s*$/.test(line)
     );
 
     if (importIndex >= 0) {
