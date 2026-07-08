@@ -2,11 +2,13 @@ import { describe, expect, it } from 'vitest';
 
 import { renderEslintConfig } from '../src/templates/eslint.js';
 import {
+  astroRootLayout,
   designDoc,
   humanizeProjectName,
   mergePnpmHardening,
   reactDoctorConfig,
   renderAgents,
+  renderAstroHomePage,
   renderHomePage,
   renderQualityWorkflow,
   renderReadme,
@@ -41,12 +43,12 @@ describe('template snapshots', () => {
   });
 
   it('snapshots ESLint and React Doctor config', () => {
-    expect(renderEslintConfig({ unit: true, e2e: true })).toMatchSnapshot();
+    expect(renderEslintConfig({ framework: 'next', unit: true, e2e: true })).toMatchSnapshot();
     expect(reactDoctorConfig).toMatchSnapshot();
   });
 
   it('produces an ESLint config that survives pnpm and ignores vendored ui', () => {
-    const config = renderEslintConfig({ unit: true, e2e: true });
+    const config = renderEslintConfig({ framework: 'next', unit: true, e2e: true });
 
     // eslint-config-next already registers the `import` plugin; re-registering it
     // breaks pnpm ("Cannot redefine plugin import").
@@ -61,6 +63,7 @@ describe('template snapshots', () => {
 
   it('keeps import plugin registration available for future base frameworks', () => {
     const config = renderEslintConfig({
+      framework: 'next',
       unit: true,
       e2e: false,
       registerImportPlugin: true,
@@ -89,6 +92,22 @@ describe('template snapshots', () => {
     expect(page).toContain("import { Cat } from 'lucide-react'");
     expect(page).toContain('<h1');
     expect(page).toContain('export const metadata');
+  });
+
+  it('renders an Astro ESLint config with Astro and TypeScript support', () => {
+    const config = renderEslintConfig({ framework: 'astro', unit: true, e2e: true });
+
+    expect(config).toContain("import eslintPluginAstro from 'eslint-plugin-astro'");
+    expect(config).toContain("import tseslint from 'typescript-eslint'");
+    expect(config).toContain('...eslintPluginAstro.configs.recommended');
+  });
+
+  it('renders a valid Astro app shell with an existing layout import', () => {
+    const page = renderAstroHomePage('my-app');
+
+    expect(page).toContain("import Layout from '../layouts/main.astro'");
+    expect(astroRootLayout).toContain("import '../styles/global.css'");
+    expect(astroRootLayout).toContain('<slot />');
   });
 
   it('documents shadcn MCP setup and preset compatibility', () => {

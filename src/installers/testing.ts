@@ -2,6 +2,7 @@ import path from 'node:path';
 
 import {
   e2eSmokeTest,
+  renderAstroUnitSmokeTest,
   renderPlaywrightConfig,
   renderPlaywrightWorkflow,
   unitSmokeTest,
@@ -11,14 +12,14 @@ import type { CreateOptions, Executor } from '../types.js';
 
 export async function installTestingFiles(
   projectRoot: string,
-  options: Pick<CreateOptions, 'packageManager' | 'unit' | 'e2e'>,
+  options: Pick<CreateOptions, 'framework' | 'packageManager' | 'unit' | 'e2e'>,
   executor: Executor
 ) {
   if (options.unit) {
     await executor.writeFile(path.join(projectRoot, 'vitest.config.mts'), vitestConfig);
     await executor.writeFile(
       path.join(projectRoot, 'tests', 'unit', 'home.test.tsx'),
-      unitSmokeTest
+      options.framework === 'astro' ? renderAstroUnitSmokeTest() : unitSmokeTest
     );
   }
 

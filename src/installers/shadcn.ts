@@ -3,12 +3,13 @@ import type { CreateOptions, Executor } from '../types.js';
 
 export async function initializeShadcn(
   projectRoot: string,
-  options: Pick<CreateOptions, 'packageManager' | 'yes' | 'shadcnArgs'>,
+  options: Pick<CreateOptions, 'framework' | 'packageManager' | 'yes' | 'shadcnArgs'>,
   executor: Executor
 ) {
   const commands = getPackageManagerCommands(options.packageManager);
   const initArgs = [
     'init',
+    ...(options.framework === 'astro' ? ['-t', 'astro'] : []),
     ...(options.yes ? ['--defaults'] : []),
     ...options.shadcnArgs,
   ];

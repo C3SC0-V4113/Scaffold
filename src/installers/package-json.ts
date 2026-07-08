@@ -41,7 +41,7 @@ export async function writeProjectPackageJson(
 export async function applyPackageJsonQualityConfig(
   projectRoot: string,
   executor: Executor,
-  options: Pick<CreateOptions, 'packageManager' | 'unit' | 'e2e'>
+  options: Pick<CreateOptions, 'framework' | 'packageManager' | 'unit' | 'e2e'>
 ) {
   const packageJson = await readProjectPackageJson(projectRoot, executor);
 

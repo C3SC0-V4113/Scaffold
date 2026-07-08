@@ -10,7 +10,6 @@ import playwrightPlugin from 'eslint-plugin-playwright';
 import reactDoctor from 'eslint-plugin-react-doctor';
 import reactYouMightNotNeedAnEffect from 'eslint-plugin-react-you-might-not-need-an-effect';
 import testingLibraryPlugin from 'eslint-plugin-testing-library';
-
 const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
@@ -18,9 +17,6 @@ const eslintConfig = defineConfig([
   reactDoctor.configs.next,
   reactYouMightNotNeedAnEffect.configs.recommended,
   {
-    // The \`import\` plugin is already registered by eslint-config-next; we only
-    // add resolver settings and ordering rules here. Re-registering the plugin
-    // breaks under pnpm's isolated node_modules ("Cannot redefine plugin import").
     files: ['**/*.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
     settings: {
       'import/resolver': {
@@ -53,8 +49,7 @@ const eslintConfig = defineConfig([
         'error',
         {
           rule: '^(is|should|has|can|did|will|as)[A-Z]([A-Za-z0-9]?)+',
-          message:
-            "Boolean props should start with 'is', 'should', 'has', 'can', 'did', 'will', or 'as'",
+          message: "Boolean props should start with 'is', 'should', 'has', 'can', 'did', 'will', or 'as'",
         },
       ],
     },
@@ -118,16 +113,12 @@ const eslintConfig = defineConfig([
     'next-env.d.ts',
     '.agents/**',
     '.claude/**',
-    // Generated shadcn/ui primitives are vendored (radix/cva imports, dual
-    // exports). They are type-checked by tsc and formatted by Prettier, but
-    // not linted. Mirrors the \`components/ui/**\` exemption in doctor.config.json.
     'components/ui/**',
     'coverage/**',
     'playwright-report/**',
     'test-results/**',
   ]),
 ]);
-
 export default eslintConfig;
 "
 `;

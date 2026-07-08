@@ -149,6 +149,52 @@ export default function Home() {
 `;
 }
 
+export function renderAstroHomeHero(projectName: string, iconLibrary: IconLibrary = 'lucide') {
+  const appName = humanizeProjectName(projectName);
+  const { importLine, markup } = getCatRender(iconLibrary);
+
+  return `${importLine}
+
+export default function HomeHero() {
+  return (
+    <main className="bg-background text-foreground flex min-h-screen flex-col items-center justify-center gap-4 p-8 text-center">
+      ${markup}
+      <h1 className="text-2xl font-semibold tracking-tight">${appName}</h1>
+      <p className="text-muted-foreground text-sm">Edit src/pages/index.astro to start building.</p>
+    </main>
+  );
+}
+`;
+}
+
+export function renderAstroHomePage(projectName: string) {
+  return `---
+import HomeHero from '../components/home-hero';
+import Layout from '../layouts/main.astro';
+---
+
+<Layout>
+  <HomeHero />
+</Layout>
+`;
+}
+
+export const astroRootLayout = `---
+import '../styles/global.css';
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <slot name="head" />
+  </head>
+  <body>
+    <slot />
+  </body>
+</html>
+`;
+
 export const reactDoctorConfig = `{
   "ignore": {
     "files": [".agents/**", ".claude/**", "components/ui/**"],
@@ -328,6 +374,22 @@ describe('Home page smoke test', () => {
   });
 });
 `;
+
+export function renderAstroUnitSmokeTest() {
+  return `import { render, screen } from '@testing-library/react';
+import { describe, expect, it } from 'vitest';
+
+import HomeHero from '@/components/home-hero';
+
+describe('Home hero smoke test', () => {
+  it('renders a heading', () => {
+    render(<HomeHero />);
+
+    expect(screen.getByRole('heading', { level: 1 })).toBeDefined();
+  });
+});
+`;
+}
 
 export const playwrightConfig = `import { defineConfig, devices } from '@playwright/test';
 

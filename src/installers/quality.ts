@@ -4,6 +4,7 @@ import { getPackageManagerCommands } from '../package-manager.js';
 import {
   commitMsgHook,
   commitlintConfig,
+  astroRootLayout,
   gitAttributes,
   mergePnpmHardening,
   preCommitHook,
@@ -11,6 +12,8 @@ import {
   prettierConfig,
   prettierIgnore,
   reactDoctorConfig,
+  renderAstroHomeHero,
+  renderAstroHomePage,
   renderHomePage,
   renderQualityWorkflow,
   renderRootLayout,
@@ -144,9 +147,23 @@ async function reconcileIconLibrary(
 async function writeAppShell(
   projectRoot: string,
   executor: Executor,
-  iconLibrary: IconLibrary
+  iconLibrary: IconLibrary,
+  framework: CreateOptions['framework']
 ) {
   const projectName = path.basename(projectRoot);
+
+  if (framework === 'astro') {
+    await executor.writeFile(
+      path.join(projectRoot, 'src', 'components', 'home-hero.tsx'),
+      renderAstroHomeHero(projectName, iconLibrary)
+    );
+    await executor.writeFile(
+      path.join(projectRoot, 'src', 'pages', 'index.astro'),
+      renderAstroHomePage(projectName)
+    );
+    await executor.writeFile(path.join(projectRoot, 'src', 'layouts', 'main.astro'), astroRootLayout);
+    return;
+  }
 
   await executor.writeFile(
     path.join(projectRoot, 'app', 'layout.tsx'),
@@ -201,7 +218,7 @@ export async function installQualityLayer(
   }
 
   const iconLibrary = await reconcileIconLibrary(projectRoot, options, executor);
-  await writeAppShell(projectRoot, executor, iconLibrary);
+  await writeAppShell(projectRoot, executor, iconLibrary, options.framework);
 
   // pnpm-only: React Doctor 0.5.x requires supply-chain hardening in
   // pnpm-workspace.yaml. Written last so it never gates the installs above.

@@ -2,6 +2,7 @@ import { confirm, select } from '@inquirer/prompts';
 
 import { DryRunExecutor, RealExecutor } from '../executor.js';
 import { defaultFramework, frameworkRegistry, isFramework } from '../frameworks/registry.js';
+import { createAstroApp } from '../installers/astro.js';
 import { installDocsAndClaude } from '../installers/docs.js';
 import { createNextApp } from '../installers/next.js';
 import { installQualityLayer } from '../installers/quality.js';
@@ -127,11 +128,17 @@ export async function resolveCreateOptions(
   flags: RawCreateFlags
 ): Promise<CreateOptions> {
   const yes = flags.yes ?? false;
+  const framework = await resolveFramework(flags);
+  const packageManager = await resolvePackageManager(flags);
+
+  if (framework === 'astro' && packageManager === 'bun') {
+    throw new Error('Astro scaffolding is not available with bun yet. Use npm or pnpm.');
+  }
 
   return {
     targetDir,
-    framework: await resolveFramework(flags),
-    packageManager: await resolvePackageManager(flags),
+    framework,
+    packageManager,
     unit: await resolveBoolean(flags.unit, yes, true, 'Install Vitest + React Testing Library?'),
     e2e: await resolveBoolean(flags.e2e, yes, false, 'Install Playwright E2E testing?'),
     commitlint: await resolveBoolean(flags.commitlint, yes, false, 'Install commitlint?'),
@@ -153,12 +160,17 @@ export async function runCreate(targetDir: string, flags: RawCreateFlags) {
   const options = await resolveCreateOptions(targetDir, flags);
   const executor = options.dryRun ? new DryRunExecutor() : new RealExecutor();
 
-  const projectRoot = await createNextApp(options, executor);
+  const projectRoot =
+    options.framework === 'astro'
+      ? await createAstroApp(options, executor)
+      : await createNextApp(options, executor);
   await initializeShadcn(projectRoot, options, executor);
   await installQualityLayer(projectRoot, options, executor);
   await installTestingFiles(projectRoot, options, executor);
-  await installSkills(projectRoot, options, executor);
-  await installDocsAndClaude(projectRoot, options, executor);
+  if (options.framework === 'next') {
+    await installSkills(projectRoot, options, executor);
+    await installDocsAndClaude(projectRoot, options, executor);
+  }
   await installShadcnMcp(projectRoot, options, executor);
 
   if (executor instanceof DryRunExecutor) {

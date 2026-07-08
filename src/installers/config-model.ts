@@ -45,6 +45,11 @@ export const DEPENDENCY_VERSIONS: Record<string, string> = {
   'lucide-react': '1.18.0',
   '@phosphor-icons/react': '2.1.10',
   '@tabler/icons-react': '3.44.0',
+  astro: '7.0.6',
+  '@astrojs/check': '0.9.9',
+  'eslint-plugin-astro': '1.7.0',
+  'typescript-eslint': '8.63.0',
+  'prettier-plugin-astro': '0.14.1',
 };
 
 /**
@@ -76,6 +81,23 @@ export const coreDevDependencies = [
   'react-scan',
 ];
 
+export const astroCoreDevDependencies = [
+  'eslint',
+  'eslint-config-prettier',
+  'eslint-plugin-import',
+  'eslint-import-resolver-typescript',
+  'eslint-plugin-astro',
+  'eslint-plugin-react-doctor',
+  'eslint-plugin-react-you-might-not-need-an-effect',
+  'typescript-eslint',
+  'prettier',
+  'prettier-plugin-astro',
+  'prettier-plugin-tailwindcss',
+  'husky',
+  'lint-staged',
+  '@astrojs/check',
+];
+
 export const unitDevDependencies = [
   'vitest',
   '@vitejs/plugin-react',
@@ -94,17 +116,60 @@ export const commitlintDevDependencies = [
   '@commitlint/config-conventional',
 ];
 
-export function buildDevDependencies(options: Pick<CreateOptions, 'unit' | 'e2e' | 'commitlint'>) {
+export function buildDevDependencies(
+  options: Pick<CreateOptions, 'framework' | 'unit' | 'e2e' | 'commitlint'>
+) {
   return [
-    ...coreDevDependencies,
+    ...(options.framework === 'astro' ? astroCoreDevDependencies : coreDevDependencies),
     ...(options.unit ? unitDevDependencies : []),
     ...(options.e2e ? e2eDevDependencies : []),
     ...(options.commitlint ? commitlintDevDependencies : []),
   ].map(pinnedSpecifier);
 }
 
-export function buildScripts(options: Pick<CreateOptions, 'packageManager' | 'unit' | 'e2e'>) {
+export function buildScripts(
+  options: Pick<CreateOptions, 'framework' | 'packageManager' | 'unit' | 'e2e'>
+) {
   const run = options.packageManager === 'npm' ? 'npm run' : `${options.packageManager} run`;
+
+  if (options.framework === 'astro') {
+    return {
+      ...(options.unit
+        ? {
+            test: 'vitest run',
+            'test:watch': 'vitest',
+          }
+        : {}),
+      ...(options.e2e
+        ? {
+            'test:e2e': 'playwright test',
+            'test:e2e:ui': 'playwright test --ui',
+          }
+        : {}),
+      ...(options.unit && options.e2e
+        ? {
+            'test:all': `${run} test && ${run} test:e2e`,
+          }
+        : {}),
+      lint: 'eslint . --no-warn-ignored --max-warnings 0',
+      'lint:fix': 'eslint . --fix --no-warn-ignored --max-warnings 0',
+      doctor: 'astro check',
+      'doctor:staged': 'astro check --noSync',
+      'doctor:ci': 'astro check',
+      'scan:init': 'astro dev --background',
+      scan: 'astro dev',
+      format: 'prettier --write .',
+      'format:check': 'prettier --check .',
+      typecheck: 'astro check',
+      check: [
+        `${run} lint`,
+        `${run} typecheck`,
+        `${run} format:check`,
+        ...(options.unit ? [`${run} test`] : []),
+      ].join(' && '),
+      prepare: 'husky',
+    };
+  }
 
   return {
     ...(options.unit

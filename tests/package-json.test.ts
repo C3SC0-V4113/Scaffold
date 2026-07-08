@@ -47,6 +47,7 @@ describe('package.json quality config', () => {
     const executor = new MemoryExecutor();
 
     await applyPackageJsonQualityConfig('app', executor, {
+      framework: 'next',
       packageManager: 'npm',
       unit: true,
       e2e: false,
@@ -73,6 +74,7 @@ describe('package.json quality config', () => {
     });
 
     await applyPackageJsonQualityConfig('app', executor, {
+      framework: 'next',
       packageManager: 'pnpm',
       unit: false,
       e2e: false,
@@ -80,6 +82,26 @@ describe('package.json quality config', () => {
 
     expect((executor.writtenJson as ProjectPackageJson).overrides).toEqual({
       react: '^19.0.0',
+    });
+  });
+
+  it('adds Astro-friendly scripts for Astro projects', async () => {
+    const executor = new MemoryExecutor();
+
+    await applyPackageJsonQualityConfig('app', executor, {
+      framework: 'astro',
+      packageManager: 'pnpm',
+      unit: true,
+      e2e: true,
+    });
+
+    expect(executor.writtenJson).toMatchObject({
+      scripts: expect.objectContaining({
+        typecheck: 'astro check',
+        scan: 'astro dev',
+        'scan:init': 'astro dev --background',
+        check: 'pnpm run lint && pnpm run typecheck && pnpm run format:check && pnpm run test',
+      }),
     });
   });
 });

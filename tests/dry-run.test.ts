@@ -51,6 +51,26 @@ describe('dry-run integration', () => {
     expect(output).not.toContain('vitest.config.mts');
   });
 
+  it('prints Astro operations with React-enabled shadcn setup', async () => {
+    const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    await runCreate('my-app', {
+      framework: 'astro',
+      pm: 'pnpm',
+      unit: true,
+      e2e: false,
+      commitlint: false,
+      yes: true,
+      dryRun: true,
+    });
+
+    const output = log.mock.calls.map((call) => call.join(' ')).join('\n');
+    expect(output).toContain('run pnpm create astro@latest my-app');
+    expect(output).toContain('run pnpm dlx shadcn@latest init -t astro --defaults');
+    expect(output).toContain('@astrojs/check@0.9.9');
+    expect(output).not.toContain('create-next-app@latest');
+  });
+
   it('prints bun operations with selected options', async () => {
     const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
 

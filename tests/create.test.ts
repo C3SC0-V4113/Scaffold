@@ -41,4 +41,10 @@ describe('create option resolution', () => {
       resolveCreateOptions('my-app', { framework: 'ember', yes: true })
     ).rejects.toThrow('Unsupported framework "ember"');
   });
+
+  it('rejects bun when Astro is selected', async () => {
+    await expect(
+      resolveCreateOptions('my-app', { framework: 'astro', pm: 'bun', yes: true })
+    ).rejects.toThrow('Astro scaffolding is not available with bun yet');
+  });
 });
