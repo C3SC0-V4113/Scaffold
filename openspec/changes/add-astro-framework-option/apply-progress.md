@@ -37,3 +37,5 @@
 ### Notes
 - Astro docs/skills guidance is additive: existing markdown content is preserved and only framework-specific sections are changed.
 - Astro keeps shared React-related skills but drops Next-only workflow skills from auto-installation.
+- Skill grouping is now organized as framework-agnostic, React-specific, and framework-specific buckets to keep the installer logic readable.
+- Astro now has a catalog entry for `astrolicious/agent-skills` (`astro`) as the framework-specific external skill.

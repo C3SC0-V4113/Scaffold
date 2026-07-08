@@ -38,6 +38,10 @@ export const externalSkillManifest: SkillInstallManifest = {
       source: 'wshobson/agents',
       skill: 'typescript-advanced-types',
     },
+    astro: {
+      source: 'https://github.com/astrolicious/agent-skills',
+      skill: 'astro',
+    },
     'vercel-composition-patterns': {
       source: 'https://github.com/vercel-labs/agent-skills',
       skill: 'vercel-composition-patterns',

@@ -99,6 +99,9 @@ describe('external skill install script', () => {
   it('omits Next-only skill commands for Astro', () => {
     const script = renderSkillsScript({ framework: 'astro', unit: false, e2e: false });
 
+    expect(script).toContain(
+      'npx --yes skills@latest add https://github.com/astrolicious/agent-skills --skill astro --agent codex --copy --yes'
+    );
     expect(script).not.toContain('next-cache-components-adoption');
     expect(script).not.toContain('next-cache-components-optimizer');
     expect(script).not.toContain('next-dev-loop');

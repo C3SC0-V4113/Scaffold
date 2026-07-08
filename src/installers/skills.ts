@@ -9,18 +9,23 @@ import {
 } from '../templates/skills.js';
 import type { CreateOptions, Executor, SkillInstallEntry } from '../types.js';
 
-const alwaysExternalSkills = [
+const frameworkAgnosticExternalSkills = [
   'architecture-decision-records',
-  'next-cache-components-adoption',
-  'next-cache-components-optimizer',
-  'next-dev-loop',
   'shadcn',
   'systematic-debugging',
   'typescript-advanced-types',
-  'vercel-composition-patterns',
-  'vercel-react-best-practices',
   'verification-before-completion',
 ] as const;
+
+const reactExternalSkills = [
+  'vercel-composition-patterns',
+  'vercel-react-best-practices',
+] as const;
+
+const frameworkSpecificExternalSkills = {
+  next: ['next-cache-components-adoption', 'next-cache-components-optimizer', 'next-dev-loop'],
+  astro: ['astro'],
+} as const;
 
 const localSkillRenderers = {
   'project-architecture': renderProjectArchitectureSkill,
@@ -30,19 +35,10 @@ const localSkillRenderers = {
 } as const;
 
 export function selectSkillNames(options: Pick<CreateOptions, 'framework' | 'unit' | 'e2e'>) {
-  const frameworkSpecific =
-    options.framework === 'astro'
-      ? [
-          'architecture-decision-records',
-          'shadcn',
-          'systematic-debugging',
-          'typescript-advanced-types',
-          'verification-before-completion',
-        ]
-      : [...alwaysExternalSkills];
-
   return [
-    ...frameworkSpecific,
+    ...frameworkAgnosticExternalSkills,
+    ...reactExternalSkills,
+    ...frameworkSpecificExternalSkills[options.framework],
     'project-architecture',
     'project-min-evaluation',
     'decision-doc-sync',
