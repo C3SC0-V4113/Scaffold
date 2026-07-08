@@ -5,11 +5,11 @@ description: Scaffold a new production-ready frontend app (Next.js + shadcn + st
 
 # purrfold — scaffold a frontend app
 
-`purrfold` is a CLI that creates a new app from `create-next-app@latest` and
-applies a production-oriented quality baseline: shadcn, strict ESLint, Prettier,
-Husky, React Doctor, React Scan, agent docs, Claude hooks, and optional unit
-(Vitest), e2e (Playwright), and commitlint. The generated app self-tests and is
-green out-of-the-box.
+`purrfold` is a CLI that creates a new app from `create-next-app@latest` or
+`create-astro@latest` and applies a production-oriented quality baseline: shadcn,
+strict ESLint, Prettier, Husky, React Doctor, React Scan, agent docs, Claude
+hooks, and optional unit (Vitest), e2e (Playwright), and commitlint. The
+generated app self-tests and is green out-of-the-box.
 
 No install step is required — run it with `npx`. Always pass `--yes` so it runs
 non-interactively.
@@ -25,6 +25,7 @@ npx purrfold@latest <target-dir> [options]
 ## Options
 
 - `--pm <npm|pnpm|bun>` — package manager (default: npm with `--yes`).
+- `--framework <next|astro>` — framework to scaffold (default: Next.js).
 - `--unit` / `--no-unit` — Vitest + React Testing Library (default: included).
 - `--e2e` / `--no-e2e` — Playwright e2e (default: skipped).
 - `--commitlint` / `--no-commitlint` — commitlint + commit-msg hook (default: skipped).
@@ -42,6 +43,7 @@ To fetch the canonical option schema at runtime: `npx purrfold@latest info --jso
 | The user says… | Run |
 | --- | --- |
 | "scaffold/create a new app" (defaults) | `npx purrfold@latest <dir> --yes` |
+| "use Astro" / "scaffold Astro" | `npx purrfold@latest <dir> --framework astro --yes` |
 | "without testing" / "no tests" | `npx purrfold@latest <dir> --no-unit --no-e2e --yes` |
 | "with e2e" / "add Playwright" | `npx purrfold@latest <dir> --e2e --yes` |
 | "the full setup" / "everything" | `npx purrfold@latest <dir> --unit --e2e --commitlint --yes` |

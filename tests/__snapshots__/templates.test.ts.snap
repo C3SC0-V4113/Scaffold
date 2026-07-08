@@ -138,6 +138,136 @@ exports[`template snapshots > snapshots ESLint and React Doctor config 2`] = `
 "
 `;
 
+exports[`template snapshots > snapshots astro docs 1`] = `
+"# Astro Quality App
+
+Astro app scaffolded with strict quality tooling, shadcn, React Doctor, React Scan, agent docs, and Claude hooks.
+
+## Development
+
+\`\`\`bash
+npm run dev
+\`\`\`
+
+## Quality
+
+\`\`\`bash
+npm run lint
+npm run typecheck
+npm run format:check
+npm run test
+npm run doctor
+npm run check
+\`\`\`
+
+## Tooling
+
+- Astro project with TypeScript, Tailwind, and React islands.
+- shadcn UI initialized through the shadcn CLI.
+- ESLint flat config with strict Astro, React, import ordering, and Prettier integration.
+- React Doctor and React Scan.
+- Vitest and React Testing Library.
+- Playwright E2E testing.
+- Conventional commit linting.
+
+## shadcn MCP
+
+shadcn MCP setup was not run by default because some clients may update user-level tool config.
+
+Manual setup commands for this package manager:
+
+\`\`\`bash
+npx shadcn@latest mcp init --client claude
+npx shadcn@latest mcp init --client codex
+npx shadcn@latest mcp init --client opencode
+\`\`\`
+
+Codex may require user-level configuration in \`~/.codex/config.toml\`:
+
+\`\`\`toml
+[mcp_servers.shadcn]
+command = "npx"
+args = ["shadcn@latest", "mcp"]
+\`\`\`
+
+## shadcn Presets
+
+purrfold forwards additional shadcn CLI arguments, including official presets:
+
+\`\`\`bash
+npx purrfold@latest my-app --shadcn-args --preset b3REw8vwo --yes
+npx purrfold@latest my-app --shadcn-args --preset b1sSLwZVp --yes
+npx purrfold@latest my-app --shadcn-args --preset b2qMI9ufY --yes
+npx purrfold@latest my-app --shadcn-args --preset b5eH0WVTX --yes
+\`\`\`
+
+## Agent Docs
+
+- \`AGENTS.md\`: agent workflow and quality gates.
+- \`DESIGN.md\`: generic UI/UX guardrails.
+- \`.agents/skills\`: local and installed skills.
+- \`CLAUDE.md\`: Claude Code pointer to \`AGENTS.md\`.
+"
+`;
+
+exports[`template snapshots > snapshots astro docs 2`] = `
+"<!-- BEGIN:astro-agent-rules -->
+
+# This is an Astro scaffold
+
+This project uses Astro. Read the current Astro docs before changing framework APIs or project structure.
+
+<!-- END:astro-agent-rules -->
+
+## Quality Gates
+
+Run these before claiming implementation complete:
+
+1. \`npm run lint\`
+2. \`npm run typecheck\`
+3. \`npm run format:check\`
+4. \`npm run test\`
+- Run \`npm run test:e2e\` when E2E behavior changed.
+- \`npm run doctor\`
+- \`npm run check\`
+
+## References
+
+- Architecture and scripts: \`README.md\`
+- Design rules: \`DESIGN.md\`
+- Astro reference docs: current Astro documentation
+- Astro agent rules: generated \`AGENTS.md\` / \`CLAUDE.md\`
+- Minimum evaluation: \`.agents/skills/project-min-evaluation/SKILL.md\`
+- Vitest guidance: \`.agents/skills/vitest/SKILL.md\`
+- Playwright guidance: \`.agents/skills/playwright-best-practices/SKILL.md\`
+- Commit messages are checked with commitlint.
+
+## shadcn MCP
+
+shadcn MCP setup is optional and was not run by default.
+
+\`\`\`bash
+npx shadcn@latest mcp init --client claude
+npx shadcn@latest mcp init --client codex
+npx shadcn@latest mcp init --client opencode
+\`\`\`
+
+For Codex, verify \`~/.codex/config.toml\` if MCP is not available:
+
+\`\`\`toml
+[mcp_servers.shadcn]
+command = "npx"
+args = ["shadcn@latest", "mcp"]
+\`\`\`
+
+shadcn presets are supported through \`--shadcn-args --preset <id>\`.
+
+## Claude Code
+
+\`CLAUDE.md\` points to this file. \`.claude/skills\` should link to \`.agents/skills\`.
+"
+`;
+
 exports[`template snapshots > snapshots generated docs 1`] = `
 "# Next Quality App
 

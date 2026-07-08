@@ -68,6 +68,7 @@ describe('dry-run integration', () => {
     expect(output).toContain('run pnpm create astro@latest my-app');
     expect(output).toContain('run pnpm dlx shadcn@latest init -t astro --defaults');
     expect(output).toContain('@astrojs/check@0.9.9');
+    expect(output).not.toContain('--no-ai');
     expect(output).not.toContain('create-next-app@latest');
   });
 

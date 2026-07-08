@@ -8,7 +8,6 @@ const createAstroBaseArgs = [
   '--add',
   'react',
   '--git',
-  '--no-ai',
 ];
 
 function assertAstroPackageManager(packageManager: CreateOptions['packageManager']) {

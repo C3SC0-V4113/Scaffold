@@ -3,7 +3,7 @@
 > purrfold is a CLI that scaffolds a production-ready frontend app with shadcn,
 > strict quality tooling (ESLint, Prettier, React Doctor, React Scan), agent
 > docs, Claude hooks, and optional unit (Vitest) / e2e (Playwright) / commitlint.
-> It starts from `create-next-app@latest`. No install needed — run it with `npx`.
+> It starts from `create-next-app@latest` or `create-astro@latest`. No install needed — run it with `npx`.
 
 ## Install / run
 
@@ -18,6 +18,7 @@ fails if it is not green.
 ## Options
 
 - `--pm <npm|pnpm|bun>` — package manager (default: prompts, or npm with `--yes`).
+- `--framework <next|astro>` — scaffold framework (default: Next.js).
 - `--unit` / `--no-unit` — Vitest + React Testing Library (default: included).
 - `--e2e` / `--no-e2e` — Playwright e2e (default: skipped).
 - `--commitlint` / `--no-commitlint` — commitlint + commit-msg hook (default: skipped).
@@ -39,6 +40,7 @@ npx purrfold@latest info --json
 | The user wants… | Run |
 | --- | --- |
 | Defaults (unit tests, no e2e/commitlint) | `npx purrfold@latest my-app --yes` |
+| Scaffold Astro instead of Next.js | `npx purrfold@latest my-app --framework astro --yes` |
 | No testing at all | `npx purrfold@latest my-app --no-unit --no-e2e --yes` |
 | Full setup (unit + e2e + commitlint) | `npx purrfold@latest my-app --unit --e2e --commitlint --yes` |
 | A specific package manager | `npx purrfold@latest my-app --pm pnpm --yes` |

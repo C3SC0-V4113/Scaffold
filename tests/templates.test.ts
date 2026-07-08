@@ -42,6 +42,13 @@ describe('template snapshots', () => {
     expect(renderAgents(options)).toMatchSnapshot();
   });
 
+  it('snapshots astro docs', () => {
+    const astroOptions = { ...options, framework: 'astro' as const };
+
+    expect(renderReadme(astroOptions)).toMatchSnapshot();
+    expect(renderAgents(astroOptions)).toMatchSnapshot();
+  });
+
   it('snapshots ESLint and React Doctor config', () => {
     expect(renderEslintConfig({ framework: 'next', unit: true, e2e: true })).toMatchSnapshot();
     expect(reactDoctorConfig).toMatchSnapshot();

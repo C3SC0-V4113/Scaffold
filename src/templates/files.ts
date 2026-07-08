@@ -499,13 +499,29 @@ ${shadcnMcpToml(options.packageManager)}
 }
 
 export function renderReadme(
-  options: Pick<CreateOptions, 'packageManager' | 'unit' | 'e2e' | 'commitlint' | 'mcp'>
+  options: Pick<CreateOptions, 'framework' | 'packageManager' | 'unit' | 'e2e' | 'commitlint' | 'mcp'>
 ) {
   const run = options.packageManager === 'npm' ? 'npm run' : `${options.packageManager} run`;
+  const frameworkName = options.framework === 'astro' ? 'Astro' : 'Next.js';
+  const title = options.framework === 'astro' ? 'Astro Quality App' : 'Next Quality App';
+  const toolingLines =
+    options.framework === 'astro'
+      ? [
+          '- Astro project with TypeScript, Tailwind, and React islands.',
+          '- shadcn UI initialized through the shadcn CLI.',
+          '- ESLint flat config with strict Astro, React, import ordering, and Prettier integration.',
+          '- React Doctor and React Scan.',
+        ]
+      : [
+          '- Next.js App Router with TypeScript and Tailwind.',
+          '- shadcn UI initialized through the shadcn CLI.',
+          '- ESLint flat config with strict Next.js, React, import ordering, and Prettier integration.',
+          '- React Doctor and React Scan.',
+        ];
 
-  return `# Next Quality App
+  return `# ${title}
 
-Next.js app scaffolded with strict quality tooling, shadcn, React Doctor, React Scan, agent docs, and Claude hooks.
+${frameworkName} app scaffolded with strict quality tooling, shadcn, React Doctor, React Scan, agent docs, and Claude hooks.
 
 ## Development
 
@@ -525,10 +541,7 @@ ${run} check
 
 ## Tooling
 
-- Next.js App Router with TypeScript and Tailwind.
-- shadcn UI initialized through the shadcn CLI.
-- ESLint flat config with strict Next.js, React, import ordering, and Prettier integration.
-- React Doctor and React Scan.
+${toolingLines.join('\n')}
 ${options.unit ? '- Vitest and React Testing Library.\n' : ''}${options.e2e ? '- Playwright E2E testing.\n' : ''}${options.commitlint ? '- Conventional commit linting.\n' : ''}
 ${renderShadcnMcpGuide(options)}
 ## shadcn Presets
@@ -577,9 +590,60 @@ This file is the UI/UX source of truth for this app.
 `;
 
 export function renderAgents(
-  options: Pick<CreateOptions, 'packageManager' | 'unit' | 'e2e' | 'commitlint' | 'mcp'>
+  options: Pick<CreateOptions, 'framework' | 'packageManager' | 'unit' | 'e2e' | 'commitlint' | 'mcp'>
 ) {
   const run = options.packageManager === 'npm' ? 'npm run' : `${options.packageManager} run`;
+
+  if (options.framework === 'astro') {
+    return `<!-- BEGIN:astro-agent-rules -->
+
+# This is an Astro scaffold
+
+This project uses Astro. Read the current Astro docs before changing framework APIs or project structure.
+
+<!-- END:astro-agent-rules -->
+
+## Quality Gates
+
+Run these before claiming implementation complete:
+
+1. \`${run} lint\`
+2. \`${run} typecheck\`
+3. \`${run} format:check\`
+${options.unit ? `4. \`${run} test\`\n` : ''}${options.e2e ? `- Run \`${run} test:e2e\` when E2E behavior changed.\n` : ''}- \`${run} doctor\`
+- \`${run} check\`
+
+## References
+
+- Architecture and scripts: \`README.md\`
+- Design rules: \`DESIGN.md\`
+- Astro reference docs: current Astro documentation
+- Astro agent rules: generated \`AGENTS.md\` / \`CLAUDE.md\`
+- Minimum evaluation: \`.agents/skills/project-min-evaluation/SKILL.md\`
+${options.unit ? '- Vitest guidance: `.agents/skills/vitest/SKILL.md`\n' : ''}${options.e2e ? '- Playwright guidance: `.agents/skills/playwright-best-practices/SKILL.md`\n' : ''}${options.commitlint ? '- Commit messages are checked with commitlint.\n' : ''}
+## shadcn MCP
+
+${options.mcp ? 'shadcn MCP setup was requested during scaffold.' : 'shadcn MCP setup is optional and was not run by default.'}
+
+\`\`\`bash
+${shadcnMcpCommand(options.packageManager, 'claude')}
+${shadcnMcpCommand(options.packageManager, 'codex')}
+${shadcnMcpCommand(options.packageManager, 'opencode')}
+\`\`\`
+
+For Codex, verify \`~/.codex/config.toml\` if MCP is not available:
+
+\`\`\`toml
+${shadcnMcpToml(options.packageManager)}
+\`\`\`
+
+shadcn presets are supported through \`--shadcn-args --preset <id>\`.
+
+## Claude Code
+
+\`CLAUDE.md\` points to this file. \`.claude/skills\` should link to \`.agents/skills\`.
+`;
+  }
 
   return `<!-- BEGIN:nextjs-agent-rules -->
 

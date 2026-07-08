@@ -7,7 +7,35 @@ export const localSkillNames = [
   'react-doctor',
 ] as const;
 
-export function renderProjectArchitectureSkill() {
+export function renderProjectArchitectureSkill(options: Pick<CreateOptions, 'framework'> = { framework: 'next' }) {
+  if (options.framework === 'astro') {
+    return `---
+name: project-architecture
+description: Generic project architecture and design guardrails. Use when changing UI, layout, component architecture, state flow, theming, or Astro island boundaries.
+---
+
+# Project Architecture Guardrails
+
+Use this skill when a change touches UI, component structure, app behavior, theming, or data display.
+
+## Rules
+
+1. Keep Astro server-first unless interactivity requires a React island.
+2. Read the current Astro docs before changing framework APIs or project structure.
+3. Use Purrfold-installed shared workflow skills when present; rerun \`./skills.sh\` if they are missing.
+4. Respect \`DESIGN.md\` for visual and UX decisions.
+5. Use shadcn primitives and semantic tokens before custom styling.
+6. Add tests proportional to risk.
+
+## Pre-Close Checklist
+
+- Did the change add unnecessary client-side surface?
+- Does it follow \`DESIGN.md\`?
+- Are loading, empty, and error states explicit?
+- Did you run \`.agents/skills/project-min-evaluation/SKILL.md\` before claiming completion?
+`;
+  }
+
   return `---
 name: project-architecture
 description: Generic project architecture and design guardrails. Use when changing UI, layout, component architecture, state flow, theming, or Next.js server/client boundaries.
@@ -36,9 +64,32 @@ Use this skill when a change touches UI, component structure, app behavior, them
 }
 
 export function renderProjectMinEvaluationSkill(
-  options: Pick<CreateOptions, 'packageManager' | 'unit' | 'e2e'>
+  options: Pick<CreateOptions, 'framework' | 'packageManager' | 'unit' | 'e2e'>
 ) {
   const run = options.packageManager === 'npm' ? 'npm run' : `${options.packageManager} run`;
+
+  if (options.framework === 'astro') {
+    return `---
+name: project-min-evaluation
+description: Run the minimum local quality checks before marking implementation work complete.
+---
+
+# Project Minimum Evaluation
+
+Run these commands from the repository root before reporting completion:
+
+\`\`\`bash
+${run} lint
+${run} typecheck
+${run} format:check
+${options.unit ? `${run} test\n` : ''}${run} doctor
+${run} check
+\`\`\`
+
+${options.e2e ? `If E2E behavior changed, also run \`${run} test:e2e\`.\n` : ''}
+If a check fails or cannot run, report the exact command, exact error, and unverified scope.
+`;
+  }
 
   return `---
 name: project-min-evaluation

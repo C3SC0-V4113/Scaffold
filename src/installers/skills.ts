@@ -29,9 +29,20 @@ const localSkillRenderers = {
   'react-doctor': renderReactDoctorSkill,
 } as const;
 
-export function selectSkillNames(options: Pick<CreateOptions, 'unit' | 'e2e'>) {
+export function selectSkillNames(options: Pick<CreateOptions, 'framework' | 'unit' | 'e2e'>) {
+  const frameworkSpecific =
+    options.framework === 'astro'
+      ? [
+          'architecture-decision-records',
+          'shadcn',
+          'systematic-debugging',
+          'typescript-advanced-types',
+          'verification-before-completion',
+        ]
+      : [...alwaysExternalSkills];
+
   return [
-    ...alwaysExternalSkills,
+    ...frameworkSpecific,
     'project-architecture',
     'project-min-evaluation',
     'decision-doc-sync',
@@ -48,7 +59,7 @@ async function installLocalSkills(
 ) {
   await executor.writeFile(
     path.join(projectRoot, '.agents', 'skills', 'project-architecture', 'SKILL.md'),
-    localSkillRenderers['project-architecture']()
+    localSkillRenderers['project-architecture']({ framework: options.framework })
   );
   await executor.writeFile(
     path.join(projectRoot, '.agents', 'skills', 'project-min-evaluation', 'SKILL.md'),
@@ -69,14 +80,14 @@ interface SkillInstallCommand {
   args: string[];
 }
 
-function selectExternalSkillEntries(options: Pick<CreateOptions, 'unit' | 'e2e'>) {
+function selectExternalSkillEntries(options: Pick<CreateOptions, 'framework' | 'unit' | 'e2e'>) {
   return selectSkillNames(options)
     .map((skillName) => externalSkillManifest.skills[skillName])
     .filter((entry): entry is SkillInstallEntry => Boolean(entry));
 }
 
 export function buildSkillInstallCommands(
-  options: Pick<CreateOptions, 'unit' | 'e2e'>
+  options: Pick<CreateOptions, 'framework' | 'unit' | 'e2e'>
 ): SkillInstallCommand[] {
   const skillsBySource = new Map<string, string[]>();
 
@@ -100,7 +111,7 @@ export function buildSkillInstallCommands(
   }));
 }
 
-export function renderSkillsScript(options: Pick<CreateOptions, 'unit' | 'e2e'>) {
+export function renderSkillsScript(options: Pick<CreateOptions, 'framework' | 'unit' | 'e2e'>) {
   const commands = buildSkillInstallCommands(options).map(({ command, args }) =>
     [command, ...args].join(' ')
   );

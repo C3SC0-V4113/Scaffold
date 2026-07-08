@@ -1,12 +1,12 @@
 ﻿# purrfold 🐱
 
-`purrfold` creates a new latest Next.js app and applies a production-oriented quality baseline: shadcn setup, strict ESLint, Prettier, Husky, React Doctor, React Scan, agent docs, Claude compatibility, and optional testing/commit tooling.
+`purrfold` creates a new latest Next.js or Astro app and applies a production-oriented quality baseline: shadcn setup, strict ESLint, Prettier, Husky, React Doctor, React Scan, agent docs, Claude compatibility, and optional testing/commit tooling.
 
 ```bash
 npx purrfold@latest my-app
 ```
 
-V1 only supports new projects created with `create-next-app@latest`. It does not retrofit existing apps or support non-Next frameworks.
+V1 supports new projects created with `create-next-app@latest` or `create-astro@latest`. It does not retrofit existing apps.
 
 ## What It Generates
 
@@ -27,6 +27,7 @@ purrfold <target-dir> [options]
 Options:
 
 - `--pm npm|pnpm|bun`: choose the package manager.
+- `--framework next|astro`: choose the framework. Defaults to Next.js.
 - `--unit` / `--no-unit`: include or skip Vitest + React Testing Library.
 - `--e2e` / `--no-e2e`: include or skip Playwright.
 - `--commitlint` / `--no-commitlint`: include or skip commitlint.
@@ -62,6 +63,7 @@ Map a user's intent to the right command:
 | The user wants… | Run |
 | --- | --- |
 | Defaults (unit tests, no e2e/commitlint) | `npx purrfold@latest my-app --yes` |
+| Scaffold Astro instead of Next.js | `npx purrfold@latest my-app --framework astro --yes` |
 | No testing at all | `npx purrfold@latest my-app --no-unit --no-e2e --yes` |
 | Full setup (unit + e2e + commitlint) | `npx purrfold@latest my-app --unit --e2e --commitlint --yes` |
 | A specific package manager | `npx purrfold@latest my-app --pm pnpm --yes` |
