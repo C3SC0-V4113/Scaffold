@@ -6,6 +6,7 @@ import {
   renderProjectArchitectureSkill,
   renderProjectMinEvaluationSkill,
   renderReactDoctorSkill,
+  renderShadcnComponentBoundariesSkill,
 } from '../templates/skills.js';
 import type { CreateOptions, Executor, SkillInstallEntry } from '../types.js';
 
@@ -29,6 +30,7 @@ const frameworkSpecificExternalSkills = {
 
 const localSkillRenderers = {
   'project-architecture': renderProjectArchitectureSkill,
+  'shadcn-component-boundaries': renderShadcnComponentBoundariesSkill,
   'project-min-evaluation': renderProjectMinEvaluationSkill,
   'decision-doc-sync': renderDecisionDocSyncSkill,
   'react-doctor': renderReactDoctorSkill,
@@ -40,6 +42,7 @@ export function selectSkillNames(options: Pick<CreateOptions, 'framework' | 'uni
     ...reactExternalSkills,
     ...frameworkSpecificExternalSkills[options.framework],
     'project-architecture',
+    'shadcn-component-boundaries',
     'project-min-evaluation',
     'decision-doc-sync',
     'react-doctor',
@@ -56,6 +59,10 @@ async function installLocalSkills(
   await executor.writeFile(
     path.join(projectRoot, '.agents', 'skills', 'project-architecture', 'SKILL.md'),
     localSkillRenderers['project-architecture']({ framework: options.framework })
+  );
+  await executor.writeFile(
+    path.join(projectRoot, '.agents', 'skills', 'shadcn-component-boundaries', 'SKILL.md'),
+    localSkillRenderers['shadcn-component-boundaries']()
   );
   await executor.writeFile(
     path.join(projectRoot, '.agents', 'skills', 'project-min-evaluation', 'SKILL.md'),
@@ -121,6 +128,10 @@ ${commands.join('\n')}
 
 export async function installSkills(projectRoot: string, options: CreateOptions, executor: Executor) {
   await installLocalSkills(projectRoot, options, executor);
+  await executor.symlinkOrJunction(
+    path.join(projectRoot, '.agents', 'skills'),
+    path.join(projectRoot, '.claude', 'skills')
+  );
   await executor.writeFile(path.join(projectRoot, 'skills.sh'), renderSkillsScript(options));
 
   for (const { command, args } of buildSkillInstallCommands(options)) {

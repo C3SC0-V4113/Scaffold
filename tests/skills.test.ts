@@ -10,6 +10,7 @@ import {
   renderDecisionDocSyncSkill,
   renderProjectArchitectureSkill,
   renderProjectMinEvaluationSkill,
+  renderShadcnComponentBoundariesSkill,
 } from '../src/templates/skills.js';
 import type { Executor } from '../src/types.js';
 
@@ -50,6 +51,7 @@ describe('skill selection', () => {
         'next-cache-components-optimizer',
         'next-dev-loop',
         'project-architecture',
+        'shadcn-component-boundaries',
         'project-min-evaluation',
         'react-doctor',
         'shadcn',
@@ -152,6 +154,7 @@ describe('external skill install script', () => {
     expect([...executor.writes.keys()]).toEqual(
       expect.arrayContaining([
         expect.stringContaining('project-architecture'),
+        expect.stringContaining('shadcn-component-boundaries'),
         expect.stringContaining('skills.sh'),
       ])
     );
@@ -171,6 +174,16 @@ describe('local skill templates', () => {
   it('snapshots generic local skills', () => {
     expect(renderProjectArchitectureSkill({ framework: 'next' })).toMatchSnapshot();
     expect(renderProjectArchitectureSkill({ framework: 'astro' })).toMatchSnapshot();
+    expect(renderShadcnComponentBoundariesSkill()).toMatchSnapshot();
     expect(renderDecisionDocSyncSkill()).toMatchSnapshot();
+  });
+
+  it('keeps registry primitives separate from product-owned components', () => {
+    const skill = renderShadcnComponentBoundariesSkill();
+
+    expect(skill).toContain('Reserve the resolved `ui` directory for registry-managed primitives');
+    expect(skill).toContain('`components/common/`');
+    expect(skill).toContain('feature → common → ui');
+    expect(skill).toContain('token variables as quarks');
   });
 });

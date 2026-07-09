@@ -17,6 +17,7 @@ V1 supports new projects created with `create-next-app@latest` or `create-astro@
 - Optional Playwright E2E testing.
 - Optional commitlint + Husky commit-msg hook.
 - Generic `README.md`, `DESIGN.md`, `AGENTS.md`, `CLAUDE.md`, `.agents/skills`, and Claude hooks in generated apps.
+- A local component-boundary skill that reserves the shadcn `ui` path for registry primitives and routes product-owned components to `common` or feature folders.
 
 ## Usage
 

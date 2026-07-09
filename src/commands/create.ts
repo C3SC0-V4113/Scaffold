@@ -209,8 +209,8 @@ export async function runCreate(targetDir: string, flags: RawCreateFlags) {
   await initializeShadcn(projectRoot, options, executor);
   await installQualityLayer(projectRoot, options, executor);
   await installTestingFiles(projectRoot, options, executor);
+  await installSkills(projectRoot, options, executor);
   if (options.framework === 'next') {
-    await installSkills(projectRoot, options, executor);
     await installDocsAndClaude(projectRoot, options, executor);
   }
   await installShadcnMcp(projectRoot, options, executor);

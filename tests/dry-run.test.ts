@@ -71,6 +71,13 @@ describe('dry-run integration', () => {
     expect(output).toContain('@vitejs/plugin-react@5.2.0');
     expect(output).not.toContain('@vitejs/plugin-react@5.1.2');
     expect(output.replaceAll('\\', '/')).toContain('my-app/src/components/Button.astro');
+    expect(output.replaceAll('\\', '/')).toContain(
+      'my-app/.agents/skills/shadcn-component-boundaries/SKILL.md'
+    );
+    expect(output.replaceAll('\\', '/')).toContain('my-app/skills.sh');
+    expect(output.replaceAll('\\', '/')).toContain(
+      'my-app/.claude/skills ->'
+    );
     expect(output).not.toContain('--no-ai');
     expect(output).not.toContain('create-next-app@latest');
   });

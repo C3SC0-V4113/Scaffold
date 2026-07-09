@@ -189,6 +189,7 @@ allowBuilds:
     expect(readme).toContain('args = ["dlx", "shadcn@latest", "mcp"]');
     expect(readme).toContain('--shadcn-args --preset b3REw8vwo');
     expect(agents).toContain('shadcn presets are supported');
+    expect(agents).toContain('.agents/skills/shadcn-component-boundaries/SKILL.md');
   });
 
   it('follows the Next.js Vitest guide with React and tsconfig-paths plugins', () => {
