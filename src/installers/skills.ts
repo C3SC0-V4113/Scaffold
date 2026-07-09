@@ -36,7 +36,9 @@ const localSkillRenderers = {
   'react-doctor': renderReactDoctorSkill,
 } as const;
 
-export function selectSkillNames(options: Pick<CreateOptions, 'framework' | 'unit' | 'e2e'>) {
+type SkillSelectionOptions = Pick<CreateOptions, 'framework' | 'unit' | 'e2e' | 'motion'>;
+
+export function selectSkillNames(options: SkillSelectionOptions) {
   return [
     ...frameworkAgnosticExternalSkills,
     ...reactExternalSkills,
@@ -48,6 +50,7 @@ export function selectSkillNames(options: Pick<CreateOptions, 'framework' | 'uni
     'react-doctor',
     ...(options.unit ? ['vitest'] : []),
     ...(options.e2e ? ['playwright-best-practices', 'playwright-cli'] : []),
+    ...(options.motion ? ['motion-framer'] : []),
   ];
 }
 
@@ -83,14 +86,14 @@ interface SkillInstallCommand {
   args: string[];
 }
 
-function selectExternalSkillEntries(options: Pick<CreateOptions, 'framework' | 'unit' | 'e2e'>) {
+function selectExternalSkillEntries(options: SkillSelectionOptions) {
   return selectSkillNames(options)
     .map((skillName) => externalSkillManifest.skills[skillName])
     .filter((entry): entry is SkillInstallEntry => Boolean(entry));
 }
 
 export function buildSkillInstallCommands(
-  options: Pick<CreateOptions, 'framework' | 'unit' | 'e2e'>
+  options: SkillSelectionOptions
 ): SkillInstallCommand[] {
   const skillsBySource = new Map<string, string[]>();
 
@@ -114,7 +117,7 @@ export function buildSkillInstallCommands(
   }));
 }
 
-export function renderSkillsScript(options: Pick<CreateOptions, 'framework' | 'unit' | 'e2e'>) {
+export function renderSkillsScript(options: SkillSelectionOptions) {
   const commands = buildSkillInstallCommands(options).map(({ command, args }) =>
     [command, ...args].join(' ')
   );

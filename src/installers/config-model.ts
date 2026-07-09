@@ -55,6 +55,7 @@ export const DEPENDENCY_VERSIONS: Record<string, string> = {
   'eslint-plugin-astro': '1.7.0',
   'typescript-eslint': '8.63.0',
   'prettier-plugin-astro': '0.14.1',
+  motion: '12.42.2',
 };
 
 const ASTRO_DEPENDENCY_VERSION_OVERRIDES: Record<string, string> = {

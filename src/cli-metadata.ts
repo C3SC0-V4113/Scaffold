@@ -58,6 +58,11 @@ export const cliOptions: CliOption[] = [
     default: 'skipped',
   },
   {
+    flags: '--motion',
+    description: 'Install Motion for React and the motion-framer agent skill.',
+    default: 'skipped (opt-in only)',
+  },
+  {
     flags: '--yes',
     description: 'Use non-interactive defaults (no prompts).',
     default: 'interactive prompts',
@@ -114,6 +119,10 @@ export const cliScenarios: CliScenario[] = [
   {
     intent: 'Use a specific package manager (pnpm or bun)',
     command: 'npx purrfold@latest my-app --pm pnpm --yes',
+  },
+  {
+    intent: 'Install Motion for React and its agent skill',
+    command: 'npx purrfold@latest my-app --motion --yes',
   },
   {
     intent: 'Pick the icon library for the home page cat',

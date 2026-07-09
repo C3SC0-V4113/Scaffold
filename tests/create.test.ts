@@ -35,9 +35,17 @@ describe('create option resolution', () => {
     const options = await resolveCreateOptions('my-app', { yes: true });
 
     expect(options.framework).toBe('next');
+    expect(options.motion).toBe(false);
     expect(options.ssr).toBe(false);
     expect(options.astroAdapter).toBeUndefined();
     expect(mockSelect).not.toHaveBeenCalled();
+    expect(mockConfirm).not.toHaveBeenCalled();
+  });
+
+  it('enables Motion only through its explicit flag', async () => {
+    const options = await resolveCreateOptions('my-app', { motion: true, yes: true });
+
+    expect(options.motion).toBe(true);
     expect(mockConfirm).not.toHaveBeenCalled();
   });
 

@@ -128,10 +128,55 @@ function runGeneratedCheck(projectRoot, packageManager, env) {
   return result.output;
 }
 
+function runMotionImportCheck(projectRoot, env) {
+  const result = runProcess(
+    process.execPath,
+    ['--input-type=module', '--eval', "import('motion/react')"],
+    { cwd: projectRoot, env, shell: false }
+  );
+
+  if (result.status !== 0) {
+    throw new Error(`Motion React import failed in ${projectRoot}\n${result.output}`);
+  }
+}
+
 export function assertGeneratedApp(projectRoot, expected) {
   const framework = expected.framework ?? 'next';
   const packageJson = readJson(path.join(projectRoot, 'package.json'));
   const eslintConfig = readFileSync(path.join(projectRoot, 'eslint.config.mjs'), 'utf8');
+  const skillsScript = readFileSync(path.join(projectRoot, 'skills.sh'), 'utf8');
+
+  if (expected.motion) {
+    if (!packageJson.dependencies?.motion?.includes('12.42.2')) {
+      throw new Error('package.json should include Motion 12.42.2 as a runtime dependency');
+    }
+    assertIncludes(skillsScript, 'freshtechbro/claudedesignskills', 'skills.sh');
+    assertIncludes(skillsScript, '--skill motion-framer', 'skills.sh');
+    const motionComponent =
+      framework === 'astro'
+        ? 'src/components/common/motion-main.tsx'
+        : 'components/common/motion-main.tsx';
+    const globalStylesheet =
+      framework === 'astro' ? 'src/styles/global.css' : 'app/globals.css';
+    assertPath(projectRoot, motionComponent);
+    assertIncludes(
+      readFileSync(path.join(projectRoot, globalStylesheet), 'utf8'),
+      '@media (prefers-reduced-motion: reduce)',
+      globalStylesheet
+    );
+  } else {
+    if (packageJson.dependencies?.motion) {
+      throw new Error('package.json should not include Motion unless --motion is selected');
+    }
+    assertNotIncludes(skillsScript, 'motion-framer', 'skills.sh');
+    assertPath(
+      projectRoot,
+      framework === 'astro'
+        ? 'src/components/common/motion-main.tsx'
+        : 'components/common/motion-main.tsx',
+      false
+    );
+  }
 
   if (framework === 'astro') {
     const tsconfig = readJson(path.join(projectRoot, 'tsconfig.json'));
@@ -466,6 +511,9 @@ export async function runScenario(scenario, context, cliPath, options = {}) {
       ssrAdapter: scenario.ssrAdapter,
     });
     const checkOutput = runGeneratedCheck(projectRoot, scenario.packageManager, context.env);
+    if (scenario.expect.motion) {
+      runMotionImportCheck(projectRoot, context.env);
+    }
     return { name: targetName, output: result.output, checkOutput };
   }
 

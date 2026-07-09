@@ -7,6 +7,8 @@ import {
   humanizeProjectName,
   mergePnpmBuildPolicy,
   mergePnpmHardening,
+  motionMainComponent,
+  motionMainUnitTest,
   reactDoctorConfig,
   renderAgents,
   renderAstroHomeHero,
@@ -50,6 +52,15 @@ describe('template snapshots', () => {
     expect(config).toContain('"deslop/unused-dev-dependency"');
   });
 
+  it('suppresses only React Doctor 0.5.4 reduced-motion false positives for Motion projects', () => {
+    const config = renderReactDoctorConfig('next', true);
+
+    expect(config).toContain('"react-doctor/require-reduced-motion"');
+    expect(renderReactDoctorConfig('next', false)).not.toContain(
+      'react-doctor/require-reduced-motion'
+    );
+  });
+
   it('merges the pnpm build allowlist without clobbering workspace config', () => {
     const config = mergePnpmBuildPolicy(`packages:
   - apps/*
@@ -77,6 +88,7 @@ allowBuilds:
     unit: true,
     e2e: true,
     commitlint: true,
+    motion: false,
     yes: true,
     dryRun: false,
     skipInstall: false,
@@ -149,6 +161,30 @@ allowBuilds:
     expect(page).toContain('export const metadata');
   });
 
+  it('uses the official Motion imports when Motion is enabled', () => {
+    const nextPage = renderHomePage('my-app', 'lucide', true);
+    const astroHero = renderAstroHomeHero('my-app', 'lucide', true);
+
+    expect(nextPage).toContain("import { MotionMain } from '@/components/common/motion-main'");
+    expect(nextPage).toContain('<MotionMain');
+    expect(astroHero).toContain("import { MotionMain } from '@/components/common/motion-main'");
+    expect(astroHero).toContain('<MotionMain');
+    expect(motionMainComponent).toContain("from 'motion/react'");
+    expect(motionMainComponent).toContain('LazyMotion');
+    expect(motionMainComponent).toContain('useReducedMotion');
+    expect(motionMainComponent).toContain(
+      'initial={shouldReduceMotion ? false : { opacity: 0, y: 8 }}'
+    );
+    expect(motionMainComponent).toContain('animate={{ opacity: 1, y: 0 }}');
+    expect(motionMainComponent).toContain("{ duration: 0.2, ease: 'easeOut' }");
+    expect(motionMainComponent).toContain('? { duration: 0 }');
+    expect(motionMainComponent.indexOf('{...props}')).toBeLessThan(
+      motionMainComponent.indexOf('initial={shouldReduceMotion')
+    );
+    expect(motionMainComponent).toContain("Omit<\n  HTMLMotionProps<'main'>");
+    expect(motionMainComponent).toContain("| 'whileHover'");
+  });
+
   it('renders an Astro ESLint config with Astro and TypeScript support', () => {
     const config = renderEslintConfig({ framework: 'astro', unit: true, e2e: true });
 
@@ -178,6 +214,21 @@ allowBuilds:
     expect(astroRootLayout).toContain('<slot />');
   });
 
+  it('hydrates the Astro React island only when Motion is enabled', () => {
+    expect(renderAstroHomePage('my-app', true)).toContain('<HomeHero client:load />');
+    expect(renderAstroHomePage('my-app', false)).toContain('<HomeHero />');
+    expect(renderAstroHomePage('my-app', false)).not.toContain('client:');
+  });
+
+  it('generates behavioral coverage for normal and reduced Motion preferences', () => {
+    expect(motionMainUnitTest).toContain("it('uses a restrained entrance animation'");
+    expect(motionMainUnitTest).toContain(
+      "it('removes movement and duration when reduced motion is requested'"
+    );
+    expect(motionMainUnitTest).toContain("transition: { duration: 0.2, ease: 'easeOut' }");
+    expect(motionMainUnitTest).toContain('transition: { duration: 0 }');
+  });
+
   it('documents shadcn MCP setup and preset compatibility', () => {
     const readme = renderReadme({ ...options, packageManager: 'pnpm', mcp: true });
     const agents = renderAgents({ ...options, packageManager: 'pnpm', mcp: true });
@@ -190,6 +241,32 @@ allowBuilds:
     expect(readme).toContain('--shadcn-args --preset b3REw8vwo');
     expect(agents).toContain('shadcn presets are supported');
     expect(agents).toContain('.agents/skills/shadcn-component-boundaries/SKILL.md');
+  });
+
+  it('adds authoritative Motion guidance only when Motion is selected', () => {
+    const readme = renderReadme({ ...options, motion: true });
+    const agents = renderAgents({ ...options, motion: true });
+    const defaultReadme = renderReadme(options);
+    const defaultAgents = renderAgents(options);
+
+    for (const document of [readme, agents]) {
+      expect(document).toContain('motion/react');
+      expect(document).toContain('motion/react-client');
+      expect(document).toContain('prefers-reduced-motion');
+      expect(document).toContain('transform');
+      expect(document).toContain('opacity');
+      expect(document).toContain('framer-motion');
+      expect(document).toContain('.agents/skills/motion-framer/SKILL.md');
+    }
+    expect(readme).not.toContain('Astro/Vite requires no additional Motion configuration');
+    expect(defaultReadme).not.toContain('motion/react');
+    expect(defaultAgents).not.toContain('motion/react');
+
+    const astroReadme = renderReadme({ ...options, framework: 'astro', motion: true });
+    expect(astroReadme).toContain('Astro/Vite requires no additional Motion configuration');
+    expect(readme).toMatchSnapshot();
+    expect(agents).toMatchSnapshot();
+    expect(astroReadme).toMatchSnapshot();
   });
 
   it('follows the Next.js Vitest guide with React and tsconfig-paths plugins', () => {

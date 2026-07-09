@@ -44,7 +44,7 @@ class FailingRunExecutor implements Executor {
 
 describe('skill selection', () => {
   it('selects always-on skills', () => {
-    expect(selectSkillNames({ framework: 'next', unit: false, e2e: false })).toEqual(
+    expect(selectSkillNames({ framework: 'next', unit: false, e2e: false, motion: false })).toEqual(
       expect.arrayContaining([
         'architecture-decision-records',
         'next-cache-components-adoption',
@@ -58,22 +58,22 @@ describe('skill selection', () => {
         'verification-before-completion',
       ])
     );
-    expect(selectSkillNames({ framework: 'next', unit: false, e2e: false })).not.toEqual(
+    expect(selectSkillNames({ framework: 'next', unit: false, e2e: false, motion: false })).not.toEqual(
       expect.arrayContaining(['next-best-practices'])
     );
   });
 
   it('adds Vitest and Playwright skills only when selected', () => {
-    expect(selectSkillNames({ framework: 'next', unit: true, e2e: true })).toEqual(
+    expect(selectSkillNames({ framework: 'next', unit: true, e2e: true, motion: false })).toEqual(
       expect.arrayContaining(['vitest', 'playwright-best-practices', 'playwright-cli'])
     );
-    expect(selectSkillNames({ framework: 'next', unit: false, e2e: false })).not.toEqual(
+    expect(selectSkillNames({ framework: 'next', unit: false, e2e: false, motion: false })).not.toEqual(
       expect.arrayContaining(['vitest', 'playwright-best-practices', 'playwright-cli'])
     );
   });
 
   it('drops Next-only workflow skills for Astro', () => {
-    expect(selectSkillNames({ framework: 'astro', unit: false, e2e: false })).not.toEqual(
+    expect(selectSkillNames({ framework: 'astro', unit: false, e2e: false, motion: false })).not.toEqual(
       expect.arrayContaining([
         'next-cache-components-adoption',
         'next-cache-components-optimizer',
@@ -81,11 +81,23 @@ describe('skill selection', () => {
       ])
     );
   });
+
+  it('adds motion-framer only when Motion is selected', () => {
+    expect(selectSkillNames({ framework: 'next', unit: false, e2e: false, motion: true })).toContain(
+      'motion-framer'
+    );
+    expect(selectSkillNames({ framework: 'astro', unit: false, e2e: false, motion: true })).toContain(
+      'motion-framer'
+    );
+    expect(selectSkillNames({ framework: 'next', unit: false, e2e: false, motion: false })).not.toContain(
+      'motion-framer'
+    );
+  });
 });
 
 describe('external skill install script', () => {
   it('renders npx skills commands grouped by source', () => {
-    const script = renderSkillsScript({ framework: 'next', unit: false, e2e: false });
+    const script = renderSkillsScript({ framework: 'next', unit: false, e2e: false, motion: false });
 
     expect(script).toContain(
       'npx --yes skills@latest add https://github.com/vercel-labs/agent-skills --skill vercel-composition-patterns --skill vercel-react-best-practices --agent codex --copy --yes'
@@ -99,7 +111,7 @@ describe('external skill install script', () => {
   });
 
   it('omits Next-only skill commands for Astro', () => {
-    const script = renderSkillsScript({ framework: 'astro', unit: false, e2e: false });
+    const script = renderSkillsScript({ framework: 'astro', unit: false, e2e: false, motion: false });
 
     expect(script).toContain(
       'npx --yes skills@latest add https://github.com/astrolicious/agent-skills --skill astro --agent codex --copy --yes'
@@ -110,8 +122,8 @@ describe('external skill install script', () => {
   });
 
   it('adds Vitest and Playwright install commands only when selected', () => {
-    const selectedCommands = buildSkillInstallCommands({ framework: 'next', unit: true, e2e: true });
-    const unselectedScript = renderSkillsScript({ framework: 'next', unit: false, e2e: false });
+    const selectedCommands = buildSkillInstallCommands({ framework: 'next', unit: true, e2e: true, motion: false });
+    const unselectedScript = renderSkillsScript({ framework: 'next', unit: false, e2e: false, motion: false });
     const selectedScript = selectedCommands
       .map(({ command, args }) => [command, ...args].join(' '))
       .join('\n');
@@ -124,6 +136,26 @@ describe('external skill install script', () => {
     expect(unselectedScript).not.toContain('--skill vitest');
     expect(unselectedScript).not.toContain('--skill playwright-best-practices');
     expect(unselectedScript).not.toContain('--skill playwright-cli');
+  });
+
+  it('mirrors the conditional motion-framer install in skills.sh', () => {
+    const selected = renderSkillsScript({
+      framework: 'next',
+      unit: false,
+      e2e: false,
+      motion: true,
+    });
+    const unselected = renderSkillsScript({
+      framework: 'next',
+      unit: false,
+      e2e: false,
+      motion: false,
+    });
+
+    expect(selected).toContain(
+      'npx --yes skills@latest add freshtechbro/claudedesignskills --skill motion-framer --agent codex --copy --yes'
+    );
+    expect(unselected).not.toContain('motion-framer');
   });
 
   it('continues project setup when an external skill install fails', async () => {
@@ -141,6 +173,7 @@ describe('external skill install script', () => {
           unit: false,
           e2e: false,
           commitlint: false,
+          motion: false,
           yes: true,
           dryRun: false,
           skipInstall: false,

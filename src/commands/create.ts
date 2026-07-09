@@ -5,6 +5,7 @@ import { defaultFramework, frameworkRegistry, isFramework } from '../frameworks/
 import { createAstroApp } from '../installers/astro.js';
 import { installDocsAndClaude } from '../installers/docs.js';
 import { createNextApp } from '../installers/next.js';
+import { installMotion } from '../installers/motion.js';
 import { installQualityLayer } from '../installers/quality.js';
 import { installShadcnMcp } from '../installers/shadcn-mcp.js';
 import { initializeShadcn } from '../installers/shadcn.js';
@@ -21,6 +22,7 @@ export interface RawCreateFlags {
   unit?: boolean;
   e2e?: boolean;
   commitlint?: boolean;
+  motion?: boolean;
   yes?: boolean;
   dryRun?: boolean;
   skipInstall?: boolean;
@@ -184,6 +186,9 @@ export async function resolveCreateOptions(
     unit: await resolveBoolean(flags.unit, yes, true, 'Install Vitest + React Testing Library?'),
     e2e: await resolveBoolean(flags.e2e, yes, false, 'Install Playwright E2E testing?'),
     commitlint: await resolveBoolean(flags.commitlint, yes, false, 'Install commitlint?'),
+    // Motion is deliberately flag-only: interactive mode and --yes both leave
+    // it disabled unless the caller explicitly passes --motion.
+    motion: flags.motion ?? false,
     yes,
     dryRun: flags.dryRun ?? false,
     skipInstall: flags.skipInstall ?? false,
@@ -208,6 +213,7 @@ export async function runCreate(targetDir: string, flags: RawCreateFlags) {
       : await createNextApp(options, executor);
   await initializeShadcn(projectRoot, options, executor);
   await installQualityLayer(projectRoot, options, executor);
+  await installMotion(projectRoot, options, executor);
   await installTestingFiles(projectRoot, options, executor);
   await installSkills(projectRoot, options, executor);
   if (options.framework === 'next') {

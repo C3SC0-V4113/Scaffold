@@ -8,6 +8,7 @@ import {
   gitAttributes,
   mergePnpmBuildPolicy,
   mergePnpmHardening,
+  motionMainComponent,
   preCommitHook,
   prePushHook,
   prettierIgnore,
@@ -173,19 +174,31 @@ async function writeAppShell(
   projectRoot: string,
   executor: Executor,
   iconLibrary: IconLibrary,
-  framework: CreateOptions['framework']
+  framework: CreateOptions['framework'],
+  motion: boolean
 ) {
   const projectName = path.basename(projectRoot);
+
+  if (motion) {
+    const componentsRoot =
+      framework === 'astro'
+        ? path.join(projectRoot, 'src', 'components')
+        : path.join(projectRoot, 'components');
+    await executor.writeFile(
+      path.join(componentsRoot, 'common', 'motion-main.tsx'),
+      motionMainComponent
+    );
+  }
 
   if (framework === 'astro') {
     await executor.remove(path.join(projectRoot, 'src', 'components', 'Button.astro'));
     await executor.writeFile(
       path.join(projectRoot, 'src', 'components', 'home-hero.tsx'),
-      renderAstroHomeHero(projectName, iconLibrary)
+      renderAstroHomeHero(projectName, iconLibrary, motion)
     );
     await executor.writeFile(
       path.join(projectRoot, 'src', 'pages', 'index.astro'),
-      renderAstroHomePage(projectName)
+      renderAstroHomePage(projectName, motion)
     );
     await executor.writeFile(path.join(projectRoot, 'src', 'layouts', 'main.astro'), astroRootLayout);
     return;
@@ -197,7 +210,7 @@ async function writeAppShell(
   );
   await executor.writeFile(
     path.join(projectRoot, 'app', 'page.tsx'),
-    renderHomePage(projectName, iconLibrary)
+    renderHomePage(projectName, iconLibrary, motion)
   );
 }
 
@@ -220,7 +233,7 @@ export async function installQualityLayer(
   await executor.writeFile(path.join(projectRoot, '.gitattributes'), gitAttributes);
   await executor.writeFile(
     path.join(projectRoot, 'doctor.config.json'),
-    renderReactDoctorConfig(options.framework)
+    renderReactDoctorConfig(options.framework, options.motion)
   );
   await appendGitIgnore(projectRoot, executor);
 
@@ -261,7 +274,7 @@ export async function installQualityLayer(
   }
 
   const iconLibrary = await reconcileIconLibrary(projectRoot, options, executor);
-  await writeAppShell(projectRoot, executor, iconLibrary, options.framework);
+  await writeAppShell(projectRoot, executor, iconLibrary, options.framework, options.motion);
 
   // pnpm-only: merge the remaining supply-chain hardening after installs.
   if (options.packageManager === 'pnpm') {

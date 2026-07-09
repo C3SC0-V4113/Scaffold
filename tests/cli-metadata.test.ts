@@ -23,6 +23,7 @@ describe('cli metadata', () => {
       '--mcp',
       '--no-mcp',
       '--icons',
+      '--motion',
     ];
 
     for (const flag of flags) {
@@ -43,6 +44,7 @@ describe('cli metadata', () => {
       commands.some((command) => command.includes('--no-unit') && command.includes('--no-e2e'))
     ).toBe(true);
     expect(commands.some((command) => command.includes('--mcp'))).toBe(true);
+    expect(commands.some((command) => command.includes('--motion'))).toBe(true);
     expect(commands.some((command) => command.includes('--preset b3REw8vwo'))).toBe(true);
     expect(
       commands.some((command) => command.includes('--framework astro --ssr --adapter cloudflare'))

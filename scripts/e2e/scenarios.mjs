@@ -3,8 +3,8 @@
     name: 'npm-default-unit',
     kind: 'real',
     packageManager: 'npm',
-    args: ['--pm', 'npm', '--unit', '--no-e2e', '--no-commitlint', '--yes'],
-    expect: { unit: true, e2e: false, commitlint: false, pnpm: false, mcp: false },
+    args: ['--pm', 'npm', '--unit', '--no-e2e', '--no-commitlint', '--motion', '--yes'],
+    expect: { unit: true, e2e: false, commitlint: false, pnpm: false, mcp: false, motion: true },
     quick: false,
   },
   {
@@ -45,8 +45,8 @@
     kind: 'real',
     framework: 'astro',
     packageManager: 'npm',
-    args: ['--framework', 'astro', '--pm', 'npm', '--unit', '--no-e2e', '--no-commitlint', '--yes'],
-    expect: { unit: true, e2e: false, commitlint: false, pnpm: false, mcp: false },
+    args: ['--framework', 'astro', '--pm', 'npm', '--unit', '--no-e2e', '--no-commitlint', '--motion', '--yes'],
+    expect: { unit: true, e2e: false, commitlint: false, pnpm: false, mcp: false, motion: true },
     quick: false,
   },
   {
@@ -86,7 +86,30 @@
     packageManager: 'npm',
     args: ['--pm', 'npm', '--yes', '--dry-run'],
     expectOutput: ['run npx create-next-app@latest', 'run npx shadcn@latest init --defaults'],
-    rejectOutput: ['mcp init --client'],
+    rejectOutput: ['mcp init --client', 'motion@12.42.2', 'motion-framer'],
+    quick: true,
+  },
+  {
+    name: 'dry-run-motion-next-npm',
+    kind: 'dry-run',
+    packageManager: 'npm',
+    args: ['--pm', 'npm', '--motion', '--yes', '--dry-run'],
+    expectOutput: [
+      'run npm install motion@12.42.2',
+      'freshtechbro/claudedesignskills --skill motion-framer',
+    ],
+    quick: true,
+  },
+  {
+    name: 'dry-run-motion-astro-pnpm',
+    kind: 'dry-run',
+    framework: 'astro',
+    packageManager: 'pnpm',
+    args: ['--framework', 'astro', '--pm', 'pnpm', '--motion', '--yes', '--dry-run'],
+    expectOutput: [
+      'run pnpm add motion@12.42.2',
+      'freshtechbro/claudedesignskills --skill motion-framer',
+    ],
     quick: true,
   },
   {

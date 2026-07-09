@@ -18,6 +18,10 @@ export const externalSkillManifest: SkillInstallManifest = {
       source: 'vercel/next.js',
       skill: 'next-dev-loop',
     },
+    'motion-framer': {
+      source: 'freshtechbro/claudedesignskills',
+      skill: 'motion-framer',
+    },
     'playwright-best-practices': {
       source: 'currents-dev/playwright-best-practices-skill',
       skill: 'playwright-best-practices',

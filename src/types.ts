@@ -19,6 +19,8 @@ export interface CreateOptions {
   unit: boolean;
   e2e: boolean;
   commitlint: boolean;
+  /** Whether to install Motion and its agent skill. Opt-in only. */
+  motion: boolean;
   yes: boolean;
   dryRun: boolean;
   skipInstall: boolean;

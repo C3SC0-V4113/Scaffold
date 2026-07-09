@@ -1,5 +1,243 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
+exports[`template snapshots > adds authoritative Motion guidance only when Motion is selected 1`] = `
+"# Next Quality App
+
+Next.js app scaffolded with strict quality tooling, shadcn, React Doctor, React Scan, agent docs, and Claude hooks.
+
+## Development
+
+\`\`\`bash
+npm run dev
+\`\`\`
+
+## Quality
+
+\`\`\`bash
+npm run lint
+npm run typecheck
+npm run format:check
+npm run test
+npm run doctor
+npm run check
+\`\`\`
+
+## Tooling
+
+- Next.js App Router with TypeScript and Tailwind.
+- shadcn UI initialized through the shadcn CLI.
+- ESLint flat config with strict Next.js, React, import ordering, and Prettier integration.
+- React Doctor and React Scan.
+- Vitest and React Testing Library.
+- Playwright E2E testing.
+- Conventional commit linting.
+- Motion for React animations.
+
+## Motion
+
+Import React APIs from \`motion/react\`. In the Next.js App Router, use \`motion/react\` from a client component or import server-compatible components from \`motion/react-client\`.
+
+- Use animation only when it clarifies state or spatial relationships.
+- Prefer \`transform\` and \`opacity\` for smooth rendering.
+- Respect \`prefers-reduced-motion\`; Motion's \`useReducedMotion\` can adapt non-essential movement.
+- Agent guidance: \`.agents/skills/motion-framer/SKILL.md\`.
+- If that external skill recommends \`framer-motion\`, this project's \`motion\` dependency and the current official Motion documentation take precedence.
+
+## shadcn MCP
+
+shadcn MCP setup was not run by default because some clients may update user-level tool config.
+
+Manual setup commands for this package manager:
+
+\`\`\`bash
+npx shadcn@latest mcp init --client claude
+npx shadcn@latest mcp init --client codex
+npx shadcn@latest mcp init --client opencode
+\`\`\`
+
+Codex may require user-level configuration in \`~/.codex/config.toml\`:
+
+\`\`\`toml
+[mcp_servers.shadcn]
+command = "npx"
+args = ["shadcn@latest", "mcp"]
+\`\`\`
+
+## shadcn Presets
+
+purrfold forwards additional shadcn CLI arguments, including official presets:
+
+\`\`\`bash
+npx purrfold@latest my-app --shadcn-args --preset b3REw8vwo --yes
+npx purrfold@latest my-app --shadcn-args --preset b1sSLwZVp --yes
+npx purrfold@latest my-app --shadcn-args --preset b2qMI9ufY --yes
+npx purrfold@latest my-app --shadcn-args --preset b5eH0WVTX --yes
+\`\`\`
+
+## Agent Docs
+
+- \`AGENTS.md\`: agent workflow and quality gates.
+- \`DESIGN.md\`: generic UI/UX guardrails.
+- \`.agents/skills\`: local and installed skills.
+- \`CLAUDE.md\`: Claude Code pointer to \`AGENTS.md\`.
+"
+`;
+
+exports[`template snapshots > adds authoritative Motion guidance only when Motion is selected 2`] = `
+"<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This project uses Next.js 16 or newer. APIs and conventions may differ from model memory. Read relevant guides in \`node_modules/next/dist/docs/\` before changing Next.js code.
+
+<!-- END:nextjs-agent-rules -->
+
+## Quality Gates
+
+Run these before claiming implementation complete:
+
+1. \`npm run lint\`
+2. \`npm run typecheck\`
+3. \`npm run format:check\`
+4. \`npm run test\`
+- Run \`npm run test:e2e\` when E2E behavior changed.
+- \`npm run doctor\`
+- \`npm run check\`
+
+Do not use \`next lint\`; use the ESLint CLI.
+
+## References
+
+- Architecture and scripts: \`README.md\`
+- Design rules: \`DESIGN.md\`
+- Next.js reference docs: \`node_modules/next/dist/docs/\`
+- Next.js agent rules: generated \`AGENTS.md\` / \`CLAUDE.md\`
+- Purrfold-installed supported Next.js workflow skills from \`vercel/next.js\`: \`.agents/skills/next-cache-components-adoption/SKILL.md\`, \`.agents/skills/next-cache-components-optimizer/SKILL.md\`, and \`.agents/skills/next-dev-loop/SKILL.md\`
+- If bundled Next.js docs are missing, run \`npx @next/codemod@canary agents-md\`.
+- If Purrfold-installed supported workflow skills are missing, rerun \`./skills.sh\`.
+- Component placement rules: \`.agents/skills/shadcn-component-boundaries/SKILL.md\`
+- Minimum evaluation: \`.agents/skills/project-min-evaluation/SKILL.md\`
+- Vitest guidance: \`.agents/skills/vitest/SKILL.md\`
+- Playwright guidance: \`.agents/skills/playwright-best-practices/SKILL.md\`
+- Commit messages are checked with commitlint.
+
+## Motion Rules
+
+- In the Next.js App Router, use \`motion/react\` in client components or \`motion/react-client\` for server-compatible components.
+- Import current React APIs from \`motion/react\`.
+- Animate purposefully, prefer \`transform\` and \`opacity\`, and respect \`prefers-reduced-motion\`.
+- Read \`.agents/skills/motion-framer/SKILL.md\` for animation guidance.
+- If the external skill recommends \`framer-motion\`, the installed \`motion\` dependency and current official Motion documentation take precedence.
+
+## shadcn MCP
+
+shadcn MCP setup is optional and was not run by default.
+
+\`\`\`bash
+npx shadcn@latest mcp init --client claude
+npx shadcn@latest mcp init --client codex
+npx shadcn@latest mcp init --client opencode
+\`\`\`
+
+For Codex, verify \`~/.codex/config.toml\` if MCP is not available:
+
+\`\`\`toml
+[mcp_servers.shadcn]
+command = "npx"
+args = ["shadcn@latest", "mcp"]
+\`\`\`
+
+shadcn presets are supported through \`--shadcn-args --preset <id>\`.
+
+## Claude Code
+
+\`CLAUDE.md\` points to this file. \`.claude/skills\` should link to \`.agents/skills\`.
+"
+`;
+
+exports[`template snapshots > adds authoritative Motion guidance only when Motion is selected 3`] = `
+"# Astro Quality App
+
+Astro app scaffolded with strict quality tooling, shadcn, React Doctor, React Scan, agent docs, and Claude hooks.
+
+## Development
+
+\`\`\`bash
+npm run dev
+\`\`\`
+
+## Quality
+
+\`\`\`bash
+npm run lint
+npm run typecheck
+npm run format:check
+npm run test
+npm run doctor
+npm run check
+\`\`\`
+
+## Tooling
+
+- Astro project with TypeScript, Tailwind, and React islands.
+- shadcn UI initialized through the shadcn CLI.
+- ESLint flat config with strict Astro, React, import ordering, and Prettier integration.
+- React Doctor and React Scan.
+- Vitest and React Testing Library.
+- Playwright E2E testing.
+- Conventional commit linting.
+- Motion for React animations.
+
+## Motion
+
+Import React APIs from \`motion/react\`. Astro/Vite requires no additional Motion configuration. Use Motion inside React islands.
+
+- Use animation only when it clarifies state or spatial relationships.
+- Prefer \`transform\` and \`opacity\` for smooth rendering.
+- Respect \`prefers-reduced-motion\`; Motion's \`useReducedMotion\` can adapt non-essential movement.
+- Agent guidance: \`.agents/skills/motion-framer/SKILL.md\`.
+- If that external skill recommends \`framer-motion\`, this project's \`motion\` dependency and the current official Motion documentation take precedence.
+
+## shadcn MCP
+
+shadcn MCP setup was not run by default because some clients may update user-level tool config.
+
+Manual setup commands for this package manager:
+
+\`\`\`bash
+npx shadcn@latest mcp init --client claude
+npx shadcn@latest mcp init --client codex
+npx shadcn@latest mcp init --client opencode
+\`\`\`
+
+Codex may require user-level configuration in \`~/.codex/config.toml\`:
+
+\`\`\`toml
+[mcp_servers.shadcn]
+command = "npx"
+args = ["shadcn@latest", "mcp"]
+\`\`\`
+
+## shadcn Presets
+
+purrfold forwards additional shadcn CLI arguments, including official presets:
+
+\`\`\`bash
+npx purrfold@latest my-app --shadcn-args --preset b3REw8vwo --yes
+npx purrfold@latest my-app --shadcn-args --preset b1sSLwZVp --yes
+npx purrfold@latest my-app --shadcn-args --preset b2qMI9ufY --yes
+npx purrfold@latest my-app --shadcn-args --preset b5eH0WVTX --yes
+\`\`\`
+
+## Agent Docs
+
+- \`AGENTS.md\`: agent workflow and quality gates.
+- \`DESIGN.md\`: generic UI/UX guardrails.
+- \`.agents/skills\`: local and installed skills.
+- \`CLAUDE.md\`: Claude Code pointer to \`AGENTS.md\`.
+"
+`;
+
 exports[`template snapshots > snapshots ESLint and React Doctor config 1`] = `
 "import vitest from '@vitest/eslint-plugin';
 import { defineConfig, globalIgnores } from 'eslint/config';

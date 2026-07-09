@@ -16,6 +16,7 @@ V1 supports new projects created with `create-next-app@latest` or `create-astro@
 - Optional Vitest + React Testing Library.
 - Optional Playwright E2E testing.
 - Optional commitlint + Husky commit-msg hook.
+- Optional Motion for React plus the `motion-framer` agent skill.
 - Generic `README.md`, `DESIGN.md`, `AGENTS.md`, `CLAUDE.md`, `.agents/skills`, and Claude hooks in generated apps.
 - A local component-boundary skill that reserves the shadcn `ui` path for registry primitives and routes product-owned components to `common` or feature folders.
 
@@ -34,6 +35,7 @@ Options:
 - `--unit` / `--no-unit`: include or skip Vitest + React Testing Library.
 - `--e2e` / `--no-e2e`: include or skip Playwright.
 - `--commitlint` / `--no-commitlint`: include or skip commitlint.
+- `--motion`: install `motion@12.42.2` and the `motion-framer` agent skill. Opt-in only; `--yes` does not enable it.
 - `--yes`: use non-interactive defaults.
 - `--dry-run`: print operations without writing files or installing packages.
 - `--skip-install`: generate quality files without installing additional quality dependencies.
@@ -71,6 +73,7 @@ Map a user's intent to the right command:
 | No testing at all | `npx purrfold@latest my-app --no-unit --no-e2e --yes` |
 | Full setup (unit + e2e + commitlint) | `npx purrfold@latest my-app --unit --e2e --commitlint --yes` |
 | A specific package manager | `npx purrfold@latest my-app --pm pnpm --yes` |
+| Motion for React | `npx purrfold@latest my-app --motion --yes` |
 | A specific icon library for the cat | `npx purrfold@latest my-app --icons phosphor --yes` |
 | shadcn MCP for Claude/Codex/OpenCode | `npx purrfold@latest my-app --mcp --yes` |
 | A shadcn preset | `npx purrfold@latest my-app --shadcn-args --preset b3REw8vwo --yes` |

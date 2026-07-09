@@ -121,6 +121,43 @@ describe('dry-run integration', () => {
     expect(output).not.toContain('playwright.config.ts');
   });
 
+  it.each([
+    ['npm', 'run npm install motion@12.42.2'],
+    ['pnpm', 'run pnpm add motion@12.42.2'],
+    ['bun', 'run bun add motion@12.42.2'],
+  ] as const)('prints the optional Motion install for %s', async (pm, expected) => {
+    const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    await runCreate('my-app', {
+      pm,
+      motion: true,
+      yes: true,
+      dryRun: true,
+    });
+
+    const output = log.mock.calls.map((call) => call.join(' ')).join('\n');
+    expect(output).toContain(expected);
+    expect(output).toContain(
+      'freshtechbro/claudedesignskills --skill motion-framer --agent codex --copy --yes'
+    );
+  });
+
+  it('does not install Motion by default or when package installation is skipped', async () => {
+    const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    await runCreate('default-app', { yes: true, dryRun: true });
+    await runCreate('skip-app', {
+      motion: true,
+      yes: true,
+      dryRun: true,
+      skipInstall: true,
+    });
+
+    const output = log.mock.calls.map((call) => call.join(' ')).join('\n');
+    expect(output).not.toContain('default-app motion@12.42.2');
+    expect(output).not.toContain('run npm install motion@12.42.2');
+  });
+
   it('prints MCP setup commands only when requested and preserves shadcn presets', async () => {
     const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
 

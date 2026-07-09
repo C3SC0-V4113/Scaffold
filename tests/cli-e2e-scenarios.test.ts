@@ -19,6 +19,7 @@ type CliE2eScenario = {
     commitlint: boolean;
     pnpm: boolean;
     mcp: boolean;
+    motion?: boolean;
   };
   expectOutput?: string[];
   rejectOutput?: string[];
@@ -138,6 +139,21 @@ describe('CLI E2E scenario definitions', () => {
         expect.stringContaining('mcp init --client codex'),
         expect.stringContaining('mcp init --client opencode'),
       ])
+    );
+  });
+
+  it('covers opt-in Motion for real Next and Astro generation', async () => {
+    const { cliE2eScenarios } = await loadScenarios();
+    const next = cliE2eScenarios.find((item) => item.name === 'npm-default-unit');
+    const astro = cliE2eScenarios.find((item) => item.name === 'astro-npm-ssg-unit');
+    const defaults = cliE2eScenarios.find((item) => item.name === 'dry-run-defaults');
+
+    expect(next).toMatchObject({ kind: 'real', expect: expect.objectContaining({ motion: true }) });
+    expect(next?.args).toContain('--motion');
+    expect(astro).toMatchObject({ kind: 'real', expect: expect.objectContaining({ motion: true }) });
+    expect(astro?.args).toContain('--motion');
+    expect(defaults?.rejectOutput).toEqual(
+      expect.arrayContaining(['motion@12.42.2', 'motion-framer'])
     );
   });
 

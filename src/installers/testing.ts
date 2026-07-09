@@ -6,13 +6,14 @@ import {
   renderPlaywrightConfig,
   renderPlaywrightWorkflow,
   renderVitestConfig,
+  motionMainUnitTest,
   unitSmokeTest,
 } from '../templates/files.js';
 import type { CreateOptions, Executor } from '../types.js';
 
 export async function installTestingFiles(
   projectRoot: string,
-  options: Pick<CreateOptions, 'framework' | 'packageManager' | 'unit' | 'e2e'>,
+  options: Pick<CreateOptions, 'framework' | 'packageManager' | 'unit' | 'e2e' | 'motion'>,
   executor: Executor
 ) {
   if (options.unit) {
@@ -24,6 +25,12 @@ export async function installTestingFiles(
       path.join(projectRoot, 'tests', 'unit', 'home.test.tsx'),
       options.framework === 'astro' ? renderAstroUnitSmokeTest() : unitSmokeTest
     );
+    if (options.motion) {
+      await executor.writeFile(
+        path.join(projectRoot, 'tests', 'unit', 'motion-main.test.tsx'),
+        motionMainUnitTest
+      );
+    }
   }
 
   if (options.e2e) {

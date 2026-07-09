@@ -182,11 +182,19 @@ export default function RootLayout({
 `;
 }
 
-export function renderHomePage(projectName: string, iconLibrary: IconLibrary = 'lucide') {
+export function renderHomePage(
+  projectName: string,
+  iconLibrary: IconLibrary = 'lucide',
+  motionEnabled = false
+) {
   const appName = humanizeProjectName(projectName);
   const { importLine, markup } = getCatRender(iconLibrary);
+  const motionImport = motionEnabled
+    ? "\n\nimport { MotionMain } from '@/components/common/motion-main';"
+    : '';
+  const mainTag = motionEnabled ? 'MotionMain' : 'main';
 
-  return `${importLine}
+  return `${importLine}${motionImport}
 
 import type { Metadata } from 'next';
 
@@ -197,44 +205,95 @@ export const metadata: Metadata = {
 
 export default function Home() {
   return (
-    <main className="bg-background text-foreground flex min-h-screen flex-col items-center justify-center gap-4 p-8 text-center">
+    <${mainTag} className="bg-background text-foreground flex min-h-screen flex-col items-center justify-center gap-4 p-8 text-center">
       ${markup}
       <h1 className="text-2xl font-semibold tracking-tight">${appName}</h1>
       <p className="text-muted-foreground text-sm">Edit app/page.tsx to start building.</p>
-    </main>
+    </${mainTag}>
   );
 }
 `;
 }
 
-export function renderAstroHomeHero(projectName: string, iconLibrary: IconLibrary = 'lucide') {
+export function renderAstroHomeHero(
+  projectName: string,
+  iconLibrary: IconLibrary = 'lucide',
+  motionEnabled = false
+) {
   const appName = humanizeProjectName(projectName);
   const { importLine, markup } = getCatRender(iconLibrary);
+  const motionImport = motionEnabled
+    ? "\nimport { MotionMain } from '@/components/common/motion-main';"
+    : '';
+  const mainTag = motionEnabled ? 'MotionMain' : 'main';
 
   return `import { Button } from '@/components/ui/button';
-${importLine}
+${importLine}${motionImport}
 
 export default function HomeHero() {
   return (
-    <main className="bg-background text-foreground flex min-h-screen flex-col items-center justify-center gap-4 p-8 text-center">
+    <${mainTag} className="bg-background text-foreground flex min-h-screen flex-col items-center justify-center gap-4 p-8 text-center">
       ${markup}
       <h1 className="text-2xl font-semibold tracking-tight">${appName}</h1>
       <p className="text-muted-foreground text-sm">Edit src/pages/index.astro to start building.</p>
       <Button type="button">Start building</Button>
-    </main>
+    </${mainTag}>
   );
 }
 `;
 }
 
-export function renderAstroHomePage(projectName: string) {
+export const motionMainComponent = `'use client';
+
+import { domAnimation, LazyMotion, m, useReducedMotion, type HTMLMotionProps } from 'motion/react';
+
+type MotionMainProps = Omit<
+  HTMLMotionProps<'main'>,
+  | 'animate'
+  | 'exit'
+  | 'initial'
+  | 'layout'
+  | 'layoutId'
+  | 'transition'
+  | 'variants'
+  | 'whileDrag'
+  | 'whileFocus'
+  | 'whileHover'
+  | 'whileInView'
+  | 'whileTap'
+>;
+
+export function MotionMain({ children, ...props }: MotionMainProps) {
+  const shouldReduceMotion = useReducedMotion();
+
+  return (
+    <LazyMotion features={domAnimation}>
+      <m.main
+        {...props}
+        data-motion-root=""
+        initial={shouldReduceMotion ? false : { opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={
+          shouldReduceMotion
+            ? { duration: 0 }
+            : { duration: 0.2, ease: 'easeOut' }
+        }
+      >
+        {children}
+      </m.main>
+    </LazyMotion>
+  );
+}
+`;
+
+export function renderAstroHomePage(projectName: string, motionEnabled = false) {
   return `---
 import HomeHero from '../components/home-hero';
 import Layout from '../layouts/main.astro';
 ---
 
 <Layout>
-  <HomeHero />
+  <HomeHero${motionEnabled ? ' client:load' : ''} />
 </Layout>
 `;
 }
@@ -276,9 +335,32 @@ export const reactDoctorConfig = `{
 }
 `;
 
-export function renderReactDoctorConfig(framework: CreateOptions['framework']) {
-  if (framework !== 'astro') {
+export function renderReactDoctorConfig(
+  framework: CreateOptions['framework'],
+  motion = false
+) {
+  if (framework !== 'astro' && !motion) {
     return reactDoctorConfig;
+  }
+
+  if (framework !== 'astro') {
+    // React Doctor 0.5.4 reports require-reduced-motion for Next App Router
+    // even when app/globals.css contains the media query and the Motion wrapper
+    // calls useReducedMotion(). Keep both real safeguards and suppress only
+    // that verified false positive until the detector recognizes them.
+    return `{
+  "ignore": {
+    "rules": ["react-doctor/require-reduced-motion"],
+    "files": [".agents/**", ".claude/**", "components/ui/**"],
+    "overrides": [
+      {
+        "files": ["lib/utils.ts"],
+        "rules": ["deslop/unused-file", "knip/exports", "exports"]
+      }
+    ]
+  }
+}
+`;
   }
 
   return `{
@@ -489,6 +571,65 @@ describe('Home hero smoke test', () => {
 `;
 }
 
+export const motionMainUnitTest = `import { render } from '@testing-library/react';
+import { createElement, type ReactNode } from 'react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+const motionState = vi.hoisted(() => ({
+  reduced: false,
+  props: undefined as Record<string, unknown> | undefined,
+}));
+
+vi.mock('motion/react', () => ({
+  domAnimation: {},
+  LazyMotion: ({ children }: { children: ReactNode }) => createElement('div', null, children),
+  m: {
+    main: ({
+      children,
+      ...props
+    }: {
+      children?: ReactNode;
+    } & Record<string, unknown>) => {
+      motionState.props = props;
+      return createElement('main', null, children);
+    },
+  },
+  useReducedMotion: () => motionState.reduced,
+}));
+
+import { MotionMain } from '@/components/common/motion-main';
+
+describe('MotionMain', () => {
+  beforeEach(() => {
+    motionState.reduced = false;
+    motionState.props = undefined;
+  });
+
+  it('uses a restrained entrance animation', () => {
+    render(<MotionMain>Content</MotionMain>);
+
+    expect(motionState.props).toMatchObject({
+      'data-motion-root': '',
+      initial: { opacity: 0, y: 8 },
+      animate: { opacity: 1, y: 0 },
+      transition: { duration: 0.2, ease: 'easeOut' },
+    });
+  });
+
+  it('removes movement and duration when reduced motion is requested', () => {
+    motionState.reduced = true;
+
+    render(<MotionMain>Content</MotionMain>);
+
+    expect(motionState.props).toMatchObject({
+      initial: false,
+      animate: { opacity: 1, y: 0 },
+      transition: { duration: 0 },
+    });
+  });
+});
+`;
+
 export const playwrightConfig = `import { defineConfig, devices } from '@playwright/test';
 
 const baseUrl = 'http://127.0.0.1:3000';
@@ -597,7 +738,7 @@ ${shadcnMcpToml(options.packageManager)}
 }
 
 export function renderReadme(
-  options: Pick<CreateOptions, 'framework' | 'packageManager' | 'unit' | 'e2e' | 'commitlint' | 'mcp'>
+  options: Pick<CreateOptions, 'framework' | 'packageManager' | 'unit' | 'e2e' | 'commitlint' | 'mcp' | 'motion'>
 ) {
   const run = options.packageManager === 'npm' ? 'npm run' : `${options.packageManager} run`;
   const frameworkName = options.framework === 'astro' ? 'Astro' : 'Next.js';
@@ -640,8 +781,8 @@ ${run} check
 ## Tooling
 
 ${toolingLines.join('\n')}
-${options.unit ? '- Vitest and React Testing Library.\n' : ''}${options.e2e ? '- Playwright E2E testing.\n' : ''}${options.commitlint ? '- Conventional commit linting.\n' : ''}
-${renderShadcnMcpGuide(options)}
+${options.unit ? '- Vitest and React Testing Library.\n' : ''}${options.e2e ? '- Playwright E2E testing.\n' : ''}${options.commitlint ? '- Conventional commit linting.\n' : ''}${options.motion ? '- Motion for React animations.\n' : ''}
+${renderMotionGuide(options)}${renderShadcnMcpGuide(options)}
 ## shadcn Presets
 
 purrfold forwards additional shadcn CLI arguments, including official presets:
@@ -687,8 +828,31 @@ This file is the UI/UX source of truth for this app.
 - Respect reduced-motion preferences for non-trivial animation.
 `;
 
+function renderMotionGuide(options: Pick<CreateOptions, 'framework' | 'motion'>) {
+  if (!options.motion) {
+    return '';
+  }
+
+  const frameworkGuidance =
+    options.framework === 'astro'
+      ? 'Astro/Vite requires no additional Motion configuration. Use Motion inside React islands.'
+      : 'In the Next.js App Router, use `motion/react` from a client component or import server-compatible components from `motion/react-client`.';
+
+  return `## Motion
+
+Import React APIs from \`motion/react\`. ${frameworkGuidance}
+
+- Use animation only when it clarifies state or spatial relationships.
+- Prefer \`transform\` and \`opacity\` for smooth rendering.
+- Respect \`prefers-reduced-motion\`; Motion's \`useReducedMotion\` can adapt non-essential movement.
+- Agent guidance: \`.agents/skills/motion-framer/SKILL.md\`.
+- If that external skill recommends \`framer-motion\`, this project's \`motion\` dependency and the current official Motion documentation take precedence.
+
+`;
+}
+
 export function renderAgents(
-  options: Pick<CreateOptions, 'framework' | 'packageManager' | 'unit' | 'e2e' | 'commitlint' | 'mcp'>
+  options: Pick<CreateOptions, 'framework' | 'packageManager' | 'unit' | 'e2e' | 'commitlint' | 'mcp' | 'motion'>
 ) {
   const run = options.packageManager === 'npm' ? 'npm run' : `${options.packageManager} run`;
 
@@ -720,7 +884,7 @@ ${options.unit ? `4. \`${run} test\`\n` : ''}${options.e2e ? `- Run \`${run} tes
 - Component placement rules: \`.agents/skills/shadcn-component-boundaries/SKILL.md\`
 - Minimum evaluation: \`.agents/skills/project-min-evaluation/SKILL.md\`
 ${options.unit ? '- Vitest guidance: `.agents/skills/vitest/SKILL.md`\n' : ''}${options.e2e ? '- Playwright guidance: `.agents/skills/playwright-best-practices/SKILL.md`\n' : ''}${options.commitlint ? '- Commit messages are checked with commitlint.\n' : ''}
-## shadcn MCP
+${renderMotionAgentRules(options)}## shadcn MCP
 
 ${options.mcp ? 'shadcn MCP setup was requested during scaffold.' : 'shadcn MCP setup is optional and was not run by default.'}
 
@@ -776,7 +940,7 @@ Do not use \`next lint\`; use the ESLint CLI.
 - Component placement rules: \`.agents/skills/shadcn-component-boundaries/SKILL.md\`
 - Minimum evaluation: \`.agents/skills/project-min-evaluation/SKILL.md\`
 ${options.unit ? '- Vitest guidance: `.agents/skills/vitest/SKILL.md`\n' : ''}${options.e2e ? '- Playwright guidance: `.agents/skills/playwright-best-practices/SKILL.md`\n' : ''}${options.commitlint ? '- Commit messages are checked with commitlint.\n' : ''}
-## shadcn MCP
+${renderMotionAgentRules(options)}## shadcn MCP
 
 ${options.mcp ? 'shadcn MCP setup was requested during scaffold.' : 'shadcn MCP setup is optional and was not run by default.'}
 
@@ -797,5 +961,26 @@ shadcn presets are supported through \`--shadcn-args --preset <id>\`.
 ## Claude Code
 
 \`CLAUDE.md\` points to this file. \`.claude/skills\` should link to \`.agents/skills\`.
+`;
+}
+
+function renderMotionAgentRules(options: Pick<CreateOptions, 'framework' | 'motion'>) {
+  if (!options.motion) {
+    return '';
+  }
+
+  const frameworkGuidance =
+    options.framework === 'astro'
+      ? '- Astro/Vite requires no additional Motion configuration; animate within React islands.'
+      : '- In the Next.js App Router, use `motion/react` in client components or `motion/react-client` for server-compatible components.';
+
+  return `## Motion Rules
+
+${frameworkGuidance}
+- Import current React APIs from \`motion/react\`.
+- Animate purposefully, prefer \`transform\` and \`opacity\`, and respect \`prefers-reduced-motion\`.
+- Read \`.agents/skills/motion-framer/SKILL.md\` for animation guidance.
+- If the external skill recommends \`framer-motion\`, the installed \`motion\` dependency and current official Motion documentation take precedence.
+
 `;
 }
