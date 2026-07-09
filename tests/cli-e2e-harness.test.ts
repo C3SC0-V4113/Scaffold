@@ -52,4 +52,16 @@ describe('CLI E2E harness', () => {
 
     expect(existsSync(context.workDir)).toBe(false);
   });
+
+  it('preserves a temporary work dir only when --keep is explicit', async () => {
+    const { cleanupContext, createRunContext } = await loadHarness();
+    const context = createRunContext(['node', 'script', '--keep'], 'purrfold-harness-keep-test-');
+
+    cleanupContext(context);
+    expect(existsSync(context.workDir)).toBe(true);
+
+    const cleanupContextWithoutKeep = { ...context, keep: false };
+    cleanupContext(cleanupContextWithoutKeep);
+    expect(existsSync(context.workDir)).toBe(false);
+  });
 });

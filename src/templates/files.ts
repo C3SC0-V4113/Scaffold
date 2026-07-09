@@ -22,7 +22,21 @@ export const prettierConfig = `{
 }
 `;
 
+export function renderPrettierConfig(framework: CreateOptions['framework']) {
+  if (framework !== 'astro') {
+    return prettierConfig;
+  }
+
+  return prettierConfig
+    .replace('"tailwindStylesheet": "./app/globals.css"', '"tailwindStylesheet": "./src/styles/global.css"')
+    .replace(
+      '"plugins": ["prettier-plugin-tailwindcss"]',
+      '"plugins": ["prettier-plugin-astro", "prettier-plugin-tailwindcss"]'
+    );
+}
+
 export const prettierIgnore = `node_modules
+.astro
 .next
 dist
 build
@@ -61,7 +75,51 @@ export function mergePnpmHardening(existing: string): string {
     }
   }
 
+  const trustPolicyExclusions = ["'chokidar@4.0.3'", "'semver@6.3.1'"];
+  if (!/^trustPolicyExclude\s*:/m.test(content)) {
+    content += `\ntrustPolicyExclude:\n${trustPolicyExclusions
+      .map((selector) => `  - ${selector}`)
+      .join('\n')}`;
+  } else {
+    const lines = content.split(/\r?\n/);
+    const headerIndex = lines.findIndex((line) => /^trustPolicyExclude\s*:/.test(line));
+    let blockEnd = headerIndex + 1;
+    while (blockEnd < lines.length && (/^\s+/.test(lines[blockEnd]) || lines[blockEnd] === '')) {
+      blockEnd += 1;
+    }
+    const block = lines.slice(headerIndex + 1, blockEnd);
+    const missing = trustPolicyExclusions.filter(
+      (selector) => !block.some((line) => line.trim() === `- ${selector}`)
+    );
+    lines.splice(blockEnd, 0, ...missing.map((selector) => `  - ${selector}`));
+    content = lines.join('\n');
+  }
+
   return `${content}\n`;
+}
+
+export function mergePnpmBuildPolicy(existing: string): string {
+  const required = ['esbuild', 'unrs-resolver'];
+  const lines = existing.replace(/\s+$/, '').split(/\r?\n/);
+  const headerIndex = lines.findIndex((line) => /^allowBuilds\s*:/.test(line));
+
+  if (headerIndex === -1) {
+    const prefix = lines.length === 1 && lines[0] === '' ? [] : lines;
+    return `${[...prefix, 'allowBuilds:', ...required.map((name) => `  ${name}: true`)].join('\n')}\n`;
+  }
+
+  let blockEnd = headerIndex + 1;
+  while (blockEnd < lines.length && (/^\s+/.test(lines[blockEnd]) || lines[blockEnd] === '')) {
+    blockEnd += 1;
+  }
+
+  const block = lines.slice(headerIndex + 1, blockEnd);
+  const missing = required.filter(
+    (name) => !block.some((line) => new RegExp(`^\\s+${name}\\s*:`).test(line))
+  );
+  lines.splice(blockEnd, 0, ...missing.map((name) => `  ${name}: true`));
+
+  return `${lines.join('\n')}\n`;
 }
 
 export function humanizeProjectName(name: string) {
@@ -153,7 +211,8 @@ export function renderAstroHomeHero(projectName: string, iconLibrary: IconLibrar
   const appName = humanizeProjectName(projectName);
   const { importLine, markup } = getCatRender(iconLibrary);
 
-  return `${importLine}
+  return `import { Button } from '@/components/ui/button';
+${importLine}
 
 export default function HomeHero() {
   return (
@@ -161,6 +220,7 @@ export default function HomeHero() {
       ${markup}
       <h1 className="text-2xl font-semibold tracking-tight">${appName}</h1>
       <p className="text-muted-foreground text-sm">Edit src/pages/index.astro to start building.</p>
+      <Button type="button">Start building</Button>
     </main>
   );
 }
@@ -187,8 +247,13 @@ import '../styles/global.css';
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width" />
-    {process.env.NODE_ENV === 'development' && (
-      <script crossOrigin="anonymous" src="//unpkg.com/react-scan/dist/auto.global.js"></script>
+    {import.meta.env.DEV && (
+      <script
+        is:inline
+        defer
+        crossorigin="anonymous"
+        src="//unpkg.com/react-scan/dist/auto.global.js"
+      ></script>
     )}
     <slot name="head" />
   </head>
@@ -210,6 +275,26 @@ export const reactDoctorConfig = `{
   }
 }
 `;
+
+export function renderReactDoctorConfig(framework: CreateOptions['framework']) {
+  if (framework !== 'astro') {
+    return reactDoctorConfig;
+  }
+
+  return `{
+  "ignore": {
+    "rules": ["deslop/unused-dev-dependency"],
+    "files": [".agents/**", ".claude/**", "src/components/ui/**"],
+    "overrides": [
+      {
+        "files": ["src/lib/utils.ts"],
+        "rules": ["deslop/unused-file", "knip/exports", "exports"]
+      }
+    ]
+  }
+}
+`;
+}
 
 export const commitlintConfig = `module.exports = {
   extends: ['@commitlint/config-conventional'],
@@ -363,6 +448,16 @@ export default defineConfig({
   },
 });
 `;
+
+export function renderVitestConfig(framework: CreateOptions['framework']) {
+  if (framework !== 'astro') {
+    return vitestConfig;
+  }
+
+  return vitestConfig
+    .replace("import tsconfigPaths from 'vite-tsconfig-paths';\n", '')
+    .replace('  plugins: [tsconfigPaths(), react()],', '  plugins: [react()],\n  resolve: {\n    tsconfigPaths: true,\n  },');
+}
 
 export const unitSmokeTest = `import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';

@@ -5,8 +5,8 @@ import {
   renderAstroUnitSmokeTest,
   renderPlaywrightConfig,
   renderPlaywrightWorkflow,
+  renderVitestConfig,
   unitSmokeTest,
-  vitestConfig,
 } from '../templates/files.js';
 import type { CreateOptions, Executor } from '../types.js';
 
@@ -16,7 +16,10 @@ export async function installTestingFiles(
   executor: Executor
 ) {
   if (options.unit) {
-    await executor.writeFile(path.join(projectRoot, 'vitest.config.mts'), vitestConfig);
+    await executor.writeFile(
+      path.join(projectRoot, 'vitest.config.mts'),
+      renderVitestConfig(options.framework)
+    );
     await executor.writeFile(
       path.join(projectRoot, 'tests', 'unit', 'home.test.tsx'),
       options.framework === 'astro' ? renderAstroUnitSmokeTest() : unitSmokeTest

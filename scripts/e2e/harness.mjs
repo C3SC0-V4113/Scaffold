@@ -129,17 +129,49 @@ function runGeneratedCheck(projectRoot, packageManager, env) {
 }
 
 export function assertGeneratedApp(projectRoot, expected) {
+  const framework = expected.framework ?? 'next';
   const packageJson = readJson(path.join(projectRoot, 'package.json'));
   const eslintConfig = readFileSync(path.join(projectRoot, 'eslint.config.mjs'), 'utf8');
-  const readme = readFileSync(path.join(projectRoot, 'README.md'), 'utf8');
-  const agents = readFileSync(path.join(projectRoot, 'AGENTS.md'), 'utf8');
 
-  assertPath(projectRoot, 'components/ui/button.tsx');
-  assertPath(projectRoot, 'lib/utils.ts');
-  assertPath(projectRoot, 'app/globals.css');
-  assertIncludes(eslintConfig, "'components/ui/**'", 'eslint.config.mjs');
-  assertIncludes(readme, 'shadcn MCP', 'README.md');
-  assertIncludes(agents, 'shadcn MCP', 'AGENTS.md');
+  if (framework === 'astro') {
+    const tsconfig = readJson(path.join(projectRoot, 'tsconfig.json'));
+    const astroConfig = readFileSync(path.join(projectRoot, 'astro.config.mjs'), 'utf8');
+
+    assertPath(projectRoot, 'src/components/ui/button.tsx');
+    assertPath(projectRoot, 'src/lib/utils.ts');
+    assertPath(projectRoot, 'src/styles/global.css');
+    assertPath(projectRoot, 'src/components/home-hero.tsx');
+    assertPath(projectRoot, 'src/pages/index.astro');
+    assertPath(projectRoot, 'src/layouts/main.astro');
+    assertIncludes(eslintConfig, "'src/components/ui/**'", 'eslint.config.mjs');
+
+    if (tsconfig.compilerOptions?.paths?.['@/*']?.[0] !== './src/*') {
+      throw new Error('tsconfig.json should map @/* to ./src/*');
+    }
+    if (packageJson.dependencies?.['@astrojs/mdx'] || packageJson.dependencies?.['canvas-confetti']) {
+      throw new Error('Astro starter-only dependencies should be removed');
+    }
+    if (!packageJson.devDependencies?.['react-doctor']) {
+      throw new Error('Astro package.json should include react-doctor');
+    }
+
+    if (expected.ssrAdapter) {
+      assertIncludes(astroConfig, "output: 'server'", 'astro.config.mjs');
+      assertIncludes(astroConfig, `@astrojs/${expected.ssrAdapter}`, 'astro.config.mjs');
+    } else {
+      assertNotIncludes(astroConfig, "output: 'server'", 'astro.config.mjs');
+    }
+  } else {
+    const readme = readFileSync(path.join(projectRoot, 'README.md'), 'utf8');
+    const agents = readFileSync(path.join(projectRoot, 'AGENTS.md'), 'utf8');
+
+    assertPath(projectRoot, 'components/ui/button.tsx');
+    assertPath(projectRoot, 'lib/utils.ts');
+    assertPath(projectRoot, 'app/globals.css');
+    assertIncludes(eslintConfig, "'components/ui/**'", 'eslint.config.mjs');
+    assertIncludes(readme, 'shadcn MCP', 'README.md');
+    assertIncludes(agents, 'shadcn MCP', 'AGENTS.md');
+  }
 
   if (expected.unit) {
     assertPath(projectRoot, 'vitest.config.mts');
@@ -172,9 +204,13 @@ export function assertGeneratedApp(projectRoot, expected) {
     const workspace = readFileSync(path.join(projectRoot, 'pnpm-workspace.yaml'), 'utf8');
     assertIncludes(workspace, 'minimumReleaseAge:', 'pnpm-workspace.yaml');
     assertIncludes(workspace, 'trustPolicy: no-downgrade', 'pnpm-workspace.yaml');
+    assertIncludes(workspace, 'trustPolicyExclude:', 'pnpm-workspace.yaml');
+    assertIncludes(workspace, 'allowBuilds:', 'pnpm-workspace.yaml');
+    assertIncludes(workspace, 'unrs-resolver: true', 'pnpm-workspace.yaml');
   }
 
-  if (expected.mcp) {
+  if (expected.mcp && framework === 'next') {
+    const readme = readFileSync(path.join(projectRoot, 'README.md'), 'utf8');
     assertIncludes(readme, 'mcp init --client claude', 'README.md');
     assertIncludes(readme, 'mcp init --client codex', 'README.md');
     assertIncludes(readme, 'mcp init --client opencode', 'README.md');
@@ -424,7 +460,11 @@ export async function runScenario(scenario, context, cliPath, options = {}) {
 
   if (scenario.kind === 'real') {
     const projectRoot = path.join(context.workDir, targetName);
-    assertGeneratedApp(projectRoot, scenario.expect);
+    assertGeneratedApp(projectRoot, {
+      ...scenario.expect,
+      framework: scenario.framework ?? 'next',
+      ssrAdapter: scenario.ssrAdapter,
+    });
     const checkOutput = runGeneratedCheck(projectRoot, scenario.packageManager, context.env);
     return { name: targetName, output: result.output, checkOutput };
   }

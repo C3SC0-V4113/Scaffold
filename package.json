@@ -45,6 +45,7 @@
     "check": "npm run typecheck && npm run test && npm run build",
     "smoke": "node scripts/smoke.mjs",
     "test:e2e:cli": "node scripts/cli-e2e.mjs",
+    "test:e2e:cli:astro": "node scripts/cli-e2e.mjs --framework astro",
     "test:e2e:cli:quick": "node scripts/cli-e2e.mjs --quick",
     "test:e2e:cli:heavy": "node scripts/cli-e2e.mjs --heavy --require-tty",
     "changeset": "changeset",

@@ -102,14 +102,21 @@ and deterministic.
 
 ```bash
 npm run test:e2e:cli:quick
+npm run test:e2e:cli:astro
 npm run test:e2e:cli -- --work-dir E:\Repositorios\smoke --keep
 npm run test:e2e:cli:heavy
 ```
 
 The quick suite builds the local CLI and verifies dry-run command generation,
 including shadcn MCP commands and preset forwarding. The default suite
-(`test:e2e:cli`) generates real apps for npm, pnpm, and bun, checks generated
-files, and runs each generated app's package-manager `run check`.
+(`test:e2e:cli`) generates real Next.js and Astro apps for the supported package
+managers, checks generated files, and runs each generated app's package-manager
+`run check`. `test:e2e:cli:astro` isolates the Astro SSG, Playwright, and SSR
+adapter matrix.
+
+Default temporary workspaces are deleted after every run, including failures.
+Pass `--keep` explicitly when a preserved workspace is needed for debugging;
+an explicit `--work-dir` is never removed automatically.
 
 Extra-heavy scenarios (`heavy: true`) are excluded from the default suite
 because they are network-bound, slow, and timing-fragile. Run them on demand

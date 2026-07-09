@@ -228,6 +228,9 @@ export async function runCreate(targetDir: string, flags: RawCreateFlags) {
   // self-test. Both are skipped when no dependencies were installed (the gate
   // would fail spuriously without Prettier/ESLint/etc.).
   if (!options.skipInstall) {
+    if (options.framework === 'astro') {
+      await executor.run(options.packageManager, ['run', 'lint:fix'], { cwd: projectRoot });
+    }
     await executor.run(options.packageManager, ['run', 'format'], { cwd: projectRoot });
     await executor.run(options.packageManager, ['run', 'check'], { cwd: projectRoot });
   }

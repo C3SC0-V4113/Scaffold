@@ -15,6 +15,7 @@ describe('quality config model', () => {
           '@testing-library/react',
           'eslint-plugin-testing-library',
           '@playwright/test',
+          '@types/node',
           'eslint-plugin-playwright',
           '@commitlint/cli',
         ].map(pinnedSpecifier)
@@ -41,6 +42,10 @@ describe('quality config model', () => {
       )
     );
     expect(deps).not.toContain(pinnedSpecifier('eslint-config-next'));
+    expect(deps).toContain(pinnedSpecifier('react-doctor'));
+    expect(deps).toContain('@vitejs/plugin-react@5.2.0');
+    expect(deps).not.toContain(pinnedSpecifier('@vitejs/plugin-react'));
+    expect(deps).not.toContain(pinnedSpecifier('vite-tsconfig-paths'));
   });
 
   it('omits optional dependency groups when disabled', () => {

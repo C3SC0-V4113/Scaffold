@@ -6,7 +6,9 @@ import { describe, expect, it } from 'vitest';
 type CliE2eScenario = {
   name: string;
   kind: 'real' | 'dry-run' | 'interactive' | 'external-shadcn';
+  framework?: 'next' | 'astro';
   packageManager?: 'npm' | 'pnpm' | 'bun';
+  ssrAdapter?: 'node' | 'vercel' | 'netlify' | 'cloudflare';
   args?: string[];
   quick?: boolean;
   requires?: string[];
@@ -25,7 +27,12 @@ type CliE2eScenario = {
 type ScenariosModule = {
   cliE2eScenarios: CliE2eScenario[];
   scenarioNames: () => string[];
-  selectScenarios: (options?: { quick?: boolean; heavy?: boolean; names?: string[] }) => CliE2eScenario[];
+  selectScenarios: (options?: {
+    quick?: boolean;
+    heavy?: boolean;
+    names?: string[];
+    framework?: 'next' | 'astro';
+  }) => CliE2eScenario[];
 };
 
 async function loadScenarios(): Promise<ScenariosModule> {
@@ -61,6 +68,38 @@ describe('CLI E2E scenario definitions', () => {
     for (const preset of ['b3REw8vwo', 'b1sSLwZVp', 'b2qMI9ufY', 'b5eH0WVTX', 'b6FS5q9aq']) {
       expect(args).toContain(preset);
     }
+  });
+
+  it('covers Astro SSG, generated Playwright files, and SSR adapter generation', async () => {
+    const { cliE2eScenarios, selectScenarios } = await loadScenarios();
+
+    expect(cliE2eScenarios).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          name: 'astro-npm-ssg-unit',
+          framework: 'astro',
+          packageManager: 'npm',
+        }),
+        expect.objectContaining({
+          name: 'astro-pnpm-ssg-e2e',
+          framework: 'astro',
+          packageManager: 'pnpm',
+          expect: expect.objectContaining({ e2e: true }),
+        }),
+        expect.objectContaining({
+          name: 'astro-npm-ssr-node',
+          framework: 'astro',
+          ssrAdapter: 'node',
+        }),
+      ])
+    );
+
+    expect(selectScenarios({ framework: 'astro' }).every((scenario) => scenario.framework === 'astro')).toBe(
+      true
+    );
+    expect(selectScenarios({ quick: true, framework: 'astro' }).map((scenario) => scenario.name)).toEqual(
+      expect.arrayContaining(['dry-run-astro-ssg-npm', 'dry-run-astro-ssr-cloudflare-pnpm'])
+    );
   });
 
   it('keeps heavy real and TTY scenarios out of the quick E2E subset', async () => {

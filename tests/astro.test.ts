@@ -1,6 +1,62 @@
 import { describe, expect, it } from 'vitest';
 
-import { rewriteAstroConfigForAdapter } from '../src/installers/astro.js';
+import {
+  rewriteAstroConfigForAdapter,
+  rewriteAstroTsconfigForShadcn,
+} from '../src/installers/astro.js';
+
+describe('Astro tsconfig rewrite', () => {
+  it('adds the shadcn alias without clobbering React compiler options', () => {
+    const current = JSON.stringify({
+      extends: 'astro/tsconfigs/strict',
+      compilerOptions: {
+        jsx: 'react-jsx',
+        jsxImportSource: 'react',
+      },
+    });
+
+    const next = JSON.parse(rewriteAstroTsconfigForShadcn(current)) as {
+      extends: string;
+      compilerOptions: {
+        jsx: string;
+        jsxImportSource: string;
+        baseUrl: string;
+        paths: Record<string, string[]>;
+      };
+    };
+
+    expect(next).toEqual({
+      extends: 'astro/tsconfigs/strict',
+      compilerOptions: {
+        jsx: 'react-jsx',
+        jsxImportSource: 'react',
+        baseUrl: '.',
+        paths: {
+          '@/*': ['./src/*'],
+        },
+      },
+    });
+  });
+
+  it('preserves existing path aliases', () => {
+    const current = JSON.stringify({
+      compilerOptions: {
+        paths: {
+          '~/*': ['./src/*'],
+        },
+      },
+    });
+
+    const next = JSON.parse(rewriteAstroTsconfigForShadcn(current)) as {
+      compilerOptions: { paths: Record<string, string[]> };
+    };
+
+    expect(next.compilerOptions.paths).toEqual({
+      '~/*': ['./src/*'],
+      '@/*': ['./src/*'],
+    });
+  });
+});
 
 describe('Astro adapter config rewrite', () => {
   it('inserts the adapter without clobbering existing config entries', () => {

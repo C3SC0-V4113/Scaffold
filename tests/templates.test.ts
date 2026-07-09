@@ -5,10 +5,15 @@ import {
   astroRootLayout,
   designDoc,
   humanizeProjectName,
+  mergePnpmBuildPolicy,
   mergePnpmHardening,
   reactDoctorConfig,
   renderAgents,
+  renderAstroHomeHero,
   renderAstroHomePage,
+  renderPrettierConfig,
+  renderReactDoctorConfig,
+  renderVitestConfig,
   renderHomePage,
   renderQualityWorkflow,
   renderReadme,
@@ -22,6 +27,49 @@ import {
 } from '../src/templates/hooks.js';
 
 describe('template snapshots', () => {
+  it('points Astro Prettier at its actual Tailwind stylesheet', () => {
+    const config = renderPrettierConfig('astro');
+
+    expect(config).toContain('"tailwindStylesheet": "./src/styles/global.css"');
+    expect(config).toContain('"prettier-plugin-astro"');
+    expect(config).not.toContain('./app/globals.css');
+  });
+
+  it('uses Vite 8 native tsconfig path resolution for Astro tests', () => {
+    const config = renderVitestConfig('astro');
+
+    expect(config).toContain('tsconfigPaths: true');
+    expect(config).not.toContain('vite-tsconfig-paths');
+  });
+
+  it('configures React Doctor for Astro-specific generated paths', () => {
+    const config = renderReactDoctorConfig('astro');
+
+    expect(config).toContain('"src/components/ui/**"');
+    expect(config).toContain('"src/lib/utils.ts"');
+    expect(config).toContain('"deslop/unused-dev-dependency"');
+  });
+
+  it('merges the pnpm build allowlist without clobbering workspace config', () => {
+    const config = mergePnpmBuildPolicy(`packages:
+  - apps/*
+allowBuilds:
+  esbuild: true
+`);
+
+    expect(config).toContain('packages:\n  - apps/*');
+    expect(config.match(/esbuild: true/g)).toHaveLength(1);
+    expect(config).toContain('unrs-resolver: true');
+  });
+
+  it('keeps pnpm trust hardening with exact transitive exceptions', () => {
+    const config = mergePnpmHardening('');
+
+    expect(config).toContain('trustPolicy: no-downgrade');
+    expect(config).toContain("  - 'chokidar@4.0.3'");
+    expect(config).toContain("  - 'semver@6.3.1'");
+  });
+
   const options = {
     targetDir: 'my-app',
     framework: 'next' as const,
@@ -107,14 +155,25 @@ describe('template snapshots', () => {
     expect(config).toContain("import eslintPluginAstro from 'eslint-plugin-astro'");
     expect(config).toContain("import tseslint from 'typescript-eslint'");
     expect(config).toContain('...eslintPluginAstro.configs.recommended');
+    expect(config.indexOf('...tseslint.configs.recommended')).toBeLessThan(
+      config.indexOf('...eslintPluginAstro.configs.recommended')
+    );
+    expect(config).toContain("'.astro/**'");
+    expect(config).toContain("'src/components/ui/**'");
+    expect(config).toContain("files: ['**/*.{jsx,tsx}']");
   });
 
   it('renders a valid Astro app shell with an existing layout import', () => {
     const page = renderAstroHomePage('my-app');
+    const hero = renderAstroHomeHero('my-app');
 
     expect(page).toContain("import Layout from '../layouts/main.astro'");
+    expect(hero).toContain("import { Button } from '@/components/ui/button'");
+    expect(hero).toContain('<Button type="button">');
     expect(astroRootLayout).toContain("import '../styles/global.css'");
-    expect(astroRootLayout).toContain("process.env.NODE_ENV === 'development'");
+    expect(astroRootLayout).toContain('import.meta.env.DEV');
+    expect(astroRootLayout).toContain('is:inline');
+    expect(astroRootLayout).toContain('crossorigin="anonymous"');
     expect(astroRootLayout).toContain('//unpkg.com/react-scan/dist/auto.global.js');
     expect(astroRootLayout).toContain('<slot />');
   });

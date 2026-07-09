@@ -6,16 +6,17 @@ import {
   commitlintConfig,
   astroRootLayout,
   gitAttributes,
+  mergePnpmBuildPolicy,
   mergePnpmHardening,
   preCommitHook,
   prePushHook,
-  prettierConfig,
   prettierIgnore,
-  reactDoctorConfig,
   renderAstroHomeHero,
   renderAstroHomePage,
   renderHomePage,
+  renderPrettierConfig,
   renderQualityWorkflow,
+  renderReactDoctorConfig,
   renderRootLayout,
 } from '../templates/files.js';
 import { renderEslintConfig } from '../templates/eslint.js';
@@ -26,7 +27,31 @@ import {
 } from '../templates/icons.js';
 import type { CreateOptions, Executor, IconLibrary } from '../types.js';
 import { buildDevDependencies, pinnedSpecifier } from './config-model.js';
-import { applyPackageJsonQualityConfig, readProjectPackageJson } from './package-json.js';
+import {
+  applyPackageJsonQualityConfig,
+  readProjectPackageJson,
+  writeProjectPackageJson,
+} from './package-json.js';
+
+const astroStarterDependencies = ['@astrojs/mdx', 'canvas-confetti'];
+
+async function removeAstroStarterDependencies(projectRoot: string, executor: Executor) {
+  const packageJson = await readProjectPackageJson(projectRoot, executor);
+  const dependencies = { ...(packageJson.dependencies ?? {}) };
+  let changed = false;
+
+  for (const dependency of astroStarterDependencies) {
+    if (dependency in dependencies) {
+      delete dependencies[dependency];
+      changed = true;
+    }
+  }
+
+  if (changed) {
+    packageJson.dependencies = dependencies;
+    await writeProjectPackageJson(projectRoot, executor, packageJson);
+  }
+}
 
 function runCommand(packageManager: string) {
   return packageManager === 'npm' ? 'npm run' : `${packageManager} run`;
@@ -153,6 +178,7 @@ async function writeAppShell(
   const projectName = path.basename(projectRoot);
 
   if (framework === 'astro') {
+    await executor.remove(path.join(projectRoot, 'src', 'components', 'Button.astro'));
     await executor.writeFile(
       path.join(projectRoot, 'src', 'components', 'home-hero.tsx'),
       renderAstroHomeHero(projectName, iconLibrary)
@@ -181,12 +207,21 @@ export async function installQualityLayer(
   executor: Executor
 ) {
   await applyPackageJsonQualityConfig(projectRoot, executor, options);
+  if (options.framework === 'astro' && !options.dryRun) {
+    await removeAstroStarterDependencies(projectRoot, executor);
+  }
 
   await executor.writeFile(path.join(projectRoot, 'eslint.config.mjs'), renderEslintConfig(options));
-  await executor.writeFile(path.join(projectRoot, '.prettierrc'), prettierConfig);
+  await executor.writeFile(
+    path.join(projectRoot, '.prettierrc'),
+    renderPrettierConfig(options.framework)
+  );
   await executor.writeFile(path.join(projectRoot, '.prettierignore'), prettierIgnore);
   await executor.writeFile(path.join(projectRoot, '.gitattributes'), gitAttributes);
-  await executor.writeFile(path.join(projectRoot, 'doctor.config.json'), reactDoctorConfig);
+  await executor.writeFile(
+    path.join(projectRoot, 'doctor.config.json'),
+    renderReactDoctorConfig(options.framework)
+  );
   await appendGitIgnore(projectRoot, executor);
 
   await executor.writeFile(
@@ -211,6 +246,14 @@ export async function installQualityLayer(
     renderQualityWorkflow(options.packageManager)
   );
 
+  if (options.packageManager === 'pnpm') {
+    const workspacePath = path.join(projectRoot, 'pnpm-workspace.yaml');
+    const existing = (await executor.pathExists(workspacePath))
+      ? await executor.readFile(workspacePath)
+      : '';
+    await executor.writeFile(workspacePath, mergePnpmBuildPolicy(existing));
+  }
+
   if (!options.skipInstall) {
     const commands = getPackageManagerCommands(options.packageManager);
     const install = commands.addDev(buildDevDependencies(options));
@@ -220,8 +263,7 @@ export async function installQualityLayer(
   const iconLibrary = await reconcileIconLibrary(projectRoot, options, executor);
   await writeAppShell(projectRoot, executor, iconLibrary, options.framework);
 
-  // pnpm-only: React Doctor 0.5.x requires supply-chain hardening in
-  // pnpm-workspace.yaml. Written last so it never gates the installs above.
+  // pnpm-only: merge the remaining supply-chain hardening after installs.
   if (options.packageManager === 'pnpm') {
     const workspacePath = path.join(projectRoot, 'pnpm-workspace.yaml');
     const existing = (await executor.pathExists(workspacePath))

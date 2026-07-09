@@ -41,6 +41,46 @@
     quick: false,
   },
   {
+    name: 'astro-npm-ssg-unit',
+    kind: 'real',
+    framework: 'astro',
+    packageManager: 'npm',
+    args: ['--framework', 'astro', '--pm', 'npm', '--unit', '--no-e2e', '--no-commitlint', '--yes'],
+    expect: { unit: true, e2e: false, commitlint: false, pnpm: false, mcp: false },
+    quick: false,
+  },
+  {
+    name: 'astro-pnpm-ssg-e2e',
+    kind: 'real',
+    framework: 'astro',
+    packageManager: 'pnpm',
+    args: ['--framework', 'astro', '--pm', 'pnpm', '--unit', '--e2e', '--no-commitlint', '--yes'],
+    expect: { unit: true, e2e: true, commitlint: false, pnpm: true, mcp: false },
+    quick: false,
+  },
+  {
+    name: 'astro-npm-ssr-node',
+    kind: 'real',
+    framework: 'astro',
+    packageManager: 'npm',
+    ssrAdapter: 'node',
+    args: [
+      '--framework',
+      'astro',
+      '--pm',
+      'npm',
+      '--ssr',
+      '--adapter',
+      'node',
+      '--no-unit',
+      '--no-e2e',
+      '--commitlint',
+      '--yes',
+    ],
+    expect: { unit: false, e2e: false, commitlint: true, pnpm: false, mcp: false },
+    quick: false,
+  },
+  {
     name: 'dry-run-defaults',
     kind: 'dry-run',
     packageManager: 'npm',
@@ -79,6 +119,48 @@
       'run npx shadcn@latest mcp init --client opencode',
     ],
     rejectOutput: ['@vitejs/plugin-react@6.0.2', 'vite@7.2.7'],
+    quick: true,
+  },
+  {
+    name: 'dry-run-astro-ssg-npm',
+    kind: 'dry-run',
+    framework: 'astro',
+    packageManager: 'npm',
+    args: ['--framework', 'astro', '--pm', 'npm', '--unit', '--e2e', '--no-commitlint', '--yes', '--dry-run'],
+    expectOutput: [
+      'run npm create astro@latest',
+      'run npx shadcn@latest init -t astro --defaults',
+      '@vitejs/plugin-react@5.2.0',
+      'react-doctor@0.5.4',
+    ],
+    rejectOutput: ['create-next-app@latest', '@vitejs/plugin-react@5.1.2'],
+    quick: true,
+  },
+  {
+    name: 'dry-run-astro-ssr-cloudflare-pnpm',
+    kind: 'dry-run',
+    framework: 'astro',
+    packageManager: 'pnpm',
+    args: [
+      '--framework',
+      'astro',
+      '--pm',
+      'pnpm',
+      '--ssr',
+      '--adapter',
+      'cloudflare',
+      '--no-unit',
+      '--no-e2e',
+      '--no-commitlint',
+      '--yes',
+      '--dry-run',
+    ],
+    expectOutput: [
+      'run pnpm create astro@latest',
+      'run pnpm add @astrojs/cloudflare@14.1.2',
+      'run pnpm dlx shadcn@latest init -t astro --defaults',
+    ],
+    rejectOutput: ['create-next-app@latest'],
     quick: true,
   },
   {
@@ -121,19 +203,21 @@
   },
 ];
 
-export function selectScenarios({ quick = false, heavy = false, names = [] } = {}) {
+export function selectScenarios({ quick = false, heavy = false, names = [], framework } = {}) {
   // Explicit names win and can reach any scenario, heavy ones included.
   if (names.length > 0) {
     return cliE2eScenarios.filter((scenario) => names.includes(scenario.name));
   }
+  const matchesFramework = (scenario) =>
+    framework === undefined || (scenario.framework ?? 'next') === framework;
   if (heavy) {
-    return cliE2eScenarios.filter((scenario) => scenario.heavy);
+    return cliE2eScenarios.filter((scenario) => scenario.heavy && matchesFramework(scenario));
   }
   if (quick) {
-    return cliE2eScenarios.filter((scenario) => scenario.quick);
+    return cliE2eScenarios.filter((scenario) => scenario.quick && matchesFramework(scenario));
   }
   // Default routine suite: everything except the extra-heavy scenarios.
-  return cliE2eScenarios.filter((scenario) => !scenario.heavy);
+  return cliE2eScenarios.filter((scenario) => !scenario.heavy && matchesFramework(scenario));
 }
 
 export function scenarioNames() {

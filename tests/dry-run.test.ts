@@ -68,6 +68,9 @@ describe('dry-run integration', () => {
     expect(output).toContain('run pnpm create astro@latest my-app');
     expect(output).toContain('run pnpm dlx shadcn@latest init -t astro --defaults');
     expect(output).toContain('@astrojs/check@0.9.9');
+    expect(output).toContain('@vitejs/plugin-react@5.2.0');
+    expect(output).not.toContain('@vitejs/plugin-react@5.1.2');
+    expect(output.replaceAll('\\', '/')).toContain('my-app/src/components/Button.astro');
     expect(output).not.toContain('--no-ai');
     expect(output).not.toContain('create-next-app@latest');
   });

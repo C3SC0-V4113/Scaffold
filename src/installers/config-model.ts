@@ -39,6 +39,7 @@ export const DEPENDENCY_VERSIONS: Record<string, string> = {
   'eslint-plugin-testing-library': '7.16.2',
   '@vitest/eslint-plugin': '1.6.20',
   '@playwright/test': '1.60.0',
+  '@types/node': '26.1.0',
   'eslint-plugin-playwright': '2.10.4',
   '@commitlint/cli': '21.0.2',
   '@commitlint/config-conventional': '21.0.2',
@@ -54,6 +55,11 @@ export const DEPENDENCY_VERSIONS: Record<string, string> = {
   'eslint-plugin-astro': '1.7.0',
   'typescript-eslint': '8.63.0',
   'prettier-plugin-astro': '0.14.1',
+};
+
+const ASTRO_DEPENDENCY_VERSION_OVERRIDES: Record<string, string> = {
+  // Astro 7 installs Vite 8 and @astrojs/react 6 requires plugin-react 5.2+.
+  '@vitejs/plugin-react': '5.2.0',
 };
 
 /**
@@ -99,6 +105,7 @@ export const astroCoreDevDependencies = [
   'prettier-plugin-tailwindcss',
   'husky',
   'lint-staged',
+  'react-doctor',
   '@astrojs/check',
 ];
 
@@ -113,7 +120,7 @@ export const unitDevDependencies = [
   '@vitest/eslint-plugin',
 ];
 
-export const e2eDevDependencies = ['@playwright/test', 'eslint-plugin-playwright'];
+export const e2eDevDependencies = ['@playwright/test', '@types/node', 'eslint-plugin-playwright'];
 
 export const commitlintDevDependencies = [
   '@commitlint/cli',
@@ -123,12 +130,21 @@ export const commitlintDevDependencies = [
 export function buildDevDependencies(
   options: Pick<CreateOptions, 'framework' | 'unit' | 'e2e' | 'commitlint'>
 ) {
+  const frameworkUnitDependencies =
+    options.framework === 'astro'
+      ? unitDevDependencies.filter((name) => name !== 'vite-tsconfig-paths')
+      : unitDevDependencies;
+
   return [
     ...(options.framework === 'astro' ? astroCoreDevDependencies : coreDevDependencies),
-    ...(options.unit ? unitDevDependencies : []),
+    ...(options.unit ? frameworkUnitDependencies : []),
     ...(options.e2e ? e2eDevDependencies : []),
     ...(options.commitlint ? commitlintDevDependencies : []),
-  ].map(pinnedSpecifier);
+  ].map((name) => {
+    const frameworkVersion =
+      options.framework === 'astro' ? ASTRO_DEPENDENCY_VERSION_OVERRIDES[name] : undefined;
+    return frameworkVersion ? `${name}@${frameworkVersion}` : pinnedSpecifier(name);
+  });
 }
 
 export function buildScripts(
