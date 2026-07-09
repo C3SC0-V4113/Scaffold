@@ -1,5 +1,26 @@
 # purrfold
 
+## 0.3.0
+
+### Minor Changes
+
+- Raise the minimum supported Node.js version to 22.13.0 so the package contract matches the current Commander and Inquirer dependency floors.
+
+  This drops support for older Node.js releases and is included in the next pre-1.0 minor release.
+
+- Add Astro as a first-class scaffold target while preserving Next.js as the default.
+
+  The CLI now supports framework selection, Astro-specific shadcn setup, quality tooling, unit and Playwright templates, generated documentation, and agent skill guidance.
+
+- Add optional Astro SSR generation with Node, Vercel, Netlify, and Cloudflare adapters.
+
+  Astro remains static-first, while `--ssr` and `--adapter` enable an explicit server deployment target.
+
+### Patch Changes
+
+- Preserve existing Astro configuration when enabling SSR adapters and fail clearly when an unsupported config shape is encountered.
+- Fix Astro SSG and SSR generation across npm and pnpm, and add an isolated Astro CLI E2E matrix with automatic temporary-workspace cleanup.
+
 ## 0.2.6
 
 ### Patch Changes
