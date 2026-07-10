@@ -7,23 +7,27 @@ import {
   readListFlag,
   runScenario,
 } from './e2e/harness.mjs';
-import { selectScenarios } from './e2e/scenarios.mjs';
+import { scenarioMetadata, selectScenarios } from './e2e/scenarios.mjs';
 
 const quick = process.argv.includes('--quick');
 const heavy = process.argv.includes('--heavy');
+const list = process.argv.includes('--list');
 const failOnTtyMissing = process.argv.includes('--require-tty');
 const names = readListFlag(process.argv, '--scenario');
 const framework = readFlag(process.argv, '--framework');
 if (framework !== undefined && framework !== 'next' && framework !== 'astro') {
   throw new Error(`Unsupported E2E framework filter: ${framework}`);
 }
-const prefix = quick ? 'purrfold-e2e-quick-' : heavy ? 'purrfold-e2e-heavy-' : 'purrfold-e2e-';
-const context = createRunContext(process.argv, prefix);
 const scenarios = selectScenarios({ quick, heavy, names, framework });
+if (list) {
+  console.log(JSON.stringify(scenarioMetadata(scenarios)));
+  process.exit(0);
+}
 if (scenarios.length === 0) {
-  cleanupContext(context);
   throw new Error('No CLI E2E scenarios matched the requested filters.');
 }
+const prefix = quick ? 'purrfold-e2e-quick-' : heavy ? 'purrfold-e2e-heavy-' : 'purrfold-e2e-';
+const context = createRunContext(process.argv, prefix);
 const results = [];
 let hasFailures = true;
 

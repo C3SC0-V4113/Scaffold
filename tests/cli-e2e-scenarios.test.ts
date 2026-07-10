@@ -27,9 +27,20 @@ type CliE2eScenario = {
   rejectOutput?: string[];
 };
 
+type ScenarioMetadata = {
+  name: string;
+  kind: CliE2eScenario['kind'];
+  framework: 'next' | 'astro';
+  packageManager: 'npm' | 'pnpm' | 'bun';
+  quick: boolean;
+  heavy: boolean;
+  requiresTty: boolean;
+};
+
 type ScenariosModule = {
   cliE2eScenarios: CliE2eScenario[];
   scenarioNames: () => string[];
+  scenarioMetadata: (scenarios?: CliE2eScenario[]) => ScenarioMetadata[];
   selectScenarios: (options?: {
     quick?: boolean;
     heavy?: boolean;
@@ -183,6 +194,34 @@ describe('CLI E2E scenario definitions', () => {
     expect(scenario?.rejectOutput).toEqual(
       expect.arrayContaining(['@vitejs/plugin-react@6.0.2', 'vite@7.2.7'])
     );
+  });
+
+  it('exposes CI-matrix metadata with explicit defaults for every scenario', async () => {
+    const { cliE2eScenarios, scenarioMetadata, selectScenarios } = await loadScenarios();
+    const metadata = scenarioMetadata();
+
+    expect(metadata).toHaveLength(cliE2eScenarios.length);
+    for (const entry of metadata) {
+      expect(entry.name).toBeTruthy();
+      expect(['next', 'astro']).toContain(entry.framework);
+      expect(['npm', 'pnpm', 'bun']).toContain(entry.packageManager);
+      expect(typeof entry.quick).toBe('boolean');
+      expect(typeof entry.heavy).toBe('boolean');
+      expect(typeof entry.requiresTty).toBe('boolean');
+    }
+
+    expect(metadata.find((entry) => entry.name === 'bun-b5-minimal')).toMatchObject({
+      packageManager: 'bun',
+      framework: 'next',
+    });
+    expect(metadata.find((entry) => entry.name === 'astro-pnpm-ssg-e2e')).toMatchObject({
+      packageManager: 'pnpm',
+      framework: 'astro',
+    });
+
+    const selected = scenarioMetadata(selectScenarios({ quick: true }));
+    expect(selected.length).toBeGreaterThan(0);
+    expect(selected.every((entry) => entry.kind === 'dry-run')).toBe(true);
   });
 
   it('marks external interactive prompt coverage as TTY-gated', async () => {

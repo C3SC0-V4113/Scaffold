@@ -1,0 +1,142 @@
+# Full CLI E2E suite: real generations, one runner per scenario, in parallel.
+#
+# The matrix is generated from scripts/e2e/scenarios.mjs (`--list`), so adding
+# a scenario there automatically adds a CI job — never hardcode scenario names
+# here. Dry-run scenarios are excluded because ci.yml's e2e-quick job already
+# runs them on every push/PR.
+#
+# Triggers:
+# - pull_request touching generator code or pins: validates the change with
+#   real generations (this is what makes automated src/versions.json bump PRs
+#   safe to merge).
+# - schedule: nightly canary against create-next-app@latest / shadcn@latest —
+#   catches upstream drift independent of our own changes and opens an issue
+#   on failure.
+# - workflow_dispatch: manual run, optionally filtered to specific scenarios.
+name: E2E
+
+on:
+  pull_request:
+    paths:
+      - 'src/**'
+      - 'scripts/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/e2e.yml'
+  schedule:
+    - cron: '23 5 * * *'
+  workflow_dispatch:
+    inputs:
+      scenario:
+        description: 'Comma-separated scenario names (default: full non-dry-run suite)'
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  matrix:
+    name: generate scenario matrix
+    runs-on: ubuntu-latest
+    outputs:
+      scenarios: ${{ steps.list.outputs.scenarios }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7.0.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6.4.0
+        with:
+          node-version: 22
+
+      # scripts/cli-e2e.mjs --list only uses Node builtins, so no npm ci here.
+      - name: List scenarios
+        id: list
+        run: |
+          if [ -n "${{ inputs.scenario }}" ]; then
+            scenarios=$(node scripts/cli-e2e.mjs --list --scenario "${{ inputs.scenario }}")
+          else
+            scenarios=$(node scripts/cli-e2e.mjs --list | jq -c '[.[] | select(.kind != "dry-run")]')
+          fi
+          echo "$scenarios" | jq .
+          echo "scenarios=$scenarios" >> "$GITHUB_OUTPUT"
+
+  scenario:
+    name: ${{ matrix.scenario.name }}
+    needs: matrix
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        scenario: ${{ fromJSON(needs.matrix.outputs.scenarios) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7.0.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6.4.0
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Setup pnpm
+        if: matrix.scenario.packageManager == 'pnpm'
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Bun
+        if: matrix.scenario.packageManager == 'bun'
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run scenario
+        run: node scripts/cli-e2e.mjs --scenario "${{ matrix.scenario.name }}" --require-tty
+
+  heavy:
+    name: heavy scenarios (network-bound interactive)
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7.0.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6.4.0
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run heavy CLI E2E
+        run: npm run test:e2e:cli:heavy
+
+  nightly-report:
+    name: nightly failure report
+    if: always() && github.event_name == 'schedule'
+    needs: [scenario, heavy]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - name: Open an issue for the failed nightly run
+        if: contains(needs.*.result, 'failure')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh issue create \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "Nightly E2E failure ($(date -u +%F))" \
+            --body "The nightly CLI E2E run failed, likely due to upstream drift (create-next-app@latest, shadcn@latest, or a registry change) since no code changed. Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"

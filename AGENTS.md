@@ -12,6 +12,8 @@ cmd /c npm run check
 
 `npm run check` performs typechecking, test execution, and build. If it cannot run, report the exact command and error.
 
+CI mirrors this: `.github/workflows/ci.yml` runs `npm run check` plus the quick E2E tier (dry-run scenarios) on ubuntu and windows for every push/PR. `.github/workflows/e2e.yml` runs the full scenario matrix (one parallel job per real scenario, generated from `scripts/cli-e2e.mjs --list` — never hardcode scenario names in workflows) on PRs that touch `src/` or `scripts/`, nightly against upstream `@latest` tools, and on manual dispatch. A failed nightly run opens a GitHub issue.
+
 ## Development Rules
 
 - Source code lives in `src/`.

@@ -249,3 +249,20 @@ export function selectScenarios({ quick = false, heavy = false, names = [], fram
 export function scenarioNames() {
   return cliE2eScenarios.map((scenario) => scenario.name);
 }
+
+/**
+ * Machine-readable scenario metadata for CI matrix generation. Defaults that
+ * are implicit in the scenario definitions (framework, package manager) are
+ * made explicit so workflows can key setup steps off them.
+ */
+export function scenarioMetadata(scenarios = cliE2eScenarios) {
+  return scenarios.map((scenario) => ({
+    name: scenario.name,
+    kind: scenario.kind,
+    framework: scenario.framework ?? 'next',
+    packageManager: scenario.packageManager ?? 'npm',
+    quick: scenario.quick === true,
+    heavy: scenario.heavy === true,
+    requiresTty: scenario.requiresTty === true,
+  }));
+}
