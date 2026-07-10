@@ -1,5 +1,12 @@
 # purrfold
 
+## 0.4.0
+
+### Minor Changes
+
+- c6d94d0: Generate a project-local component architecture skill for Next.js and Astro that reserves the shadcn UI directory for registry-managed primitives and routes product-owned components to common or feature folders.
+- 5375632: Add opt-in Motion for React installation with the `--motion` flag, including the `motion-framer` agent skill and generated project guidance.
+
 ## 0.3.0
 
 ### Minor Changes

@@ -1,6 +1,6 @@
 {
   "name": "purrfold",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Scaffold a production-ready frontend app with shadcn, strict quality tooling, agent docs, Claude hooks, and optional tests. Starts with Next.js. 🐱",
   "type": "module",
   "bin": {
@@ -31,7 +31,7 @@
     "type": "git",
     "url": "git+https://github.com/C3SC0-V4113/Scaffold.git"
   },
-  "homepage": "https://purrfold-landing.vercel.app/es",
+  "homepage": "https://purrfold-landing.vercel.app",
   "bugs": {
     "url": "https://github.com/C3SC0-V4113/Scaffold/issues"
   },
