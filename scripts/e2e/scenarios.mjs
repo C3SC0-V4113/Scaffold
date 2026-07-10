@@ -1,4 +1,6 @@
-﻿export const cliE2eScenarios = [
+﻿import { pinnedDependency } from './harness.mjs';
+
+export const cliE2eScenarios = [
   {
     name: 'npm-default-unit',
     kind: 'real',
@@ -86,7 +88,7 @@
     packageManager: 'npm',
     args: ['--pm', 'npm', '--yes', '--dry-run'],
     expectOutput: ['run npx create-next-app@latest', 'run npx shadcn@latest init --defaults'],
-    rejectOutput: ['mcp init --client', 'motion@12.42.2', 'motion-framer'],
+    rejectOutput: ['mcp init --client', pinnedDependency('motion'), 'motion-framer'],
     quick: true,
   },
   {
@@ -95,7 +97,7 @@
     packageManager: 'npm',
     args: ['--pm', 'npm', '--motion', '--yes', '--dry-run'],
     expectOutput: [
-      'run npm install motion@12.42.2',
+      `run npm install ${pinnedDependency('motion')}`,
       'freshtechbro/claudedesignskills --skill motion-framer',
     ],
     quick: true,
@@ -107,7 +109,7 @@
     packageManager: 'pnpm',
     args: ['--framework', 'astro', '--pm', 'pnpm', '--motion', '--yes', '--dry-run'],
     expectOutput: [
-      'run pnpm add motion@12.42.2',
+      `run pnpm add ${pinnedDependency('motion')}`,
       'freshtechbro/claudedesignskills --skill motion-framer',
     ],
     quick: true,
@@ -134,13 +136,14 @@
     args: ['--yes', '--dry-run', '--mcp', '--shadcn-args', '--preset', 'b6FS5q9aq'],
     expectOutput: [
       'run npx shadcn@latest init --defaults --preset b6FS5q9aq',
-      'vitest@4.1.8',
-      '@vitejs/plugin-react@5.1.2',
-      'vite-tsconfig-paths@5.1.4',
+      pinnedDependency('vitest'),
+      pinnedDependency('@vitejs/plugin-react'),
+      pinnedDependency('vite-tsconfig-paths'),
       'run npx shadcn@latest mcp init --client claude',
       'run npx shadcn@latest mcp init --client codex',
       'run npx shadcn@latest mcp init --client opencode',
     ],
+    // Known-bad resolutions from the original bug report, kept literal on purpose.
     rejectOutput: ['@vitejs/plugin-react@6.0.2', 'vite@7.2.7'],
     quick: true,
   },
@@ -153,10 +156,10 @@
     expectOutput: [
       'run npm create astro@latest',
       'run npx shadcn@latest init -t astro --defaults',
-      '@vitejs/plugin-react@5.2.0',
-      'react-doctor@0.5.4',
+      pinnedDependency('@vitejs/plugin-react', 'astro'),
+      pinnedDependency('react-doctor'),
     ],
-    rejectOutput: ['create-next-app@latest', '@vitejs/plugin-react@5.1.2'],
+    rejectOutput: ['create-next-app@latest', pinnedDependency('@vitejs/plugin-react')],
     quick: true,
   },
   {
@@ -180,7 +183,7 @@
     ],
     expectOutput: [
       'run pnpm create astro@latest',
-      'run pnpm add @astrojs/cloudflare@14.1.2',
+      `run pnpm add ${pinnedDependency('@astrojs/cloudflare')}`,
       'run pnpm dlx shadcn@latest init -t astro --defaults',
     ],
     rejectOutput: ['create-next-app@latest'],

@@ -21,6 +21,7 @@ cmd /c npm run check
 - Preserve support for `npm`, `pnpm`, and `bun` unless a change explicitly narrows scope.
 - Keep generated project docs generic; do not hardcode Cost Console or other project-specific language.
 - `src/cli-metadata.ts` is the single source of truth for CLI options and scenarios. When you add or change a flag, update it there — `--help`, `info --json`, `llms.txt`, the README table, and `skills/purrfold/SKILL.md` all mirror it.
+- `src/versions.json` is the single source of truth for the dependency versions pinned into generated apps. `src/installers/config-model.ts`, the E2E harness/scenarios, and the tests all read from it — never hardcode a generated-app version anywhere else. After bumping a pin, run the CLI E2E suite (`npm run test:e2e:cli`).
 
 ## Releases
 

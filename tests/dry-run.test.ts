@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { runCreate } from '../src/commands/create.js';
+import { pinnedSpecifier } from '../src/installers/config-model.js';
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -22,7 +23,7 @@ describe('dry-run integration', () => {
     const output = log.mock.calls.map((call) => call.join(' ')).join('\n');
     expect(output).toContain('run npx create-next-app@latest my-app');
     expect(output).toContain('run npx shadcn@latest init --defaults');
-    expect(output).toContain('@vitejs/plugin-react@5.1.2');
+    expect(output).toContain(pinnedSpecifier('@vitejs/plugin-react'));
     expect(output).not.toContain('@vitejs/plugin-react@6.0.2');
     expect(output).not.toContain('mcp init --client');
     expect(output.replaceAll('\\', '/')).toContain('my-app/skills.sh');
@@ -67,9 +68,9 @@ describe('dry-run integration', () => {
     const output = log.mock.calls.map((call) => call.join(' ')).join('\n');
     expect(output).toContain('run pnpm create astro@latest my-app');
     expect(output).toContain('run pnpm dlx shadcn@latest init -t astro --defaults');
-    expect(output).toContain('@astrojs/check@0.9.9');
-    expect(output).toContain('@vitejs/plugin-react@5.2.0');
-    expect(output).not.toContain('@vitejs/plugin-react@5.1.2');
+    expect(output).toContain(pinnedSpecifier('@astrojs/check'));
+    expect(output).toContain(pinnedSpecifier('@vitejs/plugin-react', 'astro'));
+    expect(output).not.toContain(pinnedSpecifier('@vitejs/plugin-react'));
     expect(output.replaceAll('\\', '/')).toContain('my-app/src/components/Button.astro');
     expect(output.replaceAll('\\', '/')).toContain(
       'my-app/.agents/skills/shadcn-component-boundaries/SKILL.md'
@@ -98,7 +99,7 @@ describe('dry-run integration', () => {
 
     const output = log.mock.calls.map((call) => call.join(' ')).join('\n');
     expect(output).toContain('run pnpm create astro@latest my-app');
-    expect(output).toContain('run pnpm add @astrojs/cloudflare@14.1.2');
+    expect(output).toContain(`run pnpm add ${pinnedSpecifier('@astrojs/cloudflare')}`);
     expect(output).toContain('write');
     expect(output).toContain('astro.config.mjs');
   });
@@ -122,9 +123,9 @@ describe('dry-run integration', () => {
   });
 
   it.each([
-    ['npm', 'run npm install motion@12.42.2'],
-    ['pnpm', 'run pnpm add motion@12.42.2'],
-    ['bun', 'run bun add motion@12.42.2'],
+    ['npm', `run npm install ${pinnedSpecifier('motion')}`],
+    ['pnpm', `run pnpm add ${pinnedSpecifier('motion')}`],
+    ['bun', `run bun add ${pinnedSpecifier('motion')}`],
   ] as const)('prints the optional Motion install for %s', async (pm, expected) => {
     const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
 
@@ -154,8 +155,8 @@ describe('dry-run integration', () => {
     });
 
     const output = log.mock.calls.map((call) => call.join(' ')).join('\n');
-    expect(output).not.toContain('default-app motion@12.42.2');
-    expect(output).not.toContain('run npm install motion@12.42.2');
+    expect(output).not.toContain(`default-app ${pinnedSpecifier('motion')}`);
+    expect(output).not.toContain(`run npm install ${pinnedSpecifier('motion')}`);
   });
 
   it('prints MCP setup commands only when requested and preserves shadcn presets', async () => {

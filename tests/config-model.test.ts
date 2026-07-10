@@ -18,7 +18,7 @@ describe('quality config model', () => {
           '@types/node',
           'eslint-plugin-playwright',
           '@commitlint/cli',
-        ].map(pinnedSpecifier)
+        ].map((name) => pinnedSpecifier(name))
       )
     );
     expect(
@@ -37,13 +37,13 @@ describe('quality config model', () => {
     expect(deps).toEqual(
       expect.arrayContaining(
         ['eslint-plugin-astro', 'typescript-eslint', 'prettier-plugin-astro', '@astrojs/check'].map(
-          pinnedSpecifier
+          (name) => pinnedSpecifier(name)
         )
       )
     );
     expect(deps).not.toContain(pinnedSpecifier('eslint-config-next'));
     expect(deps).toContain(pinnedSpecifier('react-doctor'));
-    expect(deps).toContain('@vitejs/plugin-react@5.2.0');
+    expect(deps).toContain(pinnedSpecifier('@vitejs/plugin-react', 'astro'));
     expect(deps).not.toContain(pinnedSpecifier('@vitejs/plugin-react'));
     expect(deps).not.toContain(pinnedSpecifier('vite-tsconfig-paths'));
   });
@@ -51,7 +51,7 @@ describe('quality config model', () => {
   it('omits optional dependency groups when disabled', () => {
     expect(buildDevDependencies({ framework: 'next', unit: false, e2e: false, commitlint: false })).not.toEqual(
       expect.arrayContaining(
-        ['vitest', '@playwright/test', '@commitlint/cli'].map(pinnedSpecifier)
+        ['vitest', '@playwright/test', '@commitlint/cli'].map((name) => pinnedSpecifier(name))
       )
     );
   });

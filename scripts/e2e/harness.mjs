@@ -6,6 +6,23 @@ import { fileURLToPath } from 'node:url';
 
 export const rootDir = path.resolve(fileURLToPath(new URL('..', import.meta.url)), '..');
 
+// Single source of truth for generated-app dependency pins, shared with
+// src/installers/config-model.ts. Read via fs (not a JSON import) so the
+// scripts stay runnable on any Node without import-attribute support.
+export const generatedVersions = JSON.parse(
+  readFileSync(path.join(rootDir, 'src', 'versions.json'), 'utf8')
+);
+
+export function pinnedDependency(name, framework = 'next') {
+  const version =
+    (framework === 'astro' ? generatedVersions.astroOverrides[name] : undefined) ??
+    generatedVersions.dependencies[name];
+  if (!version) {
+    throw new Error(`No pinned version registered for "${name}" in src/versions.json.`);
+  }
+  return `${name}@${version}`;
+}
+
 export function readFlag(argv, flag) {
   const index = argv.indexOf(flag);
   return index === -1 ? undefined : argv[index + 1];
@@ -147,8 +164,9 @@ export function assertGeneratedApp(projectRoot, expected) {
   const skillsScript = readFileSync(path.join(projectRoot, 'skills.sh'), 'utf8');
 
   if (expected.motion) {
-    if (!packageJson.dependencies?.motion?.includes('12.42.2')) {
-      throw new Error('package.json should include Motion 12.42.2 as a runtime dependency');
+    const motionVersion = generatedVersions.dependencies.motion;
+    if (!packageJson.dependencies?.motion?.includes(motionVersion)) {
+      throw new Error(`package.json should include Motion ${motionVersion} as a runtime dependency`);
     }
     assertIncludes(skillsScript, 'freshtechbro/claudedesignskills', 'skills.sh');
     assertIncludes(skillsScript, '--skill motion-framer', 'skills.sh');

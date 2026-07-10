@@ -2,8 +2,11 @@ import path from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
+import { pinnedSpecifier } from '../src/installers/config-model.js';
 import { installMotion } from '../src/installers/motion.js';
 import type { CreateOptions, Executor } from '../src/types.js';
+
+const motionPin = pinnedSpecifier('motion');
 
 class RecordingExecutor implements Executor {
   readonly runs: Array<{ command: string; args: string[]; cwd?: string }> = [];
@@ -58,9 +61,9 @@ function options(
 
 describe('Motion installer', () => {
   it.each([
-    ['npm', 'npm', ['install', 'motion@12.42.2']],
-    ['pnpm', 'pnpm', ['add', 'motion@12.42.2']],
-    ['bun', 'bun', ['add', 'motion@12.42.2']],
+    ['npm', 'npm', ['install', motionPin]],
+    ['pnpm', 'pnpm', ['add', motionPin]],
+    ['bun', 'bun', ['add', motionPin]],
   ] as const)('installs the pinned runtime package with %s', async (packageManager, command, args) => {
     const executor = new RecordingExecutor();
 

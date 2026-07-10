@@ -1,77 +1,47 @@
+import versions from '../versions.json' with { type: 'json' };
+
 import type { CreateOptions } from '../types.js';
 
 /**
- * Single source of truth for the versions purrfold pins when it installs
- * generated-app dependencies. We install with explicit `name@version`
- * specifiers (not bare names) because bare `bun add` / `pnpm add` / `npm i`
- * resolve to the absolute latest, which can escape create-next-app's existing
- * ranges and pull in a breaking major. The original symptom: bun resolved
- * `eslint` to v10, which removed `context.getFilename()` — still called by
- * `eslint-plugin-react` (a transitive dep of eslint-config-next) — so
- * `eslint .` crashed. npm/pnpm stayed on the `^9` range create-next-app set,
- * so only bun broke. Pinning here keeps all three package managers in lockstep.
+ * The versions purrfold pins when it installs generated-app dependencies live
+ * in src/versions.json — the single source of truth shared with the E2E
+ * harness, scenarios, and tests, and the one file automated dependency tooling
+ * needs to edit to bump a pin.
+ *
+ * We install with explicit `name@version` specifiers (not bare names) because
+ * bare `bun add` / `pnpm add` / `npm i` resolve to the absolute latest, which
+ * can escape create-next-app's existing ranges and pull in a breaking major.
+ * The original symptom: bun resolved `eslint` to v10, which removed
+ * `context.getFilename()` — still called by `eslint-plugin-react` (a
+ * transitive dep of eslint-config-next) — so `eslint .` crashed. npm/pnpm
+ * stayed on the `^9` range create-next-app set, so only bun broke. Pinning
+ * keeps all three package managers in lockstep.
+ *
+ * Version constraints to respect when bumping src/versions.json:
+ * - `eslint` stays on v9 until eslint-plugin-react ships v10 support.
+ * - astroOverrides['@vitejs/plugin-react']: Astro 7 installs Vite 8 and
+ *   @astrojs/react 6 requires plugin-react 5.2+, while Next stays on the
+ *   Vite-6-compatible line.
  *
  * Bumping a pin is a deliberate act: change the version, then run the CLI E2E
  * suite (`npm run test:e2e:cli`) so an incompatible upgrade is caught here, not
  * in a generated project. create-next-app and shadcn stay on @latest by design.
  */
-export const DEPENDENCY_VERSIONS: Record<string, string> = {
-  // ESLint stays on v9 until eslint-plugin-react ships v10 support.
-  eslint: '9.39.4',
-  'eslint-config-next': '16.2.9',
-  'eslint-config-prettier': '10.1.8',
-  'eslint-plugin-import': '2.32.0',
-  'eslint-import-resolver-typescript': '4.4.5',
-  'eslint-plugin-react-doctor': '0.5.4',
-  'eslint-plugin-react-you-might-not-need-an-effect': '1.0.0',
-  prettier: '3.8.4',
-  'prettier-plugin-tailwindcss': '0.8.0',
-  husky: '9.1.7',
-  'lint-staged': '16.4.0',
-  'react-doctor': '0.5.4',
-  'react-scan': '0.5.7',
-  vitest: '4.1.8',
-  '@vitejs/plugin-react': '5.1.2',
-  'vite-tsconfig-paths': '5.1.4',
-  jsdom: '29.1.1',
-  '@testing-library/react': '16.3.2',
-  '@testing-library/dom': '10.4.1',
-  'eslint-plugin-testing-library': '7.16.2',
-  '@vitest/eslint-plugin': '1.6.20',
-  '@playwright/test': '1.60.0',
-  '@types/node': '26.1.0',
-  'eslint-plugin-playwright': '2.10.4',
-  '@commitlint/cli': '21.0.2',
-  '@commitlint/config-conventional': '21.0.2',
-  'lucide-react': '1.18.0',
-  '@phosphor-icons/react': '2.1.10',
-  '@tabler/icons-react': '3.44.0',
-  astro: '7.0.6',
-  '@astrojs/check': '0.9.9',
-  '@astrojs/node': '11.0.2',
-  '@astrojs/vercel': '11.0.2',
-  '@astrojs/netlify': '8.1.1',
-  '@astrojs/cloudflare': '14.1.2',
-  'eslint-plugin-astro': '1.7.0',
-  'typescript-eslint': '8.63.0',
-  'prettier-plugin-astro': '0.14.1',
-  motion: '12.42.2',
-};
+export const DEPENDENCY_VERSIONS: Record<string, string> = versions.dependencies;
 
-const ASTRO_DEPENDENCY_VERSION_OVERRIDES: Record<string, string> = {
-  // Astro 7 installs Vite 8 and @astrojs/react 6 requires plugin-react 5.2+.
-  '@vitejs/plugin-react': '5.2.0',
-};
+const ASTRO_DEPENDENCY_VERSION_OVERRIDES: Record<string, string> = versions.astroOverrides;
 
 /**
- * Turn a bare package name into a pinned `name@version` install specifier.
- * Throws if the dependency has no registered pin so an unpinned dependency can
- * never silently ship.
+ * Turn a bare package name into a pinned `name@version` install specifier,
+ * honoring framework-specific overrides. Throws if the dependency has no
+ * registered pin so an unpinned dependency can never silently ship.
  */
-export function pinnedSpecifier(name: string): string {
-  const version = DEPENDENCY_VERSIONS[name];
+export function pinnedSpecifier(name: string, framework: CreateOptions['framework'] = 'next'): string {
+  const version =
+    (framework === 'astro' ? ASTRO_DEPENDENCY_VERSION_OVERRIDES[name] : undefined) ??
+    DEPENDENCY_VERSIONS[name];
   if (!version) {
-    throw new Error(`No pinned version registered for "${name}". Add it to DEPENDENCY_VERSIONS.`);
+    throw new Error(`No pinned version registered for "${name}". Add it to src/versions.json.`);
   }
   return `${name}@${version}`;
 }
@@ -141,11 +111,7 @@ export function buildDevDependencies(
     ...(options.unit ? frameworkUnitDependencies : []),
     ...(options.e2e ? e2eDevDependencies : []),
     ...(options.commitlint ? commitlintDevDependencies : []),
-  ].map((name) => {
-    const frameworkVersion =
-      options.framework === 'astro' ? ASTRO_DEPENDENCY_VERSION_OVERRIDES[name] : undefined;
-    return frameworkVersion ? `${name}@${frameworkVersion}` : pinnedSpecifier(name);
-  });
+  ].map((name) => pinnedSpecifier(name, options.framework));
 }
 
 export function buildScripts(

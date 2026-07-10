@@ -3,6 +3,8 @@ import { pathToFileURL } from 'node:url';
 
 import { describe, expect, it } from 'vitest';
 
+import { pinnedSpecifier } from '../src/installers/config-model.js';
+
 type CliE2eScenario = {
   name: string;
   kind: 'real' | 'dry-run' | 'interactive' | 'external-shadcn';
@@ -153,7 +155,7 @@ describe('CLI E2E scenario definitions', () => {
     expect(astro).toMatchObject({ kind: 'real', expect: expect.objectContaining({ motion: true }) });
     expect(astro?.args).toContain('--motion');
     expect(defaults?.rejectOutput).toEqual(
-      expect.arrayContaining(['motion@12.42.2', 'motion-framer'])
+      expect.arrayContaining([pinnedSpecifier('motion'), 'motion-framer'])
     );
   });
 
@@ -173,8 +175,8 @@ describe('CLI E2E scenario definitions', () => {
     expect(scenario?.expectOutput).toEqual(
       expect.arrayContaining([
         expect.stringContaining('shadcn@latest init --defaults --preset b6FS5q9aq'),
-        expect.stringContaining('@vitejs/plugin-react@5.1.2'),
-        expect.stringContaining('vite-tsconfig-paths@5.1.4'),
+        expect.stringContaining(pinnedSpecifier('@vitejs/plugin-react')),
+        expect.stringContaining(pinnedSpecifier('vite-tsconfig-paths')),
         expect.stringContaining('mcp init --client claude'),
       ])
     );

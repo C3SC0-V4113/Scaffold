@@ -3,10 +3,10 @@
 # merging.
 #
 # NOTE: the versions purrfold pins for the apps it *generates* live in
-# src/installers/config-model.ts (DEPENDENCY_VERSIONS) as TypeScript literals.
-# Dependabot cannot see those — it only tracks real package.json manifests. To
-# bump a generated-app pin, edit DEPENDENCY_VERSIONS and run the CLI E2E suite
-# (`npm run test:e2e:cli`). See AGENTS.md for the full rationale.
+# src/versions.json (imported by src/installers/config-model.ts and the E2E
+# harness). Dependabot cannot see those — it only tracks real package.json
+# manifests. To bump a generated-app pin, edit src/versions.json and run the
+# CLI E2E suite (`npm run test:e2e:cli`). See config-model.ts for the rationale.
 version: 2
 updates:
   - package-ecosystem: npm
