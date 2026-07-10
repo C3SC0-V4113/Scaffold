@@ -1,0 +1,41 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "enabledManagers": ["custom.regex"],
+  "semanticCommits": "enabled",
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Dependency versions purrfold pins into generated apps. Single source of truth: src/versions.json (see src/installers/config-model.ts for the pinning rationale). The CLI's own dependencies and GitHub Actions stay with Dependabot.",
+      "managerFilePatterns": ["src/versions.json"],
+      "matchStrings": ["\"(?<depName>[^\"]+)\":\\s*\"(?<currentValue>\\d[^\"]*)\""],
+      "datasourceTemplate": "npm"
+    }
+  ],
+  "packageRules": [
+    {
+      "description": "Group non-major pin bumps into one weekly PR; the full E2E matrix in .github/workflows/e2e.yml validates it before merge.",
+      "matchFileNames": ["src/versions.json"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "generated-app pins (non-major)",
+      "schedule": ["before 6am on monday"]
+    },
+    {
+      "description": "eslint stays on v9 until eslint-plugin-react ships v10 support (v10 removed context.getFilename(), still used transitively via eslint-config-next).",
+      "matchFileNames": ["src/versions.json"],
+      "matchDepNames": ["eslint"],
+      "matchUpdateTypes": ["major"],
+      "enabled": false
+    },
+    {
+      "description": "@vitejs/plugin-react v6 is a known-bad line for generated Next apps (original bug report: pulled vite@7 into the unit-test toolchain).",
+      "matchFileNames": ["src/versions.json"],
+      "matchDepNames": ["@vitejs/plugin-react"],
+      "matchUpdateTypes": ["major"],
+      "enabled": false
+    }
+  ],
+  "prBodyNotes": [
+    "This PR changes what purrfold installs into **generated apps** (`src/versions.json`). Before merging: the full E2E matrix (`E2E` workflow) must be green. After merging: add a changeset (`npm run changeset`) so the bump ships in the next release."
+  ]
+}

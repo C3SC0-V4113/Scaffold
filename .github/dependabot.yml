@@ -4,9 +4,10 @@
 #
 # NOTE: the versions purrfold pins for the apps it *generates* live in
 # src/versions.json (imported by src/installers/config-model.ts and the E2E
-# harness). Dependabot cannot see those — it only tracks real package.json
-# manifests. To bump a generated-app pin, edit src/versions.json and run the
-# CLI E2E suite (`npm run test:e2e:cli`). See config-model.ts for the rationale.
+# harness). Dependabot cannot see those — they are handled by Renovate via the
+# custom regex manager in renovate.json, and every bump PR is validated by the
+# full E2E matrix (.github/workflows/e2e.yml). Division of labor: Dependabot
+# owns package.json + GitHub Actions; Renovate owns src/versions.json only.
 version: 2
 updates:
   - package-ecosystem: npm
