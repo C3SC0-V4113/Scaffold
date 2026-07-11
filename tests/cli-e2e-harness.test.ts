@@ -1,13 +1,14 @@
-import { existsSync } from 'node:fs';
+import { existsSync, rmSync } from 'node:fs';
 import path from 'node:path';
 import { tmpdir } from 'node:os';
 import { pathToFileURL } from 'node:url';
 
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 type RunContext = {
   keep: boolean;
   workDir: string;
+  cacheRoot: string;
   stamp: string;
   env: Record<string, string>;
 };
@@ -17,7 +18,12 @@ type HarnessModule = {
   createRunContext: (argv: string[], prefix?: string) => RunContext;
   readFlag: (argv: string[], flag: string) => string | undefined;
   readListFlag: (argv: string[], flag: string) => string[];
+  resolveCacheRoot: (env?: Record<string, string | undefined>) => string;
 };
+
+afterEach(() => {
+  vi.unstubAllEnvs();
+});
 
 async function loadHarness(): Promise<HarnessModule> {
   const url = pathToFileURL(path.join(process.cwd(), 'scripts/e2e/harness.mjs')).href;
@@ -42,7 +48,6 @@ describe('CLI E2E harness', () => {
       expect(context.workDir.startsWith(tmpdir())).toBe(true);
       expect(context.env.HOME).toContain('_purrfold-e2e');
       expect(context.env.USERPROFILE).toBe(context.env.HOME);
-      expect(context.env.npm_config_cache).toContain('cache');
       expect(context.env.TEMP).toContain('tmp');
       expect(existsSync(context.env.HOME)).toBe(true);
       expect(existsSync(context.env.TEMP)).toBe(true);
@@ -51,6 +56,32 @@ describe('CLI E2E harness', () => {
     }
 
     expect(existsSync(context.workDir)).toBe(false);
+  });
+
+  it('shares package-manager caches across runs and honors PURRFOLD_E2E_CACHE_DIR', async () => {
+    const { cleanupContext, createRunContext, resolveCacheRoot } = await loadHarness();
+    const override = path.join(tmpdir(), `purrfold-harness-cache-test-${Date.now()}`);
+    vi.stubEnv('PURRFOLD_E2E_CACHE_DIR', override);
+
+    expect(resolveCacheRoot({ PURRFOLD_E2E_CACHE_DIR: override })).toBe(override);
+    expect(resolveCacheRoot({})).not.toContain('_purrfold-e2e');
+
+    const context = createRunContext(['node', 'script'], 'purrfold-harness-cache-test-');
+    try {
+      expect(context.cacheRoot).toBe(override);
+      expect(context.env.npm_config_cache).toBe(path.join(override, 'npm'));
+      expect(context.env.npm_config_store_dir).toBe(path.join(override, 'pnpm-store'));
+      expect(context.env.BUN_INSTALL_CACHE_DIR).toBe(path.join(override, 'bun'));
+      // Caches live outside the per-run work dir so cleanup cannot remove them.
+      expect(context.env.npm_config_cache.startsWith(context.workDir)).toBe(false);
+      expect(existsSync(context.env.npm_config_cache)).toBe(true);
+    } finally {
+      cleanupContext(context);
+    }
+
+    expect(existsSync(context.workDir)).toBe(false);
+    expect(existsSync(path.join(override, 'npm'))).toBe(true);
+    rmSync(override, { recursive: true, force: true });
   });
 
   it('preserves a temporary work dir only when --keep is explicit', async () => {

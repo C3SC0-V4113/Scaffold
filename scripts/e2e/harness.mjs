@@ -1,6 +1,6 @@
 ﻿import { execFileSync, spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { homedir, tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -44,33 +44,62 @@ export function buildCli() {
   return path.join(rootDir, 'dist', 'index.js');
 }
 
+/**
+ * Root for package-manager caches shared across E2E runs. Unlike the per-run
+ * HOME/config isolation, download caches are content-addressed and safe to
+ * reuse, and recreating them cold on every run is what made the suite slow.
+ * Override with PURRFOLD_E2E_CACHE_DIR (CI points this at a restored
+ * actions/cache directory); delete the directory to force a cold run.
+ */
+export function resolveCacheRoot(env = process.env) {
+  return env.PURRFOLD_E2E_CACHE_DIR ?? path.join(homedir(), '.cache', 'purrfold-e2e');
+}
+
 export function createRunContext(argv, prefix = 'purrfold-e2e-') {
   const keep = argv.includes('--keep');
   const workDir = readFlag(argv, '--work-dir') ?? path.join(tmpdir(), `${prefix}${Date.now()}`);
   const stateDir = path.join(workDir, '_purrfold-e2e');
   const homeDir = path.join(stateDir, 'home');
-  const cacheDir = path.join(stateDir, 'cache');
   const tempDir = path.join(stateDir, 'tmp');
   const pnpmHome = path.join(stateDir, 'pnpm-home');
-  const bunCache = path.join(stateDir, 'bun-cache');
   const appDataDir = path.join(homeDir, 'AppData', 'Roaming');
   const localAppDataDir = path.join(homeDir, 'AppData', 'Local');
+  // Shared across runs (never cleaned up by cleanupContext).
+  const cacheRoot = resolveCacheRoot();
+  const npmCache = path.join(cacheRoot, 'npm');
+  const pnpmStore = path.join(cacheRoot, 'pnpm-store');
+  const bunCache = path.join(cacheRoot, 'bun');
+  const xdgCache = path.join(cacheRoot, 'xdg');
   mkdirSync(workDir, { recursive: true });
-  for (const directory of [homeDir, cacheDir, tempDir, pnpmHome, bunCache, appDataDir, localAppDataDir]) {
+  for (const directory of [
+    homeDir,
+    tempDir,
+    pnpmHome,
+    appDataDir,
+    localAppDataDir,
+    npmCache,
+    pnpmStore,
+    bunCache,
+    xdgCache,
+  ]) {
     mkdirSync(directory, { recursive: true });
   }
   return {
     keep,
     workDir,
+    cacheRoot,
     stamp: new Date().toISOString().replace(/[-:TZ.]/g, '').slice(0, 14),
     env: {
       HOME: homeDir,
       USERPROFILE: homeDir,
       APPDATA: appDataDir,
       LOCALAPPDATA: localAppDataDir,
-      XDG_CACHE_HOME: cacheDir,
-      npm_config_cache: path.join(cacheDir, 'npm'),
-      NPM_CONFIG_CACHE: path.join(cacheDir, 'npm'),
+      XDG_CACHE_HOME: xdgCache,
+      npm_config_cache: npmCache,
+      NPM_CONFIG_CACHE: npmCache,
+      // pnpm reads npm_config_*-prefixed settings; a shared content-addressed
+      // store lets repeat installs hard-link instead of re-downloading.
+      npm_config_store_dir: pnpmStore,
       PNPM_HOME: pnpmHome,
       BUN_INSTALL_CACHE_DIR: bunCache,
       TMP: tempDir,
