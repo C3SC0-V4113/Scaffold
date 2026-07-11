@@ -33,6 +33,13 @@
       "matchDepNames": ["@vitejs/plugin-react"],
       "matchUpdateTypes": ["major"],
       "enabled": false
+    },
+    {
+      "description": "eslint-plugin-astro v2 peer-requires eslint >= 10, incompatible with the eslint v9 pin above. Unblock together with the eslint major (E2E caught this: npm ERESOLVE on Astro scenarios, PR #12).",
+      "matchFileNames": ["src/versions.json"],
+      "matchDepNames": ["eslint-plugin-astro"],
+      "matchUpdateTypes": ["major"],
+      "enabled": false
     }
   ],
   "prBodyNotes": [

@@ -19,6 +19,9 @@ import type { CreateOptions } from '../types.js';
  *
  * Version constraints to respect when bumping src/versions.json:
  * - `eslint` stays on v9 until eslint-plugin-react ships v10 support.
+ * - `eslint-plugin-astro` stays on v1: v2 peer-requires eslint >= 10, so it
+ *   moves together with the eslint major (npm fails ERESOLVE on it; pnpm only
+ *   warns, which is why only npm Astro scenarios caught it).
  * - astroOverrides['@vitejs/plugin-react']: Astro 7 installs Vite 8 and
  *   @astrojs/react 6 requires plugin-react 5.2+, while Next stays on the
  *   Vite-6-compatible line.
