@@ -324,13 +324,19 @@ function killPtyChild(child) {
 const EXTERNAL_SHADCN_TIMEOUT_MS = 20 * 60 * 1000;
 
 /**
- * Drive purrfold's own interactive prompts inside a pseudo-terminal. Keystrokes
- * from `scenario.input` are fed one at a time with a small delay so @inquirer
- * has time to render and consume each answer before the next arrives.
+ * Drive purrfold's own interactive prompts inside a pseudo-terminal. Each entry
+ * in `scenario.interactions` fires once the first time its `waitFor` marker
+ * appears in the output, answering that prompt. Prompt-driven (not blind-timed)
+ * so slow environments like CI runners cannot desynchronize the answers; an
+ * unanticipated new prompt makes the scenario time out and fail, which is the
+ * signal that the interaction script needs updating.
  */
 function runInteractivePtyScenario(pty, scenario, context, cliPath, options) {
   const targetName = `${options.prefix ?? 'e2e'}-${scenario.name}-${context.stamp}`;
-  const keys = [...(scenario.input ?? '')];
+  const interactions = (scenario.interactions ?? []).map((interaction) => ({
+    ...interaction,
+    fired: false,
+  }));
 
   return new Promise((resolve, reject) => {
     const child = pty.spawn(process.execPath, [cliPath, targetName, ...scenario.args], {
@@ -355,15 +361,17 @@ function runInteractivePtyScenario(pty, scenario, context, cliPath, options) {
       finish(() => reject(new Error(`${scenario.name} timed out after 120s\n--- output ---\n${stripAnsi(output)}`)));
     }, 120000);
 
-    const feed = (index) => {
-      if (settled || index >= keys.length) return;
-      child.write(keys[index]);
-      setTimeout(() => feed(index + 1), 250);
-    };
-    setTimeout(() => feed(0), 600);
-
     child.onData((data) => {
       output += data;
+      const clean = stripAnsi(output);
+      for (const interaction of interactions) {
+        if (!interaction.fired && clean.includes(interaction.waitFor)) {
+          interaction.fired = true;
+          setTimeout(() => {
+            if (!settled) child.write(interaction.send);
+          }, 100);
+        }
+      }
     });
 
     child.onExit(({ exitCode }) => {

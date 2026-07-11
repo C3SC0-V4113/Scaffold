@@ -194,7 +194,14 @@ export const cliE2eScenarios = [
     kind: 'interactive',
     packageManager: 'npm',
     args: ['--dry-run'],
-    input: ['\r', '\r', 'n', '\r', 'n', '\r', 'n', '\r'].join(''),
+    interactions: [
+      { waitFor: 'Framework', send: '\r' },
+      { waitFor: 'Package manager', send: '\r' },
+      { waitFor: 'Install Vitest', send: '\r' },
+      { waitFor: 'Install Playwright', send: 'n\r' },
+      { waitFor: 'Install commitlint', send: 'n\r' },
+      { waitFor: 'Install shadcn MCP', send: 'n\r' },
+    ],
     expectOutput: ['Package manager', 'Install Vitest + React Testing Library?', 'Install shadcn MCP for Claude, Codex, and OpenCode?'],
     quick: false,
     requiresTty: true,
@@ -210,6 +217,7 @@ export const cliE2eScenarios = [
     packageManager: 'npm',
     args: [],
     interactions: [
+      { waitFor: 'Framework', send: '\r' },
       { waitFor: 'Package manager', send: '\r' },
       { waitFor: 'Install Vitest', send: '\r' },
       { waitFor: 'Install Playwright', send: '\r' },
