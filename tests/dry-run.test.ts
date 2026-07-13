@@ -29,6 +29,7 @@ describe('dry-run integration', () => {
     expect(output.replaceAll('\\', '/')).toContain('my-app/skills.sh');
     expect(output.replaceAll('\\', '/')).toContain('my-app/commitlint.config.mjs');
     expect(output).not.toContain('commitlint.config.js ');
+    expect(output).toContain('run git init');
     expect(output).toContain('run npx husky');
     expect(output).toContain(
       'run npx --yes skills@latest add https://github.com/vercel-labs/agent-skills --skill vercel-composition-patterns --skill vercel-react-best-practices --agent codex --copy --yes'
