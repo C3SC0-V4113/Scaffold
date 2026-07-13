@@ -378,7 +378,10 @@ export function renderReactDoctorConfig(
 `;
 }
 
-export const commitlintConfig = `module.exports = {
+// .mjs + ESM syntax on purpose: Astro apps set "type": "module", so a
+// commitlint.config.js with module.exports crashes there, while Next apps
+// stay CommonJS. An explicit .mjs works identically in both.
+export const commitlintConfig = `export default {
   extends: ['@commitlint/config-conventional'],
 };
 `;

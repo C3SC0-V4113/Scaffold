@@ -27,6 +27,9 @@ describe('dry-run integration', () => {
     expect(output).not.toContain('@vitejs/plugin-react@6.0.2');
     expect(output).not.toContain('mcp init --client');
     expect(output.replaceAll('\\', '/')).toContain('my-app/skills.sh');
+    expect(output.replaceAll('\\', '/')).toContain('my-app/commitlint.config.mjs');
+    expect(output).not.toContain('commitlint.config.js ');
+    expect(output).toContain('run npx husky');
     expect(output).toContain(
       'run npx --yes skills@latest add https://github.com/vercel-labs/agent-skills --skill vercel-composition-patterns --skill vercel-react-best-practices --agent codex --copy --yes'
     );
@@ -48,6 +51,7 @@ describe('dry-run integration', () => {
 
     const output = log.mock.calls.map((call) => call.join(' ')).join('\n');
     expect(output).toContain('run pnpm dlx create-next-app@latest my-app');
+    expect(output).toContain('run pnpm exec husky');
     expect(output).toContain('write');
     expect(output).not.toContain('vitest.config.mts');
   });
