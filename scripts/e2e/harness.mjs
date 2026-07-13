@@ -229,6 +229,13 @@ export function assertGeneratedApp(projectRoot, expected) {
     const tsconfig = readJson(path.join(projectRoot, 'tsconfig.json'));
     const astroConfig = readFileSync(path.join(projectRoot, 'astro.config.mjs'), 'utf8');
 
+    // create-astro's --add react step can fail while create-astro still exits 0;
+    // the generated app must always end up with the React integration in place.
+    if (!packageJson.dependencies?.['@astrojs/react']) {
+      throw new Error('Astro package.json should include @astrojs/react as a runtime dependency');
+    }
+    assertIncludes(astroConfig, 'react(', 'astro.config.mjs');
+
     assertPath(projectRoot, 'src/components/ui/button.tsx');
     assertPath(projectRoot, 'src/lib/utils.ts');
     assertPath(projectRoot, 'src/styles/global.css');
