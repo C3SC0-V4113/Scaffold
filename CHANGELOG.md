@@ -1,5 +1,11 @@
 # purrfold
 
+## 0.4.2
+
+### Patch Changes
+
+- 46f311a: Fix three quality-gate bugs in generated apps. commitlint config is now written as `commitlint.config.mjs` with ESM syntax and a named default export: the previous CommonJS `commitlint.config.js` crashed the commit-msg hook in Astro apps (whose package.json sets `"type": "module"`), and an anonymous default export would trip eslint-config-next's `import/no-anonymous-default-export` under `--max-warnings 0`. husky is now activated explicitly after installing dev dependencies: package managers do not run the `prepare` script on targeted installs (`npm install -D pkg`, `pnpm add`), so generated hooks existed on disk but never ran, letting commits bypass the quality gate until a manual `npm run prepare`. And purrfold now guarantees a git repository before activating hooks: create-next-app/create-astro roll back their `git init` when the initial commit fails (no git identity configured — fresh machines, CI), which silently produced apps with no repo and no hooks. The E2E harness verifies all of this functionally (commitlint lints a real message; `git config core.hooksPath` points at .husky).
+
 ## 0.4.1
 
 ### Patch Changes
