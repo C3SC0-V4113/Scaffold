@@ -60,13 +60,16 @@ describe('CLI E2E harness', () => {
 
   it('shares package-manager caches across runs and honors PURRFOLD_E2E_CACHE_DIR', async () => {
     const { cleanupContext, createRunContext, resolveCacheRoot } = await loadHarness();
-    const override = path.join(tmpdir(), `purrfold-harness-cache-test-${Date.now()}`);
+    // Distinct prefixes: workDir is also created under tmpdir() with a
+    // Date.now() suffix, and a same-millisecond collision would make the
+    // "cache lives outside the work dir" assertion compare a path to itself.
+    const override = path.join(tmpdir(), `purrfold-harness-cache-override-${Date.now()}`);
     vi.stubEnv('PURRFOLD_E2E_CACHE_DIR', override);
 
     expect(resolveCacheRoot({ PURRFOLD_E2E_CACHE_DIR: override })).toBe(override);
     expect(resolveCacheRoot({})).not.toContain('_purrfold-e2e');
 
-    const context = createRunContext(['node', 'script'], 'purrfold-harness-cache-test-');
+    const context = createRunContext(['node', 'script'], 'purrfold-harness-cache-run-');
     try {
       expect(context.cacheRoot).toBe(override);
       expect(context.env.npm_config_cache).toBe(path.join(override, 'npm'));
