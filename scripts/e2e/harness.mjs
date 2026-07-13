@@ -174,6 +174,44 @@ function runGeneratedCheck(projectRoot, packageManager, env) {
   return result.output;
 }
 
+/**
+ * Functional commitlint check: actually load the config and lint a valid
+ * message. Catches config-format bugs (e.g. CommonJS config in a
+ * "type": "module" Astro app) that file-existence assertions cannot see.
+ */
+function runCommitlintCheck(projectRoot, packageManager, env) {
+  const exec =
+    packageManager === 'pnpm'
+      ? { command: 'pnpm', args: ['exec', 'commitlint'] }
+      : packageManager === 'bun'
+        ? { command: 'bunx', args: ['--bun', 'commitlint'] }
+        : { command: 'npx', args: ['commitlint'] };
+  const result = runProcess(exec.command, exec.args, {
+    cwd: projectRoot,
+    env,
+    input: 'feat: e2e commitlint check\n',
+  });
+
+  if (result.status !== 0) {
+    throw new Error(`commitlint failed to lint a valid message in ${projectRoot}\n${result.output}`);
+  }
+}
+
+/**
+ * Hooks must be ACTIVE, not just present: package managers do not run the
+ * `prepare` script on targeted installs, so purrfold activates husky
+ * explicitly. Verify git actually points at the husky hooks directory.
+ */
+function assertHuskyActive(projectRoot) {
+  const result = runProcess('git', ['config', 'core.hooksPath'], { cwd: projectRoot });
+
+  if (result.status !== 0 || !result.stdout.includes('.husky')) {
+    throw new Error(
+      `git core.hooksPath should point at .husky in ${projectRoot} (husky was not activated)\n${result.output}`
+    );
+  }
+}
+
 function runMotionImportCheck(projectRoot, env) {
   const result = runProcess(
     process.execPath,
@@ -292,10 +330,10 @@ export function assertGeneratedApp(projectRoot, expected) {
   }
 
   if (expected.commitlint) {
-    assertPath(projectRoot, 'commitlint.config.js');
+    assertPath(projectRoot, 'commitlint.config.mjs');
     assertPath(projectRoot, '.husky/commit-msg');
   } else {
-    assertPath(projectRoot, 'commitlint.config.js', false);
+    assertPath(projectRoot, 'commitlint.config.mjs', false);
     assertPath(projectRoot, '.husky/commit-msg', false);
   }
 
@@ -513,6 +551,7 @@ function runExternalShadcnPtyScenario(pty, scenario, context, cliPath, options) 
           }
           const projectRoot = path.join(context.workDir, targetName);
           assertGeneratedApp(projectRoot, scenario.expect);
+          assertHuskyActive(projectRoot);
           resolve({ name: targetName, output: clean });
         } catch (error) {
           reject(error);
@@ -572,7 +611,11 @@ export async function runScenario(scenario, context, cliPath, options = {}) {
       framework: scenario.framework ?? 'next',
       ssrAdapter: scenario.ssrAdapter,
     });
+    assertHuskyActive(projectRoot);
     const checkOutput = runGeneratedCheck(projectRoot, scenario.packageManager, context.env);
+    if (scenario.expect.commitlint) {
+      runCommitlintCheck(projectRoot, scenario.packageManager, context.env);
+    }
     if (scenario.expect.motion) {
       runMotionImportCheck(projectRoot, context.env);
     }

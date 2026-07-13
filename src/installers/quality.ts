@@ -247,7 +247,7 @@ export async function installQualityLayer(
   );
 
   if (options.commitlint) {
-    await executor.writeFile(path.join(projectRoot, 'commitlint.config.js'), commitlintConfig);
+    await executor.writeFile(path.join(projectRoot, 'commitlint.config.mjs'), commitlintConfig);
     await executor.writeFile(
       path.join(projectRoot, '.husky', 'commit-msg'),
       renderCommitMsgHook(options.packageManager)
@@ -271,6 +271,21 @@ export async function installQualityLayer(
     const commands = getPackageManagerCommands(options.packageManager);
     const install = commands.addDev(buildDevDependencies(options));
     await executor.run(install.command, install.args, { cwd: projectRoot });
+
+    // create-next-app/create-astro roll back their `git init` when the initial
+    // commit fails (no git identity configured — fresh machines, CI runners),
+    // leaving the app without a repository. Hooks need one, and husky treats a
+    // missing .git as a warning with exit 0, so guarantee the repo ourselves.
+    if (!(await executor.pathExists(path.join(projectRoot, '.git')))) {
+      await executor.run('git', ['init'], { cwd: projectRoot });
+    }
+
+    // Activate husky explicitly: npm/pnpm/bun do not run the `prepare` script
+    // on targeted installs (`npm install -D pkg`, `pnpm add`), so without this
+    // the hooks exist on disk but core.hooksPath is never set and commits
+    // bypass them. The `prepare` script still covers plain installs on clones.
+    const enableHooks = commands.exec('husky', []);
+    await executor.run(enableHooks.command, enableHooks.args, { cwd: projectRoot });
   }
 
   const iconLibrary = await reconcileIconLibrary(projectRoot, options, executor);
