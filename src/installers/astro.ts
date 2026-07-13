@@ -195,6 +195,62 @@ function assertAstroPackageManager(packageManager: CreateOptions['packageManager
   }
 }
 
+async function hasReactIntegration(projectRoot: string, executor: Executor) {
+  const packageJsonPath = path.join(projectRoot, 'package.json');
+  const configPath = path.join(projectRoot, 'astro.config.mjs');
+
+  if (!(await executor.pathExists(packageJsonPath)) || !(await executor.pathExists(configPath))) {
+    return false;
+  }
+
+  let packageJson: unknown;
+  try {
+    packageJson = JSON.parse(await executor.readFile(packageJsonPath));
+  } catch {
+    return false;
+  }
+
+  const dependencies = isJsonObject(packageJson) && isJsonObject(packageJson.dependencies)
+    ? packageJson.dependencies
+    : {};
+  const config = await executor.readFile(configPath);
+
+  return Boolean(dependencies['@astrojs/react']) && config.includes('react(');
+}
+
+/**
+ * create-astro's `--add react` step can fail and still exit 0: it prints
+ * "Failed to add integrations, please run astro add react" and finishes the
+ * scaffold anyway, leaving an app whose React components cannot typecheck.
+ * Verify the integration actually landed and, if not, run `astro add react`
+ * ourselves; if it is still missing afterwards, fail hard instead of shipping
+ * a broken app.
+ */
+export async function ensureAstroReactIntegration(
+  projectRoot: string,
+  options: CreateOptions,
+  executor: Executor
+) {
+  if (executor instanceof DryRunExecutor) {
+    return;
+  }
+
+  if (await hasReactIntegration(projectRoot, executor)) {
+    return;
+  }
+
+  const commands = getPackageManagerCommands(options.packageManager);
+  const addReact = commands.exec('astro', ['add', 'react', '--yes']);
+  await executor.run(addReact.command, addReact.args, { cwd: projectRoot });
+
+  if (!(await hasReactIntegration(projectRoot, executor))) {
+    throw new Error(
+      'The Astro React integration is missing: create-astro failed to add it and `astro add react --yes` did not recover. ' +
+        `Run "astro add react" manually inside ${projectRoot}, then re-run purrfold with --skip-install to finish the setup.`
+    );
+  }
+}
+
 export async function createAstroApp(options: CreateOptions, executor: Executor) {
   assertAstroPackageManager(options.packageManager);
 
@@ -210,6 +266,7 @@ export async function createAstroApp(options: CreateOptions, executor: Executor)
   ];
 
   await executor.run(command, args);
+  await ensureAstroReactIntegration(projectRoot, options, executor);
   await configureAstroPathAliases(projectRoot, executor);
 
   await installAstroAdapter(projectRoot, options, executor);
