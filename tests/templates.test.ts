@@ -161,6 +161,16 @@ allowBuilds:
     expect(page).toContain('export const metadata');
   });
 
+  it('uses viewport-height units in Next and Astro home templates', () => {
+    const nextPage = renderHomePage('my-app');
+    const astroHero = renderAstroHomeHero('my-app');
+
+    expect(nextPage).toContain('min-h-dvh');
+    expect(nextPage).not.toContain('min-h-screen');
+    expect(astroHero).toContain('min-h-dvh');
+    expect(astroHero).not.toContain('min-h-screen');
+  });
+
   it('uses the official Motion imports when Motion is enabled', () => {
     const nextPage = renderHomePage('my-app', 'lucide', true);
     const astroHero = renderAstroHomeHero('my-app', 'lucide', true);

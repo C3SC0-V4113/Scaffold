@@ -205,7 +205,7 @@ export const metadata: Metadata = {
 
 export default function Home() {
   return (
-    <${mainTag} className="bg-background text-foreground flex min-h-screen flex-col items-center justify-center gap-4 p-8 text-center">
+    <${mainTag} className="bg-background text-foreground flex min-h-dvh flex-col items-center justify-center gap-4 p-8 text-center">
       ${markup}
       <h1 className="text-2xl font-semibold tracking-tight">${appName}</h1>
       <p className="text-muted-foreground text-sm">Edit app/page.tsx to start building.</p>
@@ -232,7 +232,7 @@ ${importLine}${motionImport}
 
 export default function HomeHero() {
   return (
-    <${mainTag} className="bg-background text-foreground flex min-h-screen flex-col items-center justify-center gap-4 p-8 text-center">
+    <${mainTag} className="bg-background text-foreground flex min-h-dvh flex-col items-center justify-center gap-4 p-8 text-center">
       ${markup}
       <h1 className="text-2xl font-semibold tracking-tight">${appName}</h1>
       <p className="text-muted-foreground text-sm">Edit src/pages/index.astro to start building.</p>
