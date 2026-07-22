@@ -98,7 +98,7 @@ jobs:
       # Shared harness cache (see resolveCacheRoot in scripts/e2e/harness.mjs):
       # package-manager download caches for the generated-app installs.
       - name: Restore E2E package cache
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/.cache/purrfold-e2e
           key: e2e-pm-cache-${{ matrix.scenario.packageManager }}-${{ hashFiles('src/versions.json') }}
@@ -127,7 +127,7 @@ jobs:
           cache: npm
 
       - name: Restore E2E package cache
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/.cache/purrfold-e2e
           key: e2e-pm-cache-npm-${{ hashFiles('src/versions.json') }}
