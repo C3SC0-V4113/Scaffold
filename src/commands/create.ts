@@ -216,9 +216,7 @@ export async function runCreate(targetDir: string, flags: RawCreateFlags) {
   await installMotion(projectRoot, options, executor);
   await installTestingFiles(projectRoot, options, executor);
   await installSkills(projectRoot, options, executor);
-  if (options.framework === 'next') {
-    await installDocsAndClaude(projectRoot, options, executor);
-  }
+  await installDocsAndClaude(projectRoot, options, executor);
   await installShadcnMcp(projectRoot, options, executor);
 
   if (executor instanceof DryRunExecutor) {

@@ -34,6 +34,11 @@ describe('dry-run integration', () => {
     expect(output).toContain(
       'run npx --yes skills@latest add https://github.com/vercel-labs/agent-skills --skill vercel-composition-patterns --skill vercel-react-best-practices --agent codex --copy --yes'
     );
+    expect(output.replaceAll('\\', '/')).toContain('/my-app/README.md');
+    expect(output.replaceAll('\\', '/')).toContain('/my-app/AGENTS.md');
+    expect(output.replaceAll('\\', '/')).toContain('/my-app/CLAUDE.md');
+    expect(output.replaceAll('\\', '/')).toContain('/my-app/DESIGN.md');
+    expect(output.replaceAll('\\', '/')).toContain('/my-app/.claude/settings.json');
     expect(output).toContain('write');
     expect(output).toContain('link');
   });
@@ -84,6 +89,11 @@ describe('dry-run integration', () => {
     expect(output.replaceAll('\\', '/')).toContain(
       'my-app/.claude/skills ->'
     );
+    expect(output.replaceAll('\\', '/')).toContain('/my-app/README.md');
+    expect(output.replaceAll('\\', '/')).toContain('/my-app/AGENTS.md');
+    expect(output.replaceAll('\\', '/')).toContain('/my-app/CLAUDE.md');
+    expect(output.replaceAll('\\', '/')).toContain('/my-app/DESIGN.md');
+    expect(output.replaceAll('\\', '/')).toContain('/my-app/.claude/settings.json');
     expect(output).not.toContain('--no-ai');
     expect(output).not.toContain('create-next-app@latest');
   });
