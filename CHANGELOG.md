@@ -1,5 +1,11 @@
 # purrfold
 
+## 0.4.4
+
+### Patch Changes
+
+- Update generated app dependency pins, including the jsdom 30 test environment and the latest compatible framework tooling.
+
 ## 0.4.3
 
 ### Patch Changes
