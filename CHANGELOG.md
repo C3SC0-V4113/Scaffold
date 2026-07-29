@@ -1,5 +1,11 @@
 # purrfold
 
+## 0.4.3
+
+### Patch Changes
+
+- Update generated app dependency pins and use dynamic viewport heights in the framework templates.
+
 ## 0.4.2
 
 ### Patch Changes
