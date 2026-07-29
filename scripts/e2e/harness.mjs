@@ -1,5 +1,5 @@
 ﻿import { execFileSync, spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, lstatSync, mkdirSync, readFileSync, readlinkSync, rmSync } from 'node:fs';
 import { homedir, tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -139,6 +139,10 @@ function assertNotIncludes(text, unexpected, label) {
   }
 }
 
+function countOccurrences(text, value) {
+  return text.split(value).length - 1;
+}
+
 function readJson(filePath) {
   return JSON.parse(readFileSync(filePath, 'utf8'));
 }
@@ -229,6 +233,21 @@ export function assertGeneratedApp(projectRoot, expected) {
   const packageJson = readJson(path.join(projectRoot, 'package.json'));
   const eslintConfig = readFileSync(path.join(projectRoot, 'eslint.config.mjs'), 'utf8');
   const skillsScript = readFileSync(path.join(projectRoot, 'skills.sh'), 'utf8');
+  const readme = readFileSync(path.join(projectRoot, 'README.md'), 'utf8');
+  const agents = readFileSync(path.join(projectRoot, 'AGENTS.md'), 'utf8');
+  const claude = readFileSync(path.join(projectRoot, 'CLAUDE.md'), 'utf8');
+
+  assertPath(projectRoot, 'DESIGN.md');
+  assertPath(projectRoot, '.claude/hooks/react-doctor.ps1');
+  assertPath(projectRoot, '.claude/hooks/project-min-evaluation.ps1');
+  assertPath(projectRoot, '.claude/settings.json');
+  assertPath(projectRoot, '.claude/skills');
+  assertIncludes(readme, '## Quality', 'README.md');
+  assertIncludes(readme, '## Agent Docs', 'README.md');
+  assertIncludes(readme, '## shadcn MCP', 'README.md');
+  assertIncludes(agents, '## Quality Gates', 'AGENTS.md');
+  assertIncludes(agents, '## References', 'AGENTS.md');
+  assertIncludes(agents, '## shadcn MCP', 'AGENTS.md');
 
   if (expected.motion) {
     const motionVersion = generatedVersions.dependencies.motion;
@@ -291,6 +310,30 @@ export function assertGeneratedApp(projectRoot, expected) {
     if (!packageJson.devDependencies?.['react-doctor']) {
       throw new Error('Astro package.json should include react-doctor');
     }
+    assertIncludes(agents, 'astro dev --background', 'AGENTS.md');
+    if (readme.indexOf('<!-- BEGIN:purrfold-managed -->') <= 0) {
+      throw new Error('Astro README.md should preserve starter content before the Purrfold block');
+    }
+    if (agents.indexOf('<!-- BEGIN:purrfold-managed -->') <= 0) {
+      throw new Error('Astro AGENTS.md should preserve starter content before the Purrfold block');
+    }
+    if (
+      countOccurrences(readme, '<!-- BEGIN:purrfold-managed -->') !== 1 ||
+      countOccurrences(readme, '<!-- END:purrfold-managed -->') !== 1 ||
+      countOccurrences(agents, '<!-- BEGIN:purrfold-managed -->') !== 1 ||
+      countOccurrences(agents, '<!-- END:purrfold-managed -->') !== 1
+    ) {
+      throw new Error('Astro Markdown files should contain exactly one Purrfold managed block');
+    }
+    if (process.platform !== 'win32') {
+      const claudePath = path.join(projectRoot, 'CLAUDE.md');
+      if (!lstatSync(claudePath).isSymbolicLink() || readlinkSync(claudePath) !== 'AGENTS.md') {
+        throw new Error('Astro CLAUDE.md should remain a relative symlink to AGENTS.md');
+      }
+    }
+    if (claude !== agents) {
+      throw new Error('Astro CLAUDE.md should resolve to the updated AGENTS.md content');
+    }
 
     if (expected.ssrAdapter) {
       assertIncludes(astroConfig, "output: 'server'", 'astro.config.mjs');
@@ -299,15 +342,17 @@ export function assertGeneratedApp(projectRoot, expected) {
       assertNotIncludes(astroConfig, "output: 'server'", 'astro.config.mjs');
     }
   } else {
-    const readme = readFileSync(path.join(projectRoot, 'README.md'), 'utf8');
-    const agents = readFileSync(path.join(projectRoot, 'AGENTS.md'), 'utf8');
-
     assertPath(projectRoot, 'components/ui/button.tsx');
     assertPath(projectRoot, 'lib/utils.ts');
     assertPath(projectRoot, 'app/globals.css');
     assertIncludes(eslintConfig, "'components/ui/**'", 'eslint.config.mjs');
     assertIncludes(readme, 'shadcn MCP', 'README.md');
     assertIncludes(agents, 'shadcn MCP', 'AGENTS.md');
+    assertNotIncludes(readme, '<!-- BEGIN:purrfold-managed -->', 'README.md');
+    assertNotIncludes(agents, '<!-- BEGIN:purrfold-managed -->', 'AGENTS.md');
+    if (claude !== '@AGENTS.md\n') {
+      throw new Error('Next.js CLAUDE.md should contain exactly @AGENTS.md followed by LF');
+    }
   }
 
   if (expected.unit) {

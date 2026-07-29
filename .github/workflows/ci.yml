@@ -56,5 +56,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Test generated documentation filesystem behavior
+        run: npx vitest run tests/docs.test.ts
+
       - name: Run quick CLI E2E (dry-run scenarios)
         run: npm run test:e2e:cli:quick
