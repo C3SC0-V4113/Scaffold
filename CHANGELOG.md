@@ -1,5 +1,11 @@
 # purrfold
 
+## 0.4.5
+
+### Patch Changes
+
+- 363a831: Preserve Astro starter documentation while adding Purrfold quality and agent guidance, with regression coverage for generated Astro and Next.js docs.
+
 ## 0.4.4
 
 ### Patch Changes
