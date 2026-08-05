@@ -14,7 +14,11 @@ cmd /c npm run check
 
 CI mirrors this: `.github/workflows/ci.yml` runs `npm run check` plus the quick E2E tier (dry-run scenarios) on ubuntu and windows for every push/PR. `.github/workflows/e2e.yml` runs the full scenario matrix (one parallel job per real scenario, generated from `scripts/cli-e2e.mjs --list` — never hardcode scenario names in workflows) nightly against upstream `@latest` tools, on manual dispatch, and on every PR whose diff touches `src/`, `scripts/`, `package.json`, `package-lock.json`, or the workflow itself. A failed nightly run opens a GitHub issue.
 
-That relevance check is the `changes` job, not a `paths:` trigger filter: the workflow must report on every PR so its summary check can be required. Scenario jobs are named dynamically by the matrix and therefore cannot be required by name — the fixed-name **`e2e-ok`** job stands in for all of them. It passes when the scenario jobs succeed or are legitimately skipped, and fails when any of them fails or is cancelled. Required checks on `main`: `check`, `e2e-quick (ubuntu-latest)`, `e2e-quick (windows-latest)`, and `e2e-ok`.
+That relevance check is the `changes` job, not a `paths:` trigger filter: the workflow must report on every PR so its summary check can be required. Scenario jobs are named dynamically by the matrix and therefore cannot be required by name — the fixed-name **`e2e-ok`** job stands in for all of them. It passes when the scenario jobs succeed or are legitimately skipped, and fails when any of them fails or is cancelled.
+
+`npm run test:pack` (`scripts/pack-smoke.mjs`) is the only test that exercises the artifact users install rather than the local `dist/` bundle: it packs the package, installs the tarball into a throwaway project, and drives the installed CLI. It runs on ubuntu and windows in CI because the executable shim npm links is platform-specific. Run it after touching `files`, `bin`, `prepack`, or the tsup output layout — `src/cli.ts` resolves `../package.json` from the bundle, so `dist/index.js` must stay exactly one directory below the package root.
+
+Required checks on `main`: `check`, `pack-smoke (ubuntu-latest)`, `pack-smoke (windows-latest)`, `e2e-quick (ubuntu-latest)`, `e2e-quick (windows-latest)`, and `e2e-ok`.
 
 ## Development Rules
 

@@ -34,6 +34,34 @@ jobs:
       - name: Run quality gate
         run: npm run check
 
+  # Runs on both runner families on purpose: the executable shim npm links is
+  # platform-specific (purrfold.cmd on Windows), so a single-OS job would leave
+  # half of that assertion permanently unexecuted.
+  pack-smoke:
+    name: pack-smoke (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7.0.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7.0.0
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify the packed npm artifact
+        run: npm run test:pack
+
   e2e-quick:
     name: e2e-quick (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
