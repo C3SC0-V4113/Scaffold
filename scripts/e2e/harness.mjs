@@ -8,6 +8,7 @@ import {
   mkdirSync,
   readFileSync,
   readlinkSync,
+  realpathSync,
   rmSync,
   symlinkSync,
   writeFileSync,
@@ -149,7 +150,16 @@ function createPnpmToolchain(toolchainDir, pnpmExecutable) {
 
 export function createRunContext(argv, prefix = 'purrfold-e2e-') {
   const keep = argv.includes('--keep');
-  const workDir = readFlag(argv, '--work-dir') ?? path.join(tmpdir(), `${prefix}${Date.now()}`);
+  const requestedWorkDir = readFlag(argv, '--work-dir') ?? path.join(tmpdir(), `${prefix}${Date.now()}`);
+  mkdirSync(requestedWorkDir, { recursive: true });
+  // Canonicalize before deriving anything from it. On Windows runners tmpdir()
+  // returns the 8.3 short form (C:\Users\RUNNER~1\...), while Vite resolves
+  // modules through the long form (C:\Users\runneradmin\...). Generating under
+  // the short path makes the generated app's own vitest fail with "Cannot find
+  // module /@fs/<long path>/tests/unit/home.test.tsx" — the two spellings name
+  // the same directory and nothing reconciles them. Real users never have this,
+  // so the harness must not manufacture it.
+  const workDir = realpathSync.native(requestedWorkDir);
   const stateDir = path.join(workDir, '_purrfold-e2e');
   const homeDir = path.join(stateDir, 'home');
   const tempDir = path.join(stateDir, 'tmp');
