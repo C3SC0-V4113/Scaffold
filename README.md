@@ -1,5 +1,10 @@
 ﻿# purrfold 🐱
 
+[![CI](https://github.com/C3SC0-V4113/Scaffold/actions/workflows/ci.yml/badge.svg)](https://github.com/C3SC0-V4113/Scaffold/actions/workflows/ci.yml)
+[![E2E](https://github.com/C3SC0-V4113/Scaffold/actions/workflows/e2e.yml/badge.svg)](https://github.com/C3SC0-V4113/Scaffold/actions/workflows/e2e.yml)
+[![npm](https://img.shields.io/npm/v/purrfold)](https://www.npmjs.com/package/purrfold)
+[![license](https://img.shields.io/npm/l/purrfold)](LICENSE)
+
 `purrfold` creates a new latest Next.js or Astro app and applies a production-oriented quality baseline: shadcn setup, strict ESLint, Prettier, Husky, React Doctor, React Scan, agent docs, Claude compatibility, and optional testing/commit tooling.
 
 ```bash
@@ -153,23 +158,24 @@ npm run smoke
 npm run smoke -- --work-dir E:\Repositorios\smoke --keep
 ```
 
-## Local Smoke Test
+## Packed artifact test
 
-Create a local package and run it with `npx`:
-
-```bash
-npm pack
-mkdir ..\cli-smoke-tests
-cd ..\cli-smoke-tests
-npx ..\scaffold-next-quality\purrfold-0.1.0.tgz my-app --yes --unit --e2e --commitlint
-```
-
-Then validate the generated app:
+Every other tier runs the local `dist/` bundle. This one runs the tarball users
+install:
 
 ```bash
-cd my-app
-npm run check
+npm run test:pack
 ```
+
+It packs the package, asserts the tarball still contains `dist/index.js`,
+`README.md`, `llms.txt`, and `package.json`, installs it into a throwaway
+project, and drives the installed CLI through `--version`, `info --json`, and a
+dry-run generation. Run it after touching `files`, `bin`, `prepack`, or the
+build output — `src/cli.ts` resolves `../package.json` relative to the bundle,
+so `dist/index.js` must stay exactly one directory below the package root.
+
+CI runs it on ubuntu and windows, because the executable shim npm links is
+platform-specific.
 
 ## Releases
 

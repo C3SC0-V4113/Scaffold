@@ -1,0 +1,54 @@
+name: Feature request
+description: Propose a capability or a change to what purrfold generates
+labels: ['enhancement']
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: >
+        What are you unable to do today? Describe the situation, not the
+        solution — the solution is the next field.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What you would like purrfold to do
+    validations:
+      required: true
+
+  - type: dropdown
+    id: surface
+    attributes:
+      label: What this touches
+      options:
+        - A new or changed CLI flag
+        - What gets generated into the app
+        - A pinned dependency version
+        - Documentation or agent-facing files
+        - Something else
+    validations:
+      required: true
+
+  - type: dropdown
+    id: frameworks
+    attributes:
+      label: Which frameworks it applies to
+      multiple: true
+      options:
+        - next
+        - astro
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: What you tried or considered instead
+      description: >
+        Including a manual workaround, if you have one. This helps judge whether
+        the feature belongs in the CLI or in the generated app's own docs.
+    validations:
+      required: false
