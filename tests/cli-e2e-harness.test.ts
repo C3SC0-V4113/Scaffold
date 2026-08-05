@@ -36,6 +36,16 @@ type HarnessModule = {
   ) => Promise<{ name: string; output: string }>;
 };
 
+/**
+ * The toolchain test provisions a real Node executable (hardlink, or a full
+ * ~80MB binary copy when process.execPath and the work dir live on different
+ * volumes) and then spawns three child processes against it. That warms up in
+ * well under a second, but a cold filesystem cache — or the copy fallback —
+ * does not reliably fit vitest's 5s default. The timeout is generous on
+ * purpose: it must not be tightened toward the observed warm runtime.
+ */
+const TOOLCHAIN_TIMEOUT_MS = 60_000;
+
 afterEach(() => {
   vi.unstubAllEnvs();
 });
@@ -191,7 +201,7 @@ describe('CLI E2E harness', () => {
     } finally {
       rmSync(fixtureRoot, { recursive: true, force: true });
     }
-  });
+  }, TOOLCHAIN_TIMEOUT_MS);
 
   it.skipIf(process.platform !== 'win32')(
     'resolves the pnpm.cmd shim instead of an earlier extensionless pnpm file',
