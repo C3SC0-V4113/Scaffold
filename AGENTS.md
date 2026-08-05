@@ -12,7 +12,9 @@ cmd /c npm run check
 
 `npm run check` performs typechecking, test execution, and build. If it cannot run, report the exact command and error.
 
-CI mirrors this: `.github/workflows/ci.yml` runs `npm run check` plus the quick E2E tier (dry-run scenarios) on ubuntu and windows for every push/PR. `.github/workflows/e2e.yml` runs the full scenario matrix (one parallel job per real scenario, generated from `scripts/cli-e2e.mjs --list` — never hardcode scenario names in workflows) on PRs that touch `src/` or `scripts/`, nightly against upstream `@latest` tools, and on manual dispatch. A failed nightly run opens a GitHub issue.
+CI mirrors this: `.github/workflows/ci.yml` runs `npm run check` plus the quick E2E tier (dry-run scenarios) on ubuntu and windows for every push/PR. `.github/workflows/e2e.yml` runs the full scenario matrix (one parallel job per real scenario, generated from `scripts/cli-e2e.mjs --list` — never hardcode scenario names in workflows) nightly against upstream `@latest` tools, on manual dispatch, and on every PR whose diff touches `src/`, `scripts/`, `package.json`, `package-lock.json`, or the workflow itself. A failed nightly run opens a GitHub issue.
+
+That relevance check is the `changes` job, not a `paths:` trigger filter: the workflow must report on every PR so its summary check can be required. Scenario jobs are named dynamically by the matrix and therefore cannot be required by name — the fixed-name **`e2e-ok`** job stands in for all of them. It passes when the scenario jobs succeed or are legitimately skipped, and fails when any of them fails or is cancelled. Required checks on `main`: `check`, `e2e-quick (ubuntu-latest)`, `e2e-quick (windows-latest)`, and `e2e-ok`.
 
 ## Development Rules
 

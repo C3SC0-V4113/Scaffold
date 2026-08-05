@@ -6,9 +6,10 @@
 # runs them on every push/PR.
 #
 # Triggers:
-# - pull_request touching generator code or pins: validates the change with
-#   real generations (this is what makes automated src/versions.json bump PRs
-#   safe to merge).
+# - pull_request: runs for EVERY pull request so the e2e-ok summary check always
+#   reports. Relevance is decided by the `changes` job below, not by a `paths:`
+#   filter — a path-filtered workflow never reports at all on a non-matching pull
+#   request, which leaves a required check pending forever.
 # - schedule: nightly canary against create-next-app@latest / shadcn@latest —
 #   catches upstream drift independent of our own changes and opens an issue
 #   on failure.
@@ -17,12 +18,6 @@ name: E2E
 
 on:
   pull_request:
-    paths:
-      - 'src/**'
-      - 'scripts/**'
-      - 'package.json'
-      - 'package-lock.json'
-      - '.github/workflows/e2e.yml'
   schedule:
     - cron: '23 5 * * *'
   workflow_dispatch:
@@ -40,8 +35,53 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
+  # Replaces the former `paths:` trigger filter. Same path set, but expressed as
+  # a job so the workflow still reports a conclusion on pull requests that do not
+  # touch generator code.
+  changes:
+    name: detect E2E-relevant changes
+    runs-on: ubuntu-latest
+    outputs:
+      e2e: ${{ steps.filter.outputs.e2e }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Detect changed paths
+        id: filter
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+
+          # schedule and workflow_dispatch have no base ref to diff against, and
+          # both are meant to exercise the full suite regardless.
+          if [ "$EVENT_NAME" != "pull_request" ]; then
+            echo 'e2e=true' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # HEAD is the merge commit, so diffing it against the base tip yields
+          # exactly this pull request's changes, forks included.
+          changed="$(git diff --name-only "$BASE_SHA" HEAD)"
+          echo "Changed files:"
+          printf '%s\n' "$changed"
+
+          if printf '%s\n' "$changed" | grep -Eq '^(src/|scripts/|package\.json$|package-lock\.json$|\.github/workflows/e2e\.yml$)'; then
+            echo 'e2e=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'e2e=false' >> "$GITHUB_OUTPUT"
+          fi
+
   matrix:
     name: generate scenario matrix
+    needs: changes
+    # Must be gated at job level: the jq below errors on an empty matrix, so a
+    # skip expressed inside the script would fail the gate instead of passing it.
+    if: needs.changes.outputs.e2e == 'true'
     runs-on: ubuntu-latest
     outputs:
       scenarios: ${{ steps.list.outputs.scenarios }}
@@ -126,6 +166,33 @@ jobs:
 
       - name: Run scenario
         run: node scripts/cli-e2e.mjs --scenario "${{ matrix.scenario.name }}" --require-tty
+
+  # The single stable check name this workflow contributes to branch protection.
+  # Scenario jobs cannot be required by name because the matrix names them
+  # dynamically, so this job stands in for all of them.
+  #
+  # `heavy` is deliberately not a dependency: it never runs on pull requests, and
+  # its nightly failures are reported by nightly-report instead.
+  e2e-ok:
+    name: e2e-ok
+    # `always()` is load-bearing. Without it this job is skipped whenever the
+    # matrix is skipped, and a required check that never reports leaves the pull
+    # request pending forever — the exact failure mode the `paths:` filter caused.
+    if: always()
+    needs: [changes, matrix, scenario]
+    runs-on: ubuntu-latest
+    steps:
+      # `success()` cannot be used here: it treats a legitimately skipped matrix
+      # as a non-success. Only failure and cancellation may block the merge.
+      - name: Fail when a required E2E job did not succeed
+        if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
+        run: |
+          echo "Dependency results: ${{ join(needs.*.result, ', ') }}"
+          echo 'A required E2E job failed or was cancelled.'
+          exit 1
+
+      - name: Report gate satisfied
+        run: echo "E2E gate satisfied (${{ join(needs.*.result, ', ') }})."
 
   heavy:
     name: heavy scenarios (network-bound interactive)

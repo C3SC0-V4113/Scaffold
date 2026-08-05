@@ -110,6 +110,29 @@ describe('CLI E2E catalog boundary', () => {
     expect(workflow).not.toContain('node scripts/cli-e2e.mjs --list |');
   });
 
+  it('gates the scenario matrix behind change detection and a stable e2e-ok summary check', () => {
+    const workflow = readFileSync(path.join(process.cwd(), '.github', 'workflows', 'e2e.yml'), 'utf8');
+
+    // A `paths:` filter on pull_request stops the workflow from reporting at
+    // all on a non-matching pull request, which leaves the required summary
+    // check pending forever. Relevance must be decided by the `changes` job.
+    expect(workflow).not.toMatch(/pull_request:\s*\n\s+paths:/);
+    expect(workflow).toContain('e2e: ${{ steps.filter.outputs.e2e }}');
+
+    // The jq matrix builder errors on an empty array, so the skip has to happen
+    // at job level or the gate fails instead of passing on docs-only changes.
+    expect(workflow).toContain("if: needs.changes.outputs.e2e == 'true'");
+
+    // Scenario jobs are named dynamically by the matrix and cannot be required
+    // by name; e2e-ok is the fixed name the branch ruleset points at.
+    expect(workflow).toContain('name: e2e-ok');
+    expect(workflow).toContain('needs: [changes, matrix, scenario]');
+    expect(workflow).toContain('if: always()');
+    expect(workflow).toContain(
+      "if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')"
+    );
+  });
+
   it(
     'runs the actual quick orchestration without pnpm on PATH',
     () => {
