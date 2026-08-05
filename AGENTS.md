@@ -43,6 +43,8 @@ From there `.github/workflows/release.yml` takes over on every push to `main`. W
 
 Publishing uses npm **trusted publishing** (OIDC) with provenance. There is no `NPM_TOKEN`: the workflow's `id-token: write` permission lets npm exchange a short-lived GitHub identity for publish rights and attach an attestation linking the tarball to the workflow run. The trusted publisher is registered on npmjs.com against the workflow **filename**, so renaming `release.yml` breaks publishing until npm is updated to match.
 
+The release job installs a pinned npm major rather than the runner's bundled 10.x (too old for OIDC) or `npm@latest` (floats, and npm 12 changed the `npm pack --json` payload shape mid-flight). Raise that pin deliberately, and run `npm run test:pack` under the new major first — CI and the release job intentionally run different npm versions, which is how packaging differences between them get caught.
+
 Do not hand-edit `CHANGELOG.md`, bump `version` manually, or run `npm run changeset:version` locally — the release workflow owns all three.
 
 **Emergency local publish.** Only when the workflow itself is broken and a release cannot wait: `npm run changeset:version`, commit, then `npm run release`. This uses maintainer credentials and produces no provenance, so prefer fixing the workflow. `main` requires pull requests, so this path depends on the repository-admin bypass.

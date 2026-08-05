@@ -19,6 +19,8 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { packedFilePaths } from './pack-manifest.mjs';
+
 const rootDir = fileURLToPath(new URL('..', import.meta.url));
 const keep = process.argv.includes('--keep');
 
@@ -84,7 +86,7 @@ try {
   // --ignore-scripts keeps prepack's build output off stdout; without it the
   // --json payload is interleaved with tsup logs and cannot be parsed.
   const manifest = JSON.parse(runNpm(['pack', '--dry-run', '--ignore-scripts', '--json'], { capture: true }));
-  const packedFiles = manifest[0].files.map((file) => file.path);
+  const packedFiles = packedFilePaths(manifest);
   console.log(`packed ${packedFiles.length} files: ${packedFiles.join(', ')}`);
 
   for (const required of requiredPackedFiles) {

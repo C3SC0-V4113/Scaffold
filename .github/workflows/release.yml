@@ -48,8 +48,14 @@ jobs:
 
       # Trusted publishing needs npm >= 11.5.1 and the Node 22 runner image ships
       # npm 10.x, so the bundled version is never sufficient here.
+      #
+      # Pinned to a major deliberately. This step used to install npm@latest,
+      # which floated to npm 12 and changed the `npm pack --json` payload shape
+      # mid-flight, breaking the first automated release. Nothing in the publish
+      # path should change behavior because an upstream tool shipped a major;
+      # raising this pin is a reviewed change like any other dependency bump.
       - name: Install an npm that supports trusted publishing
-        run: npm install -g npm@latest
+        run: npm install -g npm@12
 
       - name: Report npm version
         run: npm --version
