@@ -1,11 +1,22 @@
 import { pinnedDependency } from './catalog.mjs';
 
+// Real generation runs on Ubuntu for every scenario. A couple of representative
+// scenarios also run on Windows and macOS, because scaffolding failures are
+// frequently OS-specific: the harness carries a pile of Windows-only machinery
+// (executable resolution through where.exe, .cmd shims, junctions, a Node binary
+// hardlink) that dry-run scenarios never reach.
+export const defaultRunners = ['ubuntu-latest'];
+export const crossPlatformRunners = ['ubuntu-latest', 'windows-latest', 'macos-latest'];
+
 export const cliE2eScenarios = [
   {
     name: 'npm-default-unit',
     kind: 'real',
     packageManager: 'npm',
-    execution: { requires: ['npm'] },
+    // Cross-platform representative for Next.js. npm on purpose: the pnpm
+    // toolchain forwarder is the least-proven code in the harness, so it earns
+    // multi-OS coverage as its own deliberate step rather than riding along here.
+    execution: { requires: ['npm'], os: crossPlatformRunners },
     args: ['--pm', 'npm', '--unit', '--no-e2e', '--no-commitlint', '--motion', '--yes'],
     expect: { unit: true, e2e: false, commitlint: false, pnpm: false, mcp: false, motion: true },
     quick: false,
@@ -67,7 +78,8 @@ export const cliE2eScenarios = [
     kind: 'real',
     framework: 'astro',
     packageManager: 'npm',
-    execution: { requires: ['npm'] },
+    // Cross-platform representative for Astro.
+    execution: { requires: ['npm'], os: crossPlatformRunners },
     args: ['--framework', 'astro', '--pm', 'npm', '--unit', '--no-e2e', '--no-commitlint', '--motion', '--yes'],
     expect: { unit: true, e2e: false, commitlint: false, pnpm: false, mcp: false, motion: true },
     verifyDoctorDesign: true,
@@ -314,6 +326,31 @@ export function scenarioMetadata(scenarios = cliE2eScenarios) {
     quick: scenario.quick === true,
     heavy: scenario.heavy === true,
     requiresTty: scenario.requiresTty === true,
-    execution: { requires: scenario.execution?.requires ?? [] },
+    execution: {
+      requires: scenario.execution?.requires ?? [],
+      os: scenario.execution?.os ?? defaultRunners,
+    },
   }));
+}
+
+/**
+ * The CI job matrix: one entry per (real scenario, runner) pair.
+ *
+ * Expanded here rather than in the workflow so the fan-out stays unit-testable
+ * and workflow files keep containing no scenario knowledge at all. Dry-run
+ * scenarios are excluded because ci.yml's e2e-quick job already covers them on
+ * both Ubuntu and Windows.
+ */
+export function scenarioMatrix(scenarios = cliE2eScenarios) {
+  return scenarioMetadata(scenarios)
+    .filter((scenario) => scenario.kind !== 'dry-run')
+    .flatMap((scenario) =>
+      scenario.execution.os.map((os) => ({
+        ...scenario,
+        os,
+        // Job names must be unique per runner or the matrix collapses them in
+        // the checks UI.
+        jobName: `${scenario.name} (${os})`,
+      }))
+    );
 }

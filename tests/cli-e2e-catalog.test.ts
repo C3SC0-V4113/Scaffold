@@ -103,11 +103,40 @@ describe('CLI E2E catalog boundary', () => {
     const workflow = readFileSync(path.join(process.cwd(), '.github', 'workflows', 'e2e.yml'), 'utf8');
 
     expect(workflow).toContain('set -euo pipefail');
-    expect(workflow).toContain('node scripts/cli-e2e.mjs --list > "$catalog_file"');
-    expect(workflow).toContain('if type != "array" then error("scenario catalog must be a JSON array")');
-    expect(workflow).toContain('error("scenario matrix is empty after filtering dry-runs")');
+    expect(workflow).toContain('node scripts/cli-e2e.mjs --list-matrix > "$raw_file"');
+    expect(workflow).toContain('if type != "array" then error("scenario matrix must be a JSON array")');
+    expect(workflow).toContain('error("scenario matrix is empty")');
     expect(workflow).not.toContain('scenarios=$(node scripts/cli-e2e.mjs --list');
     expect(workflow).not.toContain('node scripts/cli-e2e.mjs --list |');
+  });
+
+  it('drives runner and job name from the generated matrix instead of the workflow', () => {
+    const workflow = readFileSync(path.join(process.cwd(), '.github', 'workflows', 'e2e.yml'), 'utf8');
+
+    expect(workflow).toContain('runs-on: ${{ matrix.scenario.os }}');
+    expect(workflow).toContain('name: ${{ matrix.scenario.jobName }}');
+
+    // No runner family may be pinned on the scenario job: which OS a scenario
+    // runs on is scenario metadata, not workflow knowledge. Anchored on the
+    // two-space job indent so the workflow_dispatch `scenario:` input does not
+    // match instead.
+    const jobStart = workflow.search(/\n {2}scenario:\r?\n/);
+    const jobEnd = workflow.search(/\n {2}e2e-ok:\r?\n/);
+    expect(jobStart).toBeGreaterThan(-1);
+    expect(jobEnd).toBeGreaterThan(jobStart);
+    expect(workflow.slice(jobStart, jobEnd)).not.toMatch(/runs-on: (ubuntu|windows|macos)-latest/);
+
+    // resolveCacheRoot honors this before falling back to homedir(), which does
+    // not resolve consistently across the three runner families.
+    expect(workflow).toContain('PURRFOLD_E2E_CACHE_DIR: ${{ runner.temp }}/purrfold-e2e-cache');
+    expect(workflow).toContain('path: ${{ runner.temp }}/purrfold-e2e-cache');
+    expect(workflow).toContain('key: e2e-pm-cache-${{ matrix.scenario.os }}-');
+
+    // The `runner` context does not exist at job level — putting it in a job's
+    // `env:` fails the entire workflow at parse time, before any job starts.
+    // Ten spaces of indent means step-level env; six would mean job-level.
+    expect(workflow).toMatch(/\n {10}PURRFOLD_E2E_CACHE_DIR:/);
+    expect(workflow).not.toMatch(/\n {6}PURRFOLD_E2E_CACHE_DIR:/);
   });
 
   it('gates the scenario matrix behind change detection and a stable e2e-ok summary check', () => {

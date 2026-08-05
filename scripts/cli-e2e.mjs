@@ -1,10 +1,11 @@
 #!/usr/bin/env node
 import { readFlag, readListFlag } from './e2e/catalog.mjs';
-import { scenarioMetadata, selectScenarios } from './e2e/scenarios.mjs';
+import { scenarioMatrix, scenarioMetadata, selectScenarios } from './e2e/scenarios.mjs';
 
 const quick = process.argv.includes('--quick');
 const heavy = process.argv.includes('--heavy');
 const list = process.argv.includes('--list');
+const listMatrix = process.argv.includes('--list-matrix');
 const failOnTtyMissing = process.argv.includes('--require-tty');
 const names = readListFlag(process.argv, '--scenario');
 const framework = readFlag(process.argv, '--framework');
@@ -12,6 +13,12 @@ if (framework !== undefined && framework !== 'next' && framework !== 'astro') {
   throw new Error(`Unsupported E2E framework filter: ${framework}`);
 }
 const scenarios = selectScenarios({ quick, heavy, names, framework });
+// --list is the human/debug view: one entry per scenario. --list-matrix is what
+// CI consumes: real scenarios only, expanded to one entry per runner.
+if (listMatrix) {
+  console.log(JSON.stringify(scenarioMatrix(scenarios)));
+  process.exit(0);
+}
 if (list) {
   console.log(JSON.stringify(scenarioMetadata(scenarios)));
   process.exit(0);

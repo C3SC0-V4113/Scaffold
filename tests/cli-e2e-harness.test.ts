@@ -1,5 +1,14 @@
 import { spawnSync } from 'node:child_process';
-import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  chmodSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  realpathSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import path from 'node:path';
 import { tmpdir } from 'node:os';
 import { pathToFileURL } from 'node:url';
@@ -70,7 +79,10 @@ describe('CLI E2E harness', () => {
     const context = createRunContext(['node', 'script'], 'purrfold-harness-test-');
 
     try {
-      expect(context.workDir.startsWith(tmpdir())).toBe(true);
+      // Compare canonical forms: createRunContext realpaths the work dir, and on
+      // Windows tmpdir() can still be the 8.3 short spelling of the same folder.
+      expect(context.workDir.startsWith(realpathSync.native(tmpdir()))).toBe(true);
+      expect(context.workDir).toBe(realpathSync.native(context.workDir));
       expect(context.nodeExecutable).toBe(process.execPath);
       expect(context.env.HOME).toContain('_purrfold-e2e');
       expect(context.env.USERPROFILE).toBe(context.env.HOME);

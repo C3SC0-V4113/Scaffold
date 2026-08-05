@@ -35,11 +35,17 @@ type ScenarioMetadata = {
   quick: boolean;
   heavy: boolean;
   requiresTty: boolean;
+  execution: { requires: string[]; os: string[] };
 };
+
+type ScenarioMatrixEntry = ScenarioMetadata & { os: string; jobName: string };
 
 type ScenariosModule = {
   cliE2eScenarios: CliE2eScenario[];
   scenarioNames: () => string[];
+  defaultRunners: string[];
+  crossPlatformRunners: string[];
+  scenarioMatrix: (scenarios?: CliE2eScenario[]) => ScenarioMatrixEntry[];
   scenarioMetadata: (scenarios?: CliE2eScenario[]) => ScenarioMetadata[];
   selectScenarios: (options?: {
     quick?: boolean;
@@ -63,6 +69,49 @@ describe('CLI E2E scenario definitions', () => {
     expect(selectScenarios({ names: ['npm-default-unit'] }).map((scenario) => scenario.name)).toEqual([
       'npm-default-unit',
     ]);
+  });
+
+  it('runs every real scenario on Ubuntu and defaults to Ubuntu only', async () => {
+    const { scenarioMatrix, scenarioMetadata, cliE2eScenarios, defaultRunners } = await loadScenarios();
+    const matrix = scenarioMatrix();
+    const realScenarios = scenarioMetadata(cliE2eScenarios).filter((scenario) => scenario.kind !== 'dry-run');
+
+    expect(defaultRunners).toEqual(['ubuntu-latest']);
+    for (const scenario of realScenarios) {
+      expect(matrix.some((entry) => entry.name === scenario.name && entry.os === 'ubuntu-latest')).toBe(true);
+    }
+
+    // Dry-run scenarios belong to ci.yml's e2e-quick job and must never inflate
+    // the real-generation matrix.
+    expect(matrix.some((entry) => entry.kind === 'dry-run')).toBe(false);
+  });
+
+  it('fans representative Next and Astro scenarios out to Windows and macOS', async () => {
+    const { scenarioMatrix, crossPlatformRunners } = await loadScenarios();
+    const matrix = scenarioMatrix();
+    const runnersFor = (name: string) => matrix.filter((entry) => entry.name === name).map((entry) => entry.os);
+
+    expect(crossPlatformRunners).toEqual(['ubuntu-latest', 'windows-latest', 'macos-latest']);
+    expect(runnersFor('npm-default-unit')).toEqual(crossPlatformRunners);
+    expect(runnersFor('astro-npm-ssg-unit')).toEqual(crossPlatformRunners);
+
+    // One Next and one Astro representative, both on npm. The pnpm toolchain
+    // forwarder is the least-proven part of the harness and is deliberately not
+    // part of the first cross-platform slice.
+    const crossPlatform = matrix.filter((entry) => entry.os !== 'ubuntu-latest');
+    expect(new Set(crossPlatform.map((entry) => entry.name))).toEqual(
+      new Set(['npm-default-unit', 'astro-npm-ssg-unit'])
+    );
+    expect(crossPlatform.every((entry) => entry.packageManager === 'npm')).toBe(true);
+  });
+
+  it('gives every matrix entry a unique job name so checks do not collapse', async () => {
+    const { scenarioMatrix } = await loadScenarios();
+    const jobNames = scenarioMatrix().map((entry) => entry.jobName);
+
+    expect(new Set(jobNames).size).toBe(jobNames.length);
+    expect(jobNames).toContain('npm-default-unit (windows-latest)');
+    expect(jobNames).toContain('astro-npm-ssg-unit (macos-latest)');
   });
 
   it('covers the planned package-manager and shadcn preset matrix', async () => {
