@@ -11,16 +11,18 @@ type RunContext = {
   workDir: string;
   cacheRoot: string;
   nodeExecutable: string;
+  scenarioAdapters: Map<string, RunContext>;
   stamp: string;
   env: Record<string, string>;
 };
 
 type HarnessModule = {
   cleanupContext: (context: RunContext) => void;
-  createRunContext: (
-    argv: string[],
-    prefix?: string,
-    options?: { requiresPnpm?: boolean; pnpmExecutable?: string }
+  createRunContext: (argv: string[], prefix?: string) => RunContext;
+  prepareScenarioContext: (
+    scenario: Record<string, unknown>,
+    context: RunContext,
+    options?: { env?: Record<string, string | undefined>; pnpmExecutable?: string }
   ) => RunContext;
   readFlag: (argv: string[], flag: string) => string | undefined;
   readListFlag: (argv: string[], flag: string) => string[];
@@ -75,7 +77,8 @@ describe('CLI E2E harness', () => {
   });
 
   it('creates a pnpm toolchain that keeps outer and nested executable resolution consistent', async () => {
-    const { cleanupContext, createRunContext, resolveExecutable, runScenario } = await loadHarness();
+    const { cleanupContext, createRunContext, prepareScenarioContext, resolveExecutable, runScenario } =
+      await loadHarness();
     const fixtureRoot = mkdtempSync(path.join(tmpdir(), 'purrfold pnpm fixture '));
     const selectedDir = path.join(fixtureRoot, 'selected pnpm with spaces');
     const workDir = path.join(fixtureRoot, 'scenario run with spaces');
@@ -92,10 +95,14 @@ describe('CLI E2E harness', () => {
         chmodSync(selectedPnpm, 0o755);
       }
 
-      const context = createRunContext(['node', 'script', '--work-dir', workDir], 'unused-', {
-        requiresPnpm: true,
-        pnpmExecutable: selectedPnpm,
-      });
+      const baseContext = createRunContext(['node', 'script', '--work-dir', workDir], 'unused-');
+      const context = prepareScenarioContext(
+        { kind: 'real', execution: { requires: ['pnpm'] } },
+        baseContext,
+        {
+          pnpmExecutable: selectedPnpm,
+        }
+      );
       const toolchainDir = path.join(workDir, '_purrfold-e2e', 'toolchain', 'node_modules', '.bin');
       const pnpmForwarder = path.join(toolchainDir, process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm');
       const pathKey = Object.keys(context.env).find((key) => key.toLowerCase() === 'path');
@@ -180,7 +187,7 @@ describe('CLI E2E harness', () => {
       );
       expect(result.output).toContain(context.nodeExecutable);
 
-      cleanupContext(context);
+      cleanupContext(baseContext);
     } finally {
       rmSync(fixtureRoot, { recursive: true, force: true });
     }
@@ -212,6 +219,59 @@ describe('CLI E2E harness', () => {
       }
     }
   );
+
+  it('does not resolve pnpm for a pnpm-labelled dry-run when PATH lacks pnpm', async () => {
+    const { cleanupContext, createRunContext, runScenario } = await loadHarness();
+    const fixtureRoot = mkdtempSync(path.join(tmpdir(), 'purrfold dry-run no pnpm '));
+    const context = createRunContext(['node', 'script', '--work-dir', path.join(fixtureRoot, 'run')]);
+    const pathKey = Object.keys(process.env).find((key) => key.toLowerCase() === 'path') ?? 'PATH';
+    context.env[pathKey] = fixtureRoot;
+    const probeCli = path.join(fixtureRoot, 'probe-cli.mjs');
+    writeFileSync(probeCli, 'console.log("dry-run reached");\n');
+
+    try {
+      const result = await runScenario(
+        {
+          name: 'pnpm-dry-run-without-runtime-requirement',
+          kind: 'dry-run',
+          packageManager: 'pnpm',
+          execution: { requires: [] },
+          args: [],
+          expectOutput: ['dry-run reached'],
+        },
+        context,
+        probeCli
+      );
+
+      expect(result.output).toContain('dry-run reached');
+      expect(context.scenarioAdapters.size).toBe(0);
+    } finally {
+      cleanupContext(context);
+      rmSync(fixtureRoot, { recursive: true, force: true });
+    }
+  });
+
+  it('prepares mixed selections lazily so missing pnpm does not block npm scenarios', async () => {
+    const { cleanupContext, createRunContext, prepareScenarioContext } = await loadHarness();
+    const fixtureRoot = mkdtempSync(path.join(tmpdir(), 'purrfold mixed pm '));
+    const context = createRunContext(['node', 'script', '--work-dir', path.join(fixtureRoot, 'run')]);
+    const pathKey = Object.keys(process.env).find((key) => key.toLowerCase() === 'path') ?? 'PATH';
+    const envWithoutPnpm = { ...process.env, [pathKey]: fixtureRoot };
+    const npmScenario = { kind: 'real', execution: { requires: ['npm'] } };
+    const pnpmScenario = { kind: 'real', execution: { requires: ['pnpm'] } };
+
+    try {
+      expect(prepareScenarioContext(npmScenario, context, { env: envWithoutPnpm })).toBe(context);
+      expect(() => prepareScenarioContext(pnpmScenario, context, { env: envWithoutPnpm })).toThrow(
+        'Could not resolve pnpm on the inherited PATH.'
+      );
+      expect(prepareScenarioContext(npmScenario, context, { env: envWithoutPnpm })).toBe(context);
+      expect(context.scenarioAdapters.size).toBe(0);
+    } finally {
+      cleanupContext(context);
+      rmSync(fixtureRoot, { recursive: true, force: true });
+    }
+  });
 
   it('shares package-manager caches across runs and honors PURRFOLD_E2E_CACHE_DIR', async () => {
     const { cleanupContext, createRunContext, resolveCacheRoot } = await loadHarness();

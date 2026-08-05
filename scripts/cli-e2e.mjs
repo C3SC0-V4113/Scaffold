@@ -1,13 +1,5 @@
 #!/usr/bin/env node
-import {
-  buildCli,
-  cleanupContext,
-  createRunContext,
-  readFlag,
-  readListFlag,
-  resolveExecutable,
-  runScenario,
-} from './e2e/harness.mjs';
+import { readFlag, readListFlag } from './e2e/catalog.mjs';
 import { scenarioMetadata, selectScenarios } from './e2e/scenarios.mjs';
 
 const quick = process.argv.includes('--quick');
@@ -27,12 +19,12 @@ if (list) {
 if (scenarios.length === 0) {
   throw new Error('No CLI E2E scenarios matched the requested filters.');
 }
+
+// Runtime-only dependencies stay behind the catalog/list boundary so the CI
+// matrix can be generated immediately after checkout, before npm ci.
+const { buildCli, cleanupContext, createRunContext, runScenario } = await import('./e2e/harness.mjs');
 const prefix = quick ? 'purrfold-e2e-quick-' : heavy ? 'purrfold-e2e-heavy-' : 'purrfold-e2e-';
-const requiresPnpm = scenarios.some((scenario) => scenario.packageManager === 'pnpm');
-const context = createRunContext(process.argv, prefix, {
-  requiresPnpm,
-  pnpmExecutable: requiresPnpm ? resolveExecutable('pnpm') : undefined,
-});
+const context = createRunContext(process.argv, prefix);
 const results = [];
 let hasFailures = true;
 

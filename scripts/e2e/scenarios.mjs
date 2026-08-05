@@ -1,10 +1,11 @@
-﻿import { pinnedDependency } from './harness.mjs';
+import { pinnedDependency } from './catalog.mjs';
 
 export const cliE2eScenarios = [
   {
     name: 'npm-default-unit',
     kind: 'real',
     packageManager: 'npm',
+    execution: { requires: ['npm'] },
     args: ['--pm', 'npm', '--unit', '--no-e2e', '--no-commitlint', '--motion', '--yes'],
     expect: { unit: true, e2e: false, commitlint: false, pnpm: false, mcp: false, motion: true },
     quick: false,
@@ -13,6 +14,7 @@ export const cliE2eScenarios = [
     name: 'pnpm-b3-commitlint',
     kind: 'real',
     packageManager: 'pnpm',
+    execution: { requires: ['pnpm'] },
     args: ['--pm', 'pnpm', '--unit', '--no-e2e', '--commitlint', '--shadcn-args', '--preset', 'b3REw8vwo', '--yes'],
     expect: { unit: true, e2e: false, commitlint: true, pnpm: true, mcp: false },
     quick: false,
@@ -21,6 +23,7 @@ export const cliE2eScenarios = [
     name: 'npm-b1-no-tests',
     kind: 'real',
     packageManager: 'npm',
+    execution: { requires: ['npm'] },
     args: ['--pm', 'npm', '--no-unit', '--no-e2e', '--no-commitlint', '--shadcn-args', '--preset', 'b1sSLwZVp', '--yes'],
     expect: { unit: false, e2e: false, commitlint: false, pnpm: false, mcp: false },
     quick: false,
@@ -29,6 +32,7 @@ export const cliE2eScenarios = [
     name: 'pnpm-b2-e2e',
     kind: 'real',
     packageManager: 'pnpm',
+    execution: { requires: ['pnpm'] },
     args: ['--pm', 'pnpm', '--unit', '--e2e', '--no-commitlint', '--shadcn-args', '--preset', 'b2qMI9ufY', '--yes'],
     expect: { unit: true, e2e: true, commitlint: false, pnpm: true, mcp: false },
     quick: false,
@@ -37,15 +41,16 @@ export const cliE2eScenarios = [
     name: 'bun-b5-minimal',
     kind: 'real',
     packageManager: 'bun',
+    execution: { requires: ['bun', 'bunx'] },
     args: ['--pm', 'bun', '--no-unit', '--no-e2e', '--no-commitlint', '--shadcn-args', '--preset', 'b5eH0WVTX', '--yes'],
     expect: { unit: false, e2e: false, commitlint: false, pnpm: false, mcp: false },
-    requires: ['bunx', 'bun'],
     quick: false,
   },
   {
     name: 'npm-skip-install-repo',
     kind: 'real',
     packageManager: 'npm',
+    execution: { requires: ['npm'] },
     args: ['--pm', 'npm', '--no-unit', '--no-e2e', '--no-commitlint', '--skip-install', '--yes'],
     expect: {
       unit: false,
@@ -62,6 +67,7 @@ export const cliE2eScenarios = [
     kind: 'real',
     framework: 'astro',
     packageManager: 'npm',
+    execution: { requires: ['npm'] },
     args: ['--framework', 'astro', '--pm', 'npm', '--unit', '--no-e2e', '--no-commitlint', '--motion', '--yes'],
     expect: { unit: true, e2e: false, commitlint: false, pnpm: false, mcp: false, motion: true },
     verifyDoctorDesign: true,
@@ -72,6 +78,7 @@ export const cliE2eScenarios = [
     kind: 'real',
     framework: 'astro',
     packageManager: 'pnpm',
+    execution: { requires: ['pnpm'] },
     args: ['--framework', 'astro', '--pm', 'pnpm', '--unit', '--e2e', '--no-commitlint', '--yes'],
     expect: { unit: true, e2e: true, commitlint: false, pnpm: true, mcp: false },
     quick: false,
@@ -81,6 +88,7 @@ export const cliE2eScenarios = [
     kind: 'real',
     framework: 'astro',
     packageManager: 'npm',
+    execution: { requires: ['npm'] },
     ssrAdapter: 'node',
     args: [
       '--framework',
@@ -248,6 +256,7 @@ export const cliE2eScenarios = [
     name: 'external-shadcn-interactive',
     kind: 'external-shadcn',
     packageManager: 'npm',
+    execution: { requires: ['npm'] },
     args: [],
     interactions: [
       { waitFor: 'Framework', send: '\r' },
@@ -305,5 +314,6 @@ export function scenarioMetadata(scenarios = cliE2eScenarios) {
     quick: scenario.quick === true,
     heavy: scenario.heavy === true,
     requiresTty: scenario.requiresTty === true,
+    execution: { requires: scenario.execution?.requires ?? [] },
   }));
 }

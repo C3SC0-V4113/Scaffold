@@ -15,41 +15,11 @@ import {
 import { homedir, tmpdir } from 'node:os';
 import { createRequire } from 'node:module';
 import path from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+import { pathToFileURL } from 'node:url';
 
-export const rootDir = path.resolve(fileURLToPath(new URL('..', import.meta.url)), '..');
-const require = createRequire(import.meta.url);
-const tinyexecModuleUrl = pathToFileURL(require.resolve('tinyexec')).href;
+import { generatedVersions, pinnedDependency, readFlag, readListFlag, rootDir } from './catalog.mjs';
 
-// Single source of truth for generated-app dependency pins, shared with
-// src/installers/config-model.ts. Read via fs (not a JSON import) so the
-// scripts stay runnable on any Node without import-attribute support.
-export const generatedVersions = JSON.parse(readFileSync(path.join(rootDir, 'src', 'versions.json'), 'utf8'));
-
-export function pinnedDependency(name, framework = 'next') {
-  const version =
-    (framework === 'astro' ? generatedVersions.astroOverrides[name] : undefined) ??
-    generatedVersions.dependencies[name];
-  if (!version) {
-    throw new Error(`No pinned version registered for "${name}" in src/versions.json.`);
-  }
-  return `${name}@${version}`;
-}
-
-export function readFlag(argv, flag) {
-  const index = argv.indexOf(flag);
-  return index === -1 ? undefined : argv[index + 1];
-}
-
-export function readListFlag(argv, flag) {
-  const value = readFlag(argv, flag);
-  return value
-    ? value
-        .split(',')
-        .map((item) => item.trim())
-        .filter(Boolean)
-    : [];
-}
+export { generatedVersions, pinnedDependency, readFlag, readListFlag, rootDir };
 
 export function hasCommand(command) {
   const lookup = process.platform === 'win32' ? 'where' : 'command';
@@ -151,6 +121,8 @@ function createPnpmToolchain(toolchainDir, pnpmExecutable) {
 
   const pnpmForwarder = path.join(toolchainDir, process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm');
   if (process.platform === 'win32') {
+    const require = createRequire(import.meta.url);
+    const tinyexecModuleUrl = pathToFileURL(require.resolve('tinyexec')).href;
     const selectedBinParent = path.join(toolchainDir, 'selected', 'node_modules');
     const selectedBinDir = path.join(selectedBinParent, '.bin');
     mkdirSync(selectedBinParent, { recursive: true });
@@ -175,7 +147,7 @@ function createPnpmToolchain(toolchainDir, pnpmExecutable) {
   return nodeExecutable;
 }
 
-export function createRunContext(argv, prefix = 'purrfold-e2e-', options = {}) {
+export function createRunContext(argv, prefix = 'purrfold-e2e-') {
   const keep = argv.includes('--keep');
   const workDir = readFlag(argv, '--work-dir') ?? path.join(tmpdir(), `${prefix}${Date.now()}`);
   const stateDir = path.join(workDir, '_purrfold-e2e');
@@ -190,10 +162,6 @@ export function createRunContext(argv, prefix = 'purrfold-e2e-', options = {}) {
   const pnpmStore = path.join(cacheRoot, 'pnpm-store');
   const bunCache = path.join(cacheRoot, 'bun');
   const xdgCache = path.join(cacheRoot, 'xdg');
-  const pathKey = Object.keys(process.env).find((key) => key.toLowerCase() === 'path') ?? 'PATH';
-  // tinyexec applies the additional Windows escaping required by command shims
-  // when they live in the conventional node_modules/.bin location.
-  const toolchainDir = options.requiresPnpm ? path.join(stateDir, 'toolchain', 'node_modules', '.bin') : undefined;
   mkdirSync(workDir, { recursive: true });
   for (const directory of [
     homeDir,
@@ -205,21 +173,15 @@ export function createRunContext(argv, prefix = 'purrfold-e2e-', options = {}) {
     pnpmStore,
     bunCache,
     xdgCache,
-    ...(toolchainDir ? [toolchainDir] : []),
   ]) {
     mkdirSync(directory, { recursive: true });
   }
-  if (options.requiresPnpm && !options.pnpmExecutable) {
-    throw new Error('A resolved pnpm executable is required for pnpm E2E scenarios.');
-  }
-  const nodeExecutable = toolchainDir ? createPnpmToolchain(toolchainDir, options.pnpmExecutable) : process.execPath;
-  const inheritedPath = process.env[pathKey] ?? '';
-  const scenarioPath = toolchainDir ? [toolchainDir, inheritedPath].filter(Boolean).join(path.delimiter) : undefined;
   return {
     keep,
     workDir,
     cacheRoot,
-    nodeExecutable,
+    nodeExecutable: process.execPath,
+    scenarioAdapters: new Map(),
     stamp: new Date()
       .toISOString()
       .replace(/[-:TZ.]/g, '')
@@ -241,9 +203,44 @@ export function createRunContext(argv, prefix = 'purrfold-e2e-', options = {}) {
       BUN_INSTALL_CACHE_DIR: bunCache,
       TMP: tempDir,
       TEMP: tempDir,
-      ...(scenarioPath ? { [pathKey]: scenarioPath } : {}),
     },
   };
+}
+
+export function prepareScenarioContext(scenario, context, options = {}) {
+  const requires = scenario.execution?.requires ?? [];
+  if (!requires.includes('pnpm')) {
+    return context;
+  }
+
+  const cached = context.scenarioAdapters.get('pnpm');
+  if (cached) {
+    return cached;
+  }
+
+  const lookupEnv = options.env ?? process.env;
+  const pnpmExecutable = options.pnpmExecutable ?? resolveExecutable('pnpm', lookupEnv);
+  const toolchainDir = path.join(
+    context.workDir,
+    '_purrfold-e2e',
+    'toolchain',
+    'node_modules',
+    '.bin'
+  );
+  mkdirSync(toolchainDir, { recursive: true });
+  const nodeExecutable = createPnpmToolchain(toolchainDir, pnpmExecutable);
+  const pathKey = Object.keys(lookupEnv).find((key) => key.toLowerCase() === 'path') ?? 'PATH';
+  const inheritedPath = lookupEnv[pathKey] ?? '';
+  const scenarioContext = {
+    ...context,
+    nodeExecutable,
+    env: {
+      ...context.env,
+      [pathKey]: [toolchainDir, inheritedPath].filter(Boolean).join(path.delimiter),
+    },
+  };
+  context.scenarioAdapters.set('pnpm', scenarioContext);
+  return scenarioContext;
 }
 
 function runProcess(command, args, options = {}) {
@@ -880,22 +877,24 @@ async function runTtyScenario(scenario, context, cliPath, options) {
 }
 
 export async function runScenario(scenario, context, cliPath, options = {}) {
-  for (const command of scenario.requires ?? []) {
+  const requires = scenario.execution?.requires ?? [];
+  for (const command of requires.filter((command) => command !== 'pnpm')) {
     if (!hasCommand(command)) {
       throw new Error(`${scenario.name} requires ${command} on PATH`);
     }
   }
+  const scenarioContext = prepareScenarioContext(scenario, context, options);
 
   if (scenario.requiresTty) {
-    return runTtyScenario(scenario, context, cliPath, options);
+    return runTtyScenario(scenario, scenarioContext, cliPath, options);
   }
 
-  const targetName = `${options.prefix ?? 'e2e'}-${scenario.name}-${context.stamp}`;
+  const targetName = `${options.prefix ?? 'e2e'}-${scenario.name}-${scenarioContext.stamp}`;
   const args =
     scenario.kind === 'dry-run' ? [cliPath, targetName, ...scenario.args] : [cliPath, targetName, ...scenario.args];
-  const result = runProcess(context.nodeExecutable, args, {
-    cwd: context.workDir,
-    env: context.env,
+  const result = runProcess(scenarioContext.nodeExecutable, args, {
+    cwd: scenarioContext.workDir,
+    env: scenarioContext.env,
     input: scenario.input,
     shell: false,
   });
@@ -912,7 +911,7 @@ export async function runScenario(scenario, context, cliPath, options = {}) {
   }
 
   if (scenario.kind === 'real') {
-    const projectRoot = path.join(context.workDir, targetName);
+    const projectRoot = path.join(scenarioContext.workDir, targetName);
     assertGeneratedApp(projectRoot, {
       ...scenario.expect,
       framework: scenario.framework ?? 'next',
@@ -921,19 +920,19 @@ export async function runScenario(scenario, context, cliPath, options = {}) {
     assertRepositoryInvariant(projectRoot, !scenario.expect.skipInstall);
     const checkOutput = scenario.expect.skipInstall
       ? ''
-      : runGeneratedCheck(projectRoot, scenario.packageManager, context.env);
+      : runGeneratedCheck(projectRoot, scenario.packageManager, scenarioContext.env);
     if (scenario.verifyDoctorDesign) {
-      runGeneratedDoctorDesign(projectRoot, scenario.packageManager, context.env);
+      runGeneratedDoctorDesign(projectRoot, scenario.packageManager, scenarioContext.env);
     }
     // The generated app already ran its gate once during creation. This second
     // pass exercises React Doctor's warm-cache path; it must not create a HEAD
     // commit or alter the empty index.
     assertRepositoryInvariant(projectRoot, !scenario.expect.skipInstall);
     if (scenario.expect.commitlint) {
-      runCommitlintCheck(projectRoot, scenario.packageManager, context.env);
+      runCommitlintCheck(projectRoot, scenario.packageManager, scenarioContext.env);
     }
     if (scenario.expect.motion) {
-      runMotionImportCheck(projectRoot, context.env, context.nodeExecutable);
+      runMotionImportCheck(projectRoot, scenarioContext.env, scenarioContext.nodeExecutable);
     }
     return { name: targetName, output: result.output, checkOutput };
   }
