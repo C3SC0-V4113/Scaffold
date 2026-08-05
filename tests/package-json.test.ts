@@ -43,6 +43,23 @@ describe('package.json quality config', () => {
     expect(packageJson.engines?.node).toBe('>=22.13.0');
   });
 
+  it('packs every file the installed CLI needs at runtime', () => {
+    const packageJson = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')) as {
+      files?: string[];
+      bin?: Record<string, string>;
+    };
+
+    // scripts/pack-smoke.mjs asserts these survive into the real tarball. Pinning
+    // them here too means a dropped entry fails the fast gate instead of waiting
+    // for the network-bound pack smoke.
+    expect(packageJson.files).toEqual(expect.arrayContaining(['dist', 'README.md', 'llms.txt']));
+
+    // src/cli.ts reads ../package.json relative to the bundle to resolve the
+    // version, so the entry point has to stay exactly one directory below the
+    // package root or `purrfold --version` throws on a clean install.
+    expect(packageJson.bin?.purrfold).toBe('./dist/index.js');
+  });
+
   it('does not add npm-conflicting prettier overrides for new projects', async () => {
     const executor = new MemoryExecutor();
 
