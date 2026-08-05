@@ -60,6 +60,16 @@ describe('package.json quality config', () => {
     expect(packageJson.bin?.purrfold).toBe('./dist/index.js');
   });
 
+  it('publishes with provenance so releases stay attestable', () => {
+    const packageJson = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')) as {
+      publishConfig?: { provenance?: boolean };
+    };
+
+    // Dropping this silently downgrades every release to an unattested tarball,
+    // which no test would otherwise notice.
+    expect(packageJson.publishConfig?.provenance).toBe(true);
+  });
+
   it('does not add npm-conflicting prettier overrides for new projects', async () => {
     const executor = new MemoryExecutor();
 

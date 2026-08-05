@@ -33,13 +33,19 @@ Required checks on `main`: `check`, `pack-smoke (ubuntu-latest)`, `pack-smoke (w
 
 ## Releases
 
-Versioning and `CHANGELOG.md` are managed with Changesets. For any user-facing change:
+Versioning and `CHANGELOG.md` are managed with Changesets, and publishing is automated. The only manual step for a user-facing change is:
 
-1. `npm run changeset` — describe the change and pick the bump type.
-2. `npm run changeset:version` — apply bumps and update `CHANGELOG.md`; commit.
-3. `npm run release` — runs `npm run check` (via `prepublishOnly`), publishes, and tags.
+```bash
+npm run changeset
+```
 
-Do not hand-edit `CHANGELOG.md` or bump `version` manually.
+From there `.github/workflows/release.yml` takes over on every push to `main`. With changesets pending it opens or updates a `chore: release` version pull request; merging that pull request publishes the new version and creates the tag.
+
+Publishing uses npm **trusted publishing** (OIDC) with provenance. There is no `NPM_TOKEN`: the workflow's `id-token: write` permission lets npm exchange a short-lived GitHub identity for publish rights and attach an attestation linking the tarball to the workflow run. The trusted publisher is registered on npmjs.com against the workflow **filename**, so renaming `release.yml` breaks publishing until npm is updated to match.
+
+Do not hand-edit `CHANGELOG.md`, bump `version` manually, or run `npm run changeset:version` locally — the release workflow owns all three.
+
+**Emergency local publish.** Only when the workflow itself is broken and a release cannot wait: `npm run changeset:version`, commit, then `npm run release`. This uses maintainer credentials and produces no provenance, so prefer fixing the workflow. `main` requires pull requests, so this path depends on the repository-admin bypass.
 
 ## Agent-facing docs
 

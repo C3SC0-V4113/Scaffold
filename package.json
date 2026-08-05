@@ -35,6 +35,9 @@
   "bugs": {
     "url": "https://github.com/C3SC0-V4113/Scaffold/issues"
   },
+  "publishConfig": {
+    "provenance": true
+  },
   "scripts": {
     "build": "tsup",
     "dev": "tsx src/index.ts",
