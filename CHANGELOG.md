@@ -1,5 +1,11 @@
 # purrfold
 
+## 0.5.1
+
+### Patch Changes
+
+- 747584f: Publish releases through npm trusted publishing with provenance, so every published tarball carries a verifiable attestation linking it to the workflow run and commit that produced it.
+
 ## 0.5.0
 
 ### Minor Changes
