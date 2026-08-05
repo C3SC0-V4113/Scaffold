@@ -179,27 +179,29 @@ platform-specific.
 
 ## Releases
 
-Versioning and the changelog are managed with [Changesets](https://github.com/changesets/changesets).
+Versioning and the changelog are managed with
+[Changesets](https://github.com/changesets/changesets), and publishing is
+automated. After a change, describe it and pick the bump type:
 
-1. After a change, describe it and pick the bump type:
+```bash
+npm run changeset
+```
 
-   ```bash
-   npm run changeset
-   ```
+Commit that file with your work. From there
+[`.github/workflows/release.yml`](.github/workflows/release.yml) runs on every
+push to `main`:
 
-2. When ready to release, apply pending changesets (bumps the version and writes
-   `CHANGELOG.md`) and commit:
+- With changesets pending, it opens or updates a `chore: release` pull request
+  that applies the bumps and writes `CHANGELOG.md`.
+- Merging that pull request publishes to npm and creates the release tag.
 
-   ```bash
-   npm run changeset:version
-   git commit -am "release: version packages"
-   ```
+Publishing uses npm [trusted publishing](https://docs.npmjs.com/trusted-publishers)
+over OIDC, so no npm token exists in this repository, and every release carries
+a provenance attestation linking the published tarball to the workflow run and
+commit that produced it.
 
-3. Publish to npm (runs `npm run check` first and tags the release):
-
-   ```bash
-   npm run release
-   ```
+Do not run `npm run changeset:version` locally or edit `CHANGELOG.md` by hand —
+the workflow owns both.
 
 The package is built with `tsup` into a single `dist/index.js`.
 

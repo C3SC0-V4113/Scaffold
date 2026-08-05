@@ -1,0 +1,75 @@
+# Release automation.
+#
+# Every push to main runs this. Changesets decides what happens:
+# - pending changesets  -> open or update the version pull request
+# - none pending        -> publish whatever the merged version PR bumped, and tag it
+#
+# Publishing uses npm trusted publishing (OIDC). There is no NPM_TOKEN on this
+# path: the id-token permission below lets npm exchange a short-lived GitHub
+# identity for publish rights, and npm attaches a provenance attestation linking
+# the tarball back to this workflow run and commit. The trusted publisher is
+# configured on npmjs.com against this exact workflow filename — renaming this
+# file breaks publishing until the npm side is updated to match.
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+# Never cancel a release in flight: a half-published version is far worse than
+# a queued one.
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # push the version commit and the release tag
+      pull-requests: write # open and update the changesets version PR
+      id-token: write # mint the OIDC token trusted publishing exchanges
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7.0.0
+        with:
+          node-version: 22
+          cache: npm
+
+      # Trusted publishing needs npm >= 11.5.1 and the Node 22 runner image ships
+      # npm 10.x, so the bundled version is never sufficient here.
+      - name: Install an npm that supports trusted publishing
+        run: npm install -g npm@latest
+
+      - name: Report npm version
+        run: npm --version
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Verifies the real tarball in the job that publishes it. A green run on an
+      # earlier commit is not evidence about this one. Kept as an explicit step
+      # rather than folded into prepublishOnly so the documented emergency local
+      # publish stays fast and offline-friendly.
+      - name: Verify the packed artifact
+        run: npm run test:pack
+
+      - name: Create version pull request or publish
+        uses: changesets/action@v1
+        with:
+          version: npm run changeset:version
+          publish: npm run release
+          commit: 'chore: release'
+          title: 'chore: release'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
