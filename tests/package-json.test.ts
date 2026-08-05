@@ -101,6 +101,7 @@ describe('package.json quality config', () => {
         scan: 'astro dev',
         'scan:init': 'astro dev --background',
         doctor: 'astro check && react-doctor . --yes --blocking warning',
+        'doctor:design': 'react-doctor design . --yes --blocking warning',
         'doctor:ci': 'astro check && react-doctor . --yes --blocking warning',
         check: 'pnpm run lint && pnpm run typecheck && pnpm run format:check && pnpm run test && pnpm run doctor:ci',
       }),

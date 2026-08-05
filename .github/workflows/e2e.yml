@@ -57,14 +57,30 @@ jobs:
       # scripts/cli-e2e.mjs --list only uses Node builtins, so no npm ci here.
       - name: List scenarios
         id: list
+        env:
+          SCENARIO_FILTER: ${{ inputs.scenario }}
         run: |
-          if [ -n "${{ inputs.scenario }}" ]; then
-            scenarios=$(node scripts/cli-e2e.mjs --list --scenario "${{ inputs.scenario }}")
+          set -euo pipefail
+          catalog_file="$(mktemp)"
+          matrix_file="$(mktemp)"
+          trap 'rm -f "$catalog_file" "$matrix_file"' EXIT
+
+          if [ -n "$SCENARIO_FILTER" ]; then
+            node scripts/cli-e2e.mjs --list --scenario "$SCENARIO_FILTER" > "$catalog_file"
           else
-            scenarios=$(node scripts/cli-e2e.mjs --list | jq -c '[.[] | select(.kind != "dry-run")]')
+            node scripts/cli-e2e.mjs --list > "$catalog_file"
           fi
-          echo "$scenarios" | jq .
-          echo "scenarios=$scenarios" >> "$GITHUB_OUTPUT"
+
+          jq -ce '
+            if type != "array" then error("scenario catalog must be a JSON array") else . end
+            | [.[] | select(.kind != "dry-run")]
+            | if length == 0 then error("scenario matrix is empty after filtering dry-runs") else . end
+          ' "$catalog_file" > "$matrix_file"
+          jq . "$matrix_file"
+          {
+            printf 'scenarios='
+            cat "$matrix_file"
+          } >> "$GITHUB_OUTPUT"
 
   scenario:
     name: ${{ matrix.scenario.name }}

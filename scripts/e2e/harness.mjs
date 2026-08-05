@@ -1,46 +1,91 @@
 ﻿import { execFileSync, spawnSync } from 'node:child_process';
-import { existsSync, lstatSync, mkdirSync, readFileSync, readlinkSync, rmSync } from 'node:fs';
+import {
+  chmodSync,
+  copyFileSync,
+  existsSync,
+  linkSync,
+  lstatSync,
+  mkdirSync,
+  readFileSync,
+  readlinkSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from 'node:fs';
 import { homedir, tmpdir } from 'node:os';
+import { createRequire } from 'node:module';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { pathToFileURL } from 'node:url';
 
-export const rootDir = path.resolve(fileURLToPath(new URL('..', import.meta.url)), '..');
+import { generatedVersions, pinnedDependency, readFlag, readListFlag, rootDir } from './catalog.mjs';
 
-// Single source of truth for generated-app dependency pins, shared with
-// src/installers/config-model.ts. Read via fs (not a JSON import) so the
-// scripts stay runnable on any Node without import-attribute support.
-export const generatedVersions = JSON.parse(
-  readFileSync(path.join(rootDir, 'src', 'versions.json'), 'utf8')
-);
-
-export function pinnedDependency(name, framework = 'next') {
-  const version =
-    (framework === 'astro' ? generatedVersions.astroOverrides[name] : undefined) ??
-    generatedVersions.dependencies[name];
-  if (!version) {
-    throw new Error(`No pinned version registered for "${name}" in src/versions.json.`);
-  }
-  return `${name}@${version}`;
-}
-
-export function readFlag(argv, flag) {
-  const index = argv.indexOf(flag);
-  return index === -1 ? undefined : argv[index + 1];
-}
-
-export function readListFlag(argv, flag) {
-  const value = readFlag(argv, flag);
-  return value ? value.split(',').map((item) => item.trim()).filter(Boolean) : [];
-}
+export { generatedVersions, pinnedDependency, readFlag, readListFlag, rootDir };
 
 export function hasCommand(command) {
   const lookup = process.platform === 'win32' ? 'where' : 'command';
   const args = process.platform === 'win32' ? [command] : ['-v', command];
-  return spawnSync(lookup, args, { stdio: 'ignore', shell: process.platform !== 'win32' }).status === 0;
+  return (
+    spawnSync(lookup, args, {
+      stdio: 'ignore',
+      shell: process.platform !== 'win32',
+    }).status === 0
+  );
+}
+
+export function resolveExecutable(command, env = process.env) {
+  let result;
+  let executable;
+  if (process.platform === 'win32') {
+    const systemRoot = env.SystemRoot ?? env.SYSTEMROOT ?? process.env.SystemRoot ?? 'C:\\Windows';
+    const whereExecutable = path.join(systemRoot, 'System32', 'where.exe');
+    const lookup = (candidate) => {
+      const lookupResult = spawnSync(whereExecutable, [candidate], {
+        env,
+        encoding: 'utf8',
+        shell: false,
+      });
+      return {
+        result: lookupResult,
+        matches: lookupResult.stdout?.split(/\r?\n/).filter(Boolean) ?? [],
+      };
+    };
+
+    const primary = lookup(command.toLowerCase() === 'pnpm' ? 'pnpm.cmd' : command);
+    result = primary.result;
+    executable = primary.matches[0];
+
+    if (command.toLowerCase() === 'pnpm' && (!executable || path.extname(executable).toLowerCase() !== '.cmd')) {
+      const fallback = lookup(command);
+      const executableExtensions = new Set(
+        (env.PATHEXT ?? '.COM;.EXE;.BAT;.CMD').split(';').map((extension) => extension.toLowerCase())
+      );
+      result = fallback.result;
+      executable = fallback.matches.find((match) => executableExtensions.has(path.extname(match).toLowerCase()));
+    }
+  } else {
+    result = spawnSync('sh', ['-c', 'command -v "$1"', 'sh', command], {
+      env,
+      encoding: 'utf8',
+      shell: false,
+    });
+    executable = result.stdout?.split(/\r?\n/).find(Boolean);
+  }
+
+  if (result.status !== 0 || !executable) {
+    throw new Error(
+      `Could not resolve ${command} on the inherited PATH.\n${result.stderr ?? result.error?.message ?? ''}`
+    );
+  }
+
+  return executable;
 }
 
 export function buildCli() {
-  execFileSync('npm', ['run', 'build'], { cwd: rootDir, stdio: 'inherit', shell: process.platform === 'win32' });
+  execFileSync('npm', ['run', 'build'], {
+    cwd: rootDir,
+    stdio: 'inherit',
+    shell: process.platform === 'win32',
+  });
   return path.join(rootDir, 'dist', 'index.js');
 }
 
@@ -53,6 +98,53 @@ export function buildCli() {
  */
 export function resolveCacheRoot(env = process.env) {
   return env.PURRFOLD_E2E_CACHE_DIR ?? path.join(homedir(), '.cache', 'purrfold-e2e');
+}
+
+function quotePosix(value) {
+  return `'${value.replaceAll("'", "'\\''")}'`;
+}
+
+function createPnpmToolchain(toolchainDir, pnpmExecutable) {
+  if (!existsSync(pnpmExecutable)) {
+    throw new Error(`Resolved pnpm executable does not exist: ${pnpmExecutable}`);
+  }
+
+  const nodeExecutable = path.join(toolchainDir, process.platform === 'win32' ? 'node.exe' : 'node');
+  try {
+    linkSync(process.execPath, nodeExecutable);
+  } catch {
+    copyFileSync(process.execPath, nodeExecutable);
+    if (process.platform !== 'win32') {
+      chmodSync(nodeExecutable, 0o755);
+    }
+  }
+
+  const pnpmForwarder = path.join(toolchainDir, process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm');
+  if (process.platform === 'win32') {
+    const require = createRequire(import.meta.url);
+    const tinyexecModuleUrl = pathToFileURL(require.resolve('tinyexec')).href;
+    const selectedBinParent = path.join(toolchainDir, 'selected', 'node_modules');
+    const selectedBinDir = path.join(selectedBinParent, '.bin');
+    mkdirSync(selectedBinParent, { recursive: true });
+    symlinkSync(path.dirname(pnpmExecutable), selectedBinDir, 'junction');
+    const selectedPnpm = path.join(selectedBinDir, path.basename(pnpmExecutable));
+    const pnpmLauncher = path.join(toolchainDir, 'pnpm-forwarder.mjs');
+    writeFileSync(
+      pnpmLauncher,
+      `import { xSync } from ${JSON.stringify(tinyexecModuleUrl)};\n` +
+        `const result = xSync(${JSON.stringify(selectedPnpm)}, process.argv.slice(2), {\n` +
+        `  nodePath: false,\n` +
+        `  nodeOptions: { env: process.env, stdio: 'inherit' },\n` +
+        `});\n` +
+        `process.exitCode = result.exitCode ?? 1;\n`
+    );
+    writeFileSync(pnpmForwarder, '@echo off\r\n@"%~dp0node.exe" "%~dp0pnpm-forwarder.mjs" %*\r\n');
+  } else {
+    writeFileSync(pnpmForwarder, `#!/bin/sh\nexec ${quotePosix(pnpmExecutable)} "$@"\n`);
+    chmodSync(pnpmForwarder, 0o755);
+  }
+
+  return nodeExecutable;
 }
 
 export function createRunContext(argv, prefix = 'purrfold-e2e-') {
@@ -88,7 +180,12 @@ export function createRunContext(argv, prefix = 'purrfold-e2e-') {
     keep,
     workDir,
     cacheRoot,
-    stamp: new Date().toISOString().replace(/[-:TZ.]/g, '').slice(0, 14),
+    nodeExecutable: process.execPath,
+    scenarioAdapters: new Map(),
+    stamp: new Date()
+      .toISOString()
+      .replace(/[-:TZ.]/g, '')
+      .slice(0, 14),
     env: {
       HOME: homeDir,
       USERPROFILE: homeDir,
@@ -97,15 +194,53 @@ export function createRunContext(argv, prefix = 'purrfold-e2e-') {
       XDG_CACHE_HOME: xdgCache,
       npm_config_cache: npmCache,
       NPM_CONFIG_CACHE: npmCache,
-      // pnpm reads npm_config_*-prefixed settings; a shared content-addressed
-      // store lets repeat installs hard-link instead of re-downloading.
+      // Export npm-compatible and pnpm-native spellings so nested pnpm
+      // versions agree on one shared content-addressed store.
       npm_config_store_dir: pnpmStore,
+      pnpm_config_store_dir: pnpmStore,
+      PNPM_CONFIG_STORE_DIR: pnpmStore,
       PNPM_HOME: pnpmHome,
       BUN_INSTALL_CACHE_DIR: bunCache,
       TMP: tempDir,
       TEMP: tempDir,
     },
   };
+}
+
+export function prepareScenarioContext(scenario, context, options = {}) {
+  const requires = scenario.execution?.requires ?? [];
+  if (!requires.includes('pnpm')) {
+    return context;
+  }
+
+  const cached = context.scenarioAdapters.get('pnpm');
+  if (cached) {
+    return cached;
+  }
+
+  const lookupEnv = options.env ?? process.env;
+  const pnpmExecutable = options.pnpmExecutable ?? resolveExecutable('pnpm', lookupEnv);
+  const toolchainDir = path.join(
+    context.workDir,
+    '_purrfold-e2e',
+    'toolchain',
+    'node_modules',
+    '.bin'
+  );
+  mkdirSync(toolchainDir, { recursive: true });
+  const nodeExecutable = createPnpmToolchain(toolchainDir, pnpmExecutable);
+  const pathKey = Object.keys(lookupEnv).find((key) => key.toLowerCase() === 'path') ?? 'PATH';
+  const inheritedPath = lookupEnv[pathKey] ?? '';
+  const scenarioContext = {
+    ...context,
+    nodeExecutable,
+    env: {
+      ...context.env,
+      [pathKey]: [toolchainDir, inheritedPath].filter(Boolean).join(path.delimiter),
+    },
+  };
+  context.scenarioAdapters.set('pnpm', scenarioContext);
+  return scenarioContext;
 }
 
 function runProcess(command, args, options = {}) {
@@ -178,6 +313,23 @@ function runGeneratedCheck(projectRoot, packageManager, env) {
   return result.output;
 }
 
+function runGeneratedDoctorDesign(projectRoot, packageManager, env) {
+  const command = packageManager ?? 'npm';
+  const result = runProcess(command, packageManagerRunArgs(command, 'doctor:design'), {
+    cwd: projectRoot,
+    env,
+    timeoutMs: 10 * 60 * 1000,
+  });
+
+  if (result.status !== 0) {
+    throw new Error(
+      `Generated design audit failed in ${projectRoot} with ${command} run doctor:design\n${result.output}`
+    );
+  }
+
+  assertIncludes(result.output, 'Design scans do not affect the React health score.', 'doctor:design output');
+}
+
 /**
  * Functional commitlint check: actually load the config and lint a valid
  * message. Catches config-format bugs (e.g. CommonJS config in a
@@ -188,8 +340,8 @@ function runCommitlintCheck(projectRoot, packageManager, env) {
     packageManager === 'pnpm'
       ? { command: 'pnpm', args: ['exec', 'commitlint'] }
       : packageManager === 'bun'
-        ? { command: 'bunx', args: ['--bun', 'commitlint'] }
-        : { command: 'npx', args: ['commitlint'] };
+      ? { command: 'bunx', args: ['--bun', 'commitlint'] }
+      : { command: 'npx', args: ['commitlint'] };
   const result = runProcess(exec.command, exec.args, {
     cwd: projectRoot,
     env,
@@ -207,21 +359,84 @@ function runCommitlintCheck(projectRoot, packageManager, env) {
  * explicitly. Verify git actually points at the husky hooks directory.
  */
 function assertHuskyActive(projectRoot) {
-  const result = runProcess('git', ['config', 'core.hooksPath'], { cwd: projectRoot });
+  const result = runProcess('git', ['config', '--local', '--get', 'core.hooksPath'], {
+    cwd: projectRoot,
+  });
 
-  if (result.status !== 0 || !result.stdout.includes('.husky')) {
+  if (result.error || result.status !== 0) {
+    throw new Error(
+      `Could not read local git core.hooksPath in ${projectRoot}\n${result.output}${
+        result.error ? `\n${result.error.message}` : ''
+      }`
+    );
+  }
+
+  if (!result.stdout.includes('.husky')) {
     throw new Error(
       `git core.hooksPath should point at .husky in ${projectRoot} (husky was not activated)\n${result.output}`
     );
   }
 }
 
-function runMotionImportCheck(projectRoot, env) {
-  const result = runProcess(
-    process.execPath,
-    ['--input-type=module', '--eval', "import('motion/react')"],
-    { cwd: projectRoot, env, shell: false }
-  );
+function assertHuskyInactive(projectRoot) {
+  const result = runProcess('git', ['config', '--local', '--get', 'core.hooksPath'], {
+    cwd: projectRoot,
+  });
+
+  // `git config --get` exits 1 with no output when the key is unset. Any
+  // other non-zero result is a command/config error and must not be mistaken
+  // for the expected unset state.
+  if (result.error || result.status !== 1 || result.stdout.trim() !== '' || result.stderr.trim() !== '') {
+    const detail = result.error ? `${result.output}\n${result.error.message}` : result.output;
+    throw new Error(
+      result.status === 0
+        ? `git core.hooksPath should remain unset when dependency installation is skipped in ${projectRoot}\n${detail}`
+        : `Could not verify local git core.hooksPath is unset in ${projectRoot}\n${detail}`
+    );
+  }
+}
+
+/**
+ * Purrfold owns Git initialization so every generated app starts from the same
+ * reviewable state: local `main`, no commit, and no staged/tracked/deleted files.
+ */
+function assertRepositoryInvariant(projectRoot, huskyShouldBeActive) {
+  assertPath(projectRoot, '.git');
+
+  const branch = runProcess('git', ['symbolic-ref', '--short', 'HEAD'], {
+    cwd: projectRoot,
+  });
+  if (branch.status !== 0 || branch.stdout.trim() !== 'main') {
+    throw new Error(`Expected an unborn main branch in ${projectRoot}\n${branch.output}`);
+  }
+
+  const head = runProcess('git', ['rev-parse', '--verify', 'HEAD'], {
+    cwd: projectRoot,
+  });
+  if (head.status === 0) {
+    throw new Error(`Generated repository should not contain a commit in ${projectRoot}`);
+  }
+
+  const indexed = runProcess('git', ['ls-files', '--cached', '--deleted'], {
+    cwd: projectRoot,
+  });
+  if (indexed.status !== 0 || indexed.stdout.trim() !== '') {
+    throw new Error(`Generated repository index should be empty in ${projectRoot}\n${indexed.output}`);
+  }
+
+  if (huskyShouldBeActive) {
+    assertHuskyActive(projectRoot);
+  } else {
+    assertHuskyInactive(projectRoot);
+  }
+}
+
+function runMotionImportCheck(projectRoot, env, nodeExecutable) {
+  const result = runProcess(nodeExecutable, ['--input-type=module', '--eval', "import('motion/react')"], {
+    cwd: projectRoot,
+    env,
+    shell: false,
+  });
 
   if (result.status !== 0) {
     throw new Error(`Motion React import failed in ${projectRoot}\n${result.output}`);
@@ -232,6 +447,7 @@ export function assertGeneratedApp(projectRoot, expected) {
   const framework = expected.framework ?? 'next';
   const packageJson = readJson(path.join(projectRoot, 'package.json'));
   const eslintConfig = readFileSync(path.join(projectRoot, 'eslint.config.mjs'), 'utf8');
+  const doctorConfig = readJson(path.join(projectRoot, 'doctor.config.json'));
   const skillsScript = readFileSync(path.join(projectRoot, 'skills.sh'), 'utf8');
   const readme = readFileSync(path.join(projectRoot, 'README.md'), 'utf8');
   const agents = readFileSync(path.join(projectRoot, 'AGENTS.md'), 'utf8');
@@ -248,6 +464,43 @@ export function assertGeneratedApp(projectRoot, expected) {
   assertIncludes(agents, '## Quality Gates', 'AGENTS.md');
   assertIncludes(agents, '## References', 'AGENTS.md');
   assertIncludes(agents, '## shadcn MCP', 'AGENTS.md');
+  if (packageJson.scripts?.['doctor:design'] !== 'react-doctor design . --yes --blocking warning') {
+    throw new Error(
+      'package.json should invoke the React Doctor design subcommand separately from the routine quality gate'
+    );
+  }
+  assertNotIncludes(packageJson.scripts?.check ?? '', 'doctor:design', 'package.json check script');
+  assertNotIncludes(packageJson.scripts?.['doctor:ci'] ?? '', '--design', 'package.json doctor:ci script');
+  assertNotIncludes(eslintConfig, 'reactDoctor.configs.all', 'eslint.config.mjs');
+
+  const doctorIgnoredFiles = doctorConfig.ignore?.files ?? [];
+  for (const ignoredPath of [
+    '.agents/**',
+    '.claude/**',
+    framework === 'astro' ? 'src/components/ui/**' : 'components/ui/**',
+  ]) {
+    if (!doctorIgnoredFiles.includes(ignoredPath)) {
+      throw new Error(`doctor.config.json should ignore ${ignoredPath}`);
+    }
+  }
+
+  const expectedUtilsPath = framework === 'astro' ? 'src/lib/utils.ts' : 'lib/utils.ts';
+  if (!doctorConfig.ignore?.overrides?.some((override) => override.files?.includes(expectedUtilsPath))) {
+    throw new Error(`doctor.config.json should preserve the ${expectedUtilsPath} override`);
+  }
+
+  if (framework === 'astro' && doctorConfig.ignore?.rules?.includes('deslop/unused-dev-dependency')) {
+    throw new Error('Astro doctor.config.json should analyze unused development dependencies');
+  }
+
+  for (const dependency of ['react-doctor', 'eslint-plugin-react-doctor']) {
+    const installed = packageJson.devDependencies?.[dependency];
+    if (expected.skipInstall) {
+      if (installed) throw new Error(`${dependency} should not be installed with --skip-install`);
+    } else if (!installed?.includes(generatedVersions.dependencies[dependency])) {
+      throw new Error(`${dependency} should be pinned to ${generatedVersions.dependencies[dependency]}`);
+    }
+  }
 
   if (expected.motion) {
     const motionVersion = generatedVersions.dependencies.motion;
@@ -257,11 +510,8 @@ export function assertGeneratedApp(projectRoot, expected) {
     assertIncludes(skillsScript, 'freshtechbro/claudedesignskills', 'skills.sh');
     assertIncludes(skillsScript, '--skill motion-framer', 'skills.sh');
     const motionComponent =
-      framework === 'astro'
-        ? 'src/components/common/motion-main.tsx'
-        : 'components/common/motion-main.tsx';
-    const globalStylesheet =
-      framework === 'astro' ? 'src/styles/global.css' : 'app/globals.css';
+      framework === 'astro' ? 'src/components/common/motion-main.tsx' : 'components/common/motion-main.tsx';
+    const globalStylesheet = framework === 'astro' ? 'src/styles/global.css' : 'app/globals.css';
     assertPath(projectRoot, motionComponent);
     assertIncludes(
       readFileSync(path.join(projectRoot, globalStylesheet), 'utf8'),
@@ -275,9 +525,7 @@ export function assertGeneratedApp(projectRoot, expected) {
     assertNotIncludes(skillsScript, 'motion-framer', 'skills.sh');
     assertPath(
       projectRoot,
-      framework === 'astro'
-        ? 'src/components/common/motion-main.tsx'
-        : 'components/common/motion-main.tsx',
+      framework === 'astro' ? 'src/components/common/motion-main.tsx' : 'components/common/motion-main.tsx',
       false
     );
   }
@@ -297,6 +545,7 @@ export function assertGeneratedApp(projectRoot, expected) {
     assertPath(projectRoot, 'src/lib/utils.ts');
     assertPath(projectRoot, 'src/styles/global.css');
     assertPath(projectRoot, 'src/components/home-hero.tsx');
+    assertPath(projectRoot, 'src/components/Button.astro', false);
     assertPath(projectRoot, 'src/pages/index.astro');
     assertPath(projectRoot, 'src/layouts/main.astro');
     assertIncludes(eslintConfig, "'src/components/ui/**'", 'eslint.config.mjs');
@@ -307,9 +556,9 @@ export function assertGeneratedApp(projectRoot, expected) {
     if (packageJson.dependencies?.['@astrojs/mdx'] || packageJson.dependencies?.['canvas-confetti']) {
       throw new Error('Astro starter-only dependencies should be removed');
     }
-    if (!packageJson.devDependencies?.['react-doctor']) {
-      throw new Error('Astro package.json should include react-doctor');
-    }
+    assertIncludes(packageJson.scripts?.doctor ?? '', 'astro check && react-doctor', 'Astro doctor script');
+    assertIncludes(packageJson.scripts?.['doctor:ci'] ?? '', 'astro check && react-doctor', 'Astro doctor:ci script');
+    assertIncludes(eslintConfig, '...reactDoctor.configs.recommended', 'eslint.config.mjs');
     assertIncludes(agents, 'astro dev --background', 'AGENTS.md');
     if (readme.indexOf('<!-- BEGIN:purrfold-managed -->') <= 0) {
       throw new Error('Astro README.md should preserve starter content before the Purrfold block');
@@ -433,7 +682,9 @@ function killPtyChild(child) {
 
   if (process.platform === 'win32' && child.pid) {
     try {
-      execFileSync('taskkill', ['/PID', String(child.pid), '/T', '/F'], { stdio: 'ignore' });
+      execFileSync('taskkill', ['/PID', String(child.pid), '/T', '/F'], {
+        stdio: 'ignore',
+      });
     } catch {
       // process tree already gone
     }
@@ -458,7 +709,7 @@ function runInteractivePtyScenario(pty, scenario, context, cliPath, options) {
   }));
 
   return new Promise((resolve, reject) => {
-    const child = pty.spawn(process.execPath, [cliPath, targetName, ...scenario.args], {
+    const child = pty.spawn(context.nodeExecutable, [cliPath, targetName, ...scenario.args], {
       name: 'xterm-color',
       cols: 100,
       rows: 30,
@@ -532,7 +783,7 @@ function runExternalShadcnPtyScenario(pty, scenario, context, cliPath, options) 
   }));
 
   return new Promise((resolve, reject) => {
-    const child = pty.spawn(process.execPath, [cliPath, targetName, ...scenario.args], {
+    const child = pty.spawn(context.nodeExecutable, [cliPath, targetName, ...scenario.args], {
       name: 'xterm-color',
       cols: 100,
       rows: 30,
@@ -596,7 +847,7 @@ function runExternalShadcnPtyScenario(pty, scenario, context, cliPath, options) 
           }
           const projectRoot = path.join(context.workDir, targetName);
           assertGeneratedApp(projectRoot, scenario.expect);
-          assertHuskyActive(projectRoot);
+          assertRepositoryInvariant(projectRoot, true);
           resolve({ name: targetName, output: clean });
         } catch (error) {
           reject(error);
@@ -609,7 +860,9 @@ function runExternalShadcnPtyScenario(pty, scenario, context, cliPath, options) 
 async function runTtyScenario(scenario, context, cliPath, options) {
   const pty = await loadNodePty();
   if (!pty) {
-    throw new Error(`${scenario.name} requires node-pty. Install dev dependency node-pty when registry access is available.`);
+    throw new Error(
+      `${scenario.name} requires node-pty. Install dev dependency node-pty when registry access is available.`
+    );
   }
 
   if (scenario.kind === 'interactive') {
@@ -624,19 +877,27 @@ async function runTtyScenario(scenario, context, cliPath, options) {
 }
 
 export async function runScenario(scenario, context, cliPath, options = {}) {
-  for (const command of scenario.requires ?? []) {
+  const requires = scenario.execution?.requires ?? [];
+  for (const command of requires.filter((command) => command !== 'pnpm')) {
     if (!hasCommand(command)) {
       throw new Error(`${scenario.name} requires ${command} on PATH`);
     }
   }
+  const scenarioContext = prepareScenarioContext(scenario, context, options);
 
   if (scenario.requiresTty) {
-    return runTtyScenario(scenario, context, cliPath, options);
+    return runTtyScenario(scenario, scenarioContext, cliPath, options);
   }
 
-  const targetName = `${options.prefix ?? 'e2e'}-${scenario.name}-${context.stamp}`;
-  const args = scenario.kind === 'dry-run' ? [cliPath, targetName, ...scenario.args] : [cliPath, targetName, ...scenario.args];
-  const result = runProcess('node', args, { cwd: context.workDir, env: context.env, input: scenario.input });
+  const targetName = `${options.prefix ?? 'e2e'}-${scenario.name}-${scenarioContext.stamp}`;
+  const args =
+    scenario.kind === 'dry-run' ? [cliPath, targetName, ...scenario.args] : [cliPath, targetName, ...scenario.args];
+  const result = runProcess(scenarioContext.nodeExecutable, args, {
+    cwd: scenarioContext.workDir,
+    env: scenarioContext.env,
+    input: scenario.input,
+    shell: false,
+  });
 
   if (result.status !== 0) {
     throw new Error(`${scenario.name} failed with exit ${result.status}\n${result.output}`);
@@ -650,19 +911,28 @@ export async function runScenario(scenario, context, cliPath, options = {}) {
   }
 
   if (scenario.kind === 'real') {
-    const projectRoot = path.join(context.workDir, targetName);
+    const projectRoot = path.join(scenarioContext.workDir, targetName);
     assertGeneratedApp(projectRoot, {
       ...scenario.expect,
       framework: scenario.framework ?? 'next',
       ssrAdapter: scenario.ssrAdapter,
     });
-    assertHuskyActive(projectRoot);
-    const checkOutput = runGeneratedCheck(projectRoot, scenario.packageManager, context.env);
+    assertRepositoryInvariant(projectRoot, !scenario.expect.skipInstall);
+    const checkOutput = scenario.expect.skipInstall
+      ? ''
+      : runGeneratedCheck(projectRoot, scenario.packageManager, scenarioContext.env);
+    if (scenario.verifyDoctorDesign) {
+      runGeneratedDoctorDesign(projectRoot, scenario.packageManager, scenarioContext.env);
+    }
+    // The generated app already ran its gate once during creation. This second
+    // pass exercises React Doctor's warm-cache path; it must not create a HEAD
+    // commit or alter the empty index.
+    assertRepositoryInvariant(projectRoot, !scenario.expect.skipInstall);
     if (scenario.expect.commitlint) {
-      runCommitlintCheck(projectRoot, scenario.packageManager, context.env);
+      runCommitlintCheck(projectRoot, scenario.packageManager, scenarioContext.env);
     }
     if (scenario.expect.motion) {
-      runMotionImportCheck(projectRoot, context.env);
+      runMotionImportCheck(projectRoot, scenarioContext.env, scenarioContext.nodeExecutable);
     }
     return { name: targetName, output: result.output, checkOutput };
   }

@@ -22,6 +22,7 @@ describe('dry-run integration', () => {
 
     const output = log.mock.calls.map((call) => call.join(' ')).join('\n');
     expect(output).toContain('run npx create-next-app@latest my-app');
+    expect(output).toContain('--disable-git');
     expect(output).toContain('run npx shadcn@latest init --defaults');
     expect(output).toContain(pinnedSpecifier('@vitejs/plugin-react'));
     expect(output).not.toContain('@vitejs/plugin-react@6.0.2');
@@ -29,8 +30,11 @@ describe('dry-run integration', () => {
     expect(output.replaceAll('\\', '/')).toContain('my-app/skills.sh');
     expect(output.replaceAll('\\', '/')).toContain('my-app/commitlint.config.mjs');
     expect(output).not.toContain('commitlint.config.js ');
-    expect(output).toContain('run git init');
+    expect(output.match(/run git init --initial-branch=main/g)).toHaveLength(1);
     expect(output).toContain('run npx husky');
+    expect(output.indexOf('run git init --initial-branch=main')).toBeGreaterThan(
+      Math.max(output.lastIndexOf('write '), output.lastIndexOf('link '))
+    );
     expect(output).toContain(
       'run npx --yes skills@latest add https://github.com/vercel-labs/agent-skills --skill vercel-composition-patterns --skill vercel-react-best-practices --agent codex --copy --yes'
     );
@@ -57,6 +61,7 @@ describe('dry-run integration', () => {
 
     const output = log.mock.calls.map((call) => call.join(' ')).join('\n');
     expect(output).toContain('run pnpm dlx create-next-app@latest my-app');
+    expect(output).toContain('--disable-git');
     expect(output).toContain('run pnpm exec husky');
     expect(output).toContain('write');
     expect(output).not.toContain('vitest.config.mts');
@@ -77,6 +82,8 @@ describe('dry-run integration', () => {
 
     const output = log.mock.calls.map((call) => call.join(' ')).join('\n');
     expect(output).toContain('run pnpm create astro@latest my-app');
+    expect(output.match(/--no-git/g)).toHaveLength(1);
+    expect(output).not.toContain(' --git');
     expect(output).toContain('run pnpm dlx shadcn@latest init -t astro --defaults');
     expect(output).toContain(pinnedSpecifier('@astrojs/check'));
     expect(output).toContain(pinnedSpecifier('@vitejs/plugin-react', 'astro'));
@@ -133,6 +140,7 @@ describe('dry-run integration', () => {
 
     const output = log.mock.calls.map((call) => call.join(' ')).join('\n');
     expect(output).toContain('run bunx --bun create-next-app@latest my-app');
+    expect(output).toContain('--disable-git');
     expect(output).toContain('write');
     expect(output).not.toContain('playwright.config.ts');
   });
@@ -172,6 +180,24 @@ describe('dry-run integration', () => {
     const output = log.mock.calls.map((call) => call.join(' ')).join('\n');
     expect(output).not.toContain(`default-app ${pinnedSpecifier('motion')}`);
     expect(output).not.toContain(`run npm install ${pinnedSpecifier('motion')}`);
+  });
+
+  it('initializes a repository but does not activate Husky when installation is skipped', async () => {
+    const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    await runCreate('skip-app', {
+      pm: 'npm',
+      yes: true,
+      dryRun: true,
+      skipInstall: true,
+    });
+
+    const output = log.mock.calls.map((call) => call.join(' ')).join('\n');
+    expect(output.match(/run git init --initial-branch=main/g)).toHaveLength(1);
+    expect(output).not.toContain('run npx husky');
+    expect(output.indexOf('run git init --initial-branch=main')).toBeGreaterThan(
+      Math.max(output.lastIndexOf('write '), output.lastIndexOf('link '))
+    );
   });
 
   it('prints MCP setup commands only when requested and preserves shadcn presets', async () => {

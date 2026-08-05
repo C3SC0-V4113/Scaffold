@@ -1,8 +1,18 @@
 import { describe, expect, it } from 'vitest';
 
 import { buildDevDependencies, buildScripts, pinnedSpecifier } from '../src/installers/config-model.js';
+import versions from '../src/versions.json' with { type: 'json' };
 
 describe('quality config model', () => {
+  it('derives React Doctor install specifiers from the shared version source', () => {
+    for (const dependency of ['react-doctor', 'eslint-plugin-react-doctor'] as const) {
+      const version = versions.dependencies[dependency];
+
+      expect(version).toMatch(/^\d+\.\d+\.\d+$/);
+      expect(pinnedSpecifier(dependency)).toBe(`${dependency}@${version}`);
+    }
+  });
+
   it('includes optional dependency groups as pinned specifiers', () => {
     expect(buildDevDependencies({ framework: 'next', unit: true, e2e: true, commitlint: true })).toEqual(
       expect.arrayContaining(
@@ -70,6 +80,9 @@ describe('quality config model', () => {
     expect(scripts.check).toBe(
       'pnpm run lint && pnpm run typecheck && pnpm run format:check && pnpm run test && pnpm run doctor:ci'
     );
+    expect(scripts['doctor:design']).toBe(
+      'react-doctor design . --yes --blocking warning'
+    );
     expect(scripts['test:all']).toBe('pnpm run test && pnpm run test:e2e');
   });
 
@@ -88,6 +101,9 @@ describe('quality config model', () => {
     expect(scripts.scan).toBe('astro dev');
     expect(scripts['scan:init']).toBe('astro dev --background');
     expect(scripts.doctor).toBe('astro check && react-doctor . --yes --blocking warning');
+    expect(scripts['doctor:design']).toBe(
+      'react-doctor design . --yes --blocking warning'
+    );
     expect(scripts['doctor:ci']).toBe('astro check && react-doctor . --yes --blocking warning');
     expect(scripts.check).toBe(
       'npm run lint && npm run typecheck && npm run format:check && npm run test && npm run doctor:ci'

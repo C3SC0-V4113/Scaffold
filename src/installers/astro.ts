@@ -12,7 +12,7 @@ const createAstroBaseArgs = [
   '--install',
   '--add',
   'react',
-  '--git',
+  '--no-git',
 ];
 
 const astroAdapterPackages = {

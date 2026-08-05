@@ -3,13 +3,19 @@ import { describe, expect, it } from 'vitest';
 import { getPackageManagerCommands } from '../src/package-manager.js';
 
 describe('package manager command mapping', () => {
+  function expectGitDisabledExactlyOnce(args: string[]) {
+    expect(args.filter((arg) => arg === '--disable-git')).toHaveLength(1);
+  }
+
   it('maps npm commands', () => {
     const commands = getPackageManagerCommands('npm');
+    const create = commands.createNextApp('my-app', true);
 
-    expect(commands.createNextApp('my-app', true)).toEqual({
+    expect(create).toEqual({
       command: 'npx',
       args: expect.arrayContaining(['create-next-app@latest', 'my-app', '--use-npm', '--yes']),
     });
+    expectGitDisabledExactlyOnce(create.args);
     expect(commands.shadcn(['init'])).toEqual({
       command: 'npx',
       args: ['shadcn@latest', 'init'],
@@ -26,11 +32,13 @@ describe('package manager command mapping', () => {
 
   it('maps pnpm commands', () => {
     const commands = getPackageManagerCommands('pnpm');
+    const create = commands.createNextApp('my-app', false);
 
-    expect(commands.createNextApp('my-app', false)).toEqual({
+    expect(create).toEqual({
       command: 'pnpm',
       args: expect.arrayContaining(['dlx', 'create-next-app@latest', 'my-app', '--use-pnpm']),
     });
+    expectGitDisabledExactlyOnce(create.args);
     expect(commands.shadcn(['init'])).toEqual({
       command: 'pnpm',
       args: ['dlx', 'shadcn@latest', 'init'],
@@ -47,11 +55,13 @@ describe('package manager command mapping', () => {
 
   it('maps bun commands', () => {
     const commands = getPackageManagerCommands('bun');
+    const create = commands.createNextApp('my-app', false);
 
-    expect(commands.createNextApp('my-app', false)).toEqual({
+    expect(create).toEqual({
       command: 'bunx',
       args: expect.arrayContaining(['--bun', 'create-next-app@latest', 'my-app', '--use-bun']),
     });
+    expectGitDisabledExactlyOnce(create.args);
     expect(commands.shadcn(['init'])).toEqual({
       command: 'bunx',
       args: ['--bun', 'shadcn@latest', 'init'],

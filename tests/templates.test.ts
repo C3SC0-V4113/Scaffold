@@ -4,6 +4,7 @@ import { renderEslintConfig } from '../src/templates/eslint.js';
 import {
   astroRootLayout,
   designDoc,
+  gitAttributes,
   humanizeProjectName,
   mergePnpmBuildPolicy,
   mergePnpmHardening,
@@ -49,7 +50,30 @@ describe('template snapshots', () => {
 
     expect(config).toContain('"src/components/ui/**"');
     expect(config).toContain('"src/lib/utils.ts"');
-    expect(config).toContain('"deslop/unused-dev-dependency"');
+    expect(config).toContain('".agents/**"');
+    expect(config).toContain('".claude/**"');
+    expect(config).not.toContain('"deslop/unused-dev-dependency"');
+  });
+
+  it('keeps shadcn files in Doctor diagnostic ignores without hiding them from graph analysis', () => {
+    const nextConfig = JSON.parse(renderReactDoctorConfig('next')) as {
+      ignore: { files: string[] };
+    };
+    const astroConfig = JSON.parse(renderReactDoctorConfig('astro')) as {
+      ignore: { files: string[] };
+    };
+
+    expect(gitAttributes).not.toMatch(/linguist-(?:vendored|generated)/);
+    expect(nextConfig.ignore.files).toEqual([
+      '.agents/**',
+      '.claude/**',
+      'components/ui/**',
+    ]);
+    expect(astroConfig.ignore.files).toEqual([
+      '.agents/**',
+      '.claude/**',
+      'src/components/ui/**',
+    ]);
   });
 
   it('suppresses only React Doctor 0.5.4 reduced-motion false positives for Motion projects', () => {
@@ -207,6 +231,16 @@ allowBuilds:
     expect(config).toContain("'.astro/**'");
     expect(config).toContain("'src/components/ui/**'");
     expect(config).toContain("files: ['**/*.{jsx,tsx}']");
+    expect(config).toContain('...reactDoctor.configs.recommended');
+    expect(config).not.toContain('reactDoctor.configs.all');
+  });
+
+  it('keeps Next React Doctor presets scoped to recommended and Next rules', () => {
+    const config = renderEslintConfig({ framework: 'next', unit: true, e2e: false });
+
+    expect(config).toContain('reactDoctor.configs.recommended');
+    expect(config).toContain('reactDoctor.configs.next');
+    expect(config).not.toContain('reactDoctor.configs.all');
   });
 
   it('renders a valid Astro app shell with an existing layout import', () => {

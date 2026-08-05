@@ -365,7 +365,6 @@ export function renderReactDoctorConfig(
 
   return `{
   "ignore": {
-    "rules": ["deslop/unused-dev-dependency"],
     "files": [".agents/**", ".claude/**", "src/components/ui/**"],
     "overrides": [
       {
