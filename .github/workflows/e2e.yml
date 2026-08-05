@@ -94,28 +94,30 @@ jobs:
         with:
           node-version: 22
 
-      # scripts/cli-e2e.mjs --list only uses Node builtins, so no npm ci here.
+      # scripts/cli-e2e.mjs --list-matrix only uses Node builtins, so no npm ci
+      # here. It emits real scenarios already expanded to one entry per runner;
+      # the fan-out lives in scripts/e2e/scenarios.mjs where it is unit-tested,
+      # so this workflow still holds no scenario knowledge of its own.
       - name: List scenarios
         id: list
         env:
           SCENARIO_FILTER: ${{ inputs.scenario }}
         run: |
           set -euo pipefail
-          catalog_file="$(mktemp)"
+          raw_file="$(mktemp)"
           matrix_file="$(mktemp)"
-          trap 'rm -f "$catalog_file" "$matrix_file"' EXIT
+          trap 'rm -f "$raw_file" "$matrix_file"' EXIT
 
           if [ -n "$SCENARIO_FILTER" ]; then
-            node scripts/cli-e2e.mjs --list --scenario "$SCENARIO_FILTER" > "$catalog_file"
+            node scripts/cli-e2e.mjs --list-matrix --scenario "$SCENARIO_FILTER" > "$raw_file"
           else
-            node scripts/cli-e2e.mjs --list > "$catalog_file"
+            node scripts/cli-e2e.mjs --list-matrix > "$raw_file"
           fi
 
           jq -ce '
-            if type != "array" then error("scenario catalog must be a JSON array") else . end
-            | [.[] | select(.kind != "dry-run")]
-            | if length == 0 then error("scenario matrix is empty after filtering dry-runs") else . end
-          ' "$catalog_file" > "$matrix_file"
+            if type != "array" then error("scenario matrix must be a JSON array") else . end
+            | if length == 0 then error("scenario matrix is empty") else . end
+          ' "$raw_file" > "$matrix_file"
           jq . "$matrix_file"
           {
             printf 'scenarios='
@@ -123,9 +125,9 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
   scenario:
-    name: ${{ matrix.scenario.name }}
+    name: ${{ matrix.scenario.jobName }}
     needs: matrix
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.scenario.os }}
     timeout-minutes: 45
     strategy:
       fail-fast: false
@@ -151,20 +153,29 @@ jobs:
         if: matrix.scenario.packageManager == 'bun'
         uses: oven-sh/setup-bun@v2
 
-      # Shared harness cache (see resolveCacheRoot in scripts/e2e/harness.mjs):
-      # package-manager download caches for the generated-app installs.
+      # Shared harness cache: package-manager download caches for the generated-app
+      # installs. Keyed by runner too — a Linux npm cache is not reusable on
+      # Windows, and sharing one key across them thrashes instead of helping.
       - name: Restore E2E package cache
         uses: actions/cache@v6
         with:
-          path: ~/.cache/purrfold-e2e
-          key: e2e-pm-cache-${{ matrix.scenario.packageManager }}-${{ hashFiles('src/versions.json') }}
+          path: ${{ runner.temp }}/purrfold-e2e-cache
+          key: e2e-pm-cache-${{ matrix.scenario.os }}-${{ matrix.scenario.packageManager }}-${{ hashFiles('src/versions.json') }}
           restore-keys: |
-            e2e-pm-cache-${{ matrix.scenario.packageManager }}-
+            e2e-pm-cache-${{ matrix.scenario.os }}-${{ matrix.scenario.packageManager }}-
 
       - name: Install dependencies
         run: npm ci
 
+      # PURRFOLD_E2E_CACHE_DIR pins the harness cache instead of relying on `~`
+      # expanding the same way on three runner families; resolveCacheRoot in
+      # scripts/e2e/harness.mjs honors it before falling back to homedir().
+      #
+      # It lives on the step, not the job: the `runner` context does not exist at
+      # job level, and using it there fails the whole workflow at parse time.
       - name: Run scenario
+        env:
+          PURRFOLD_E2E_CACHE_DIR: ${{ runner.temp }}/purrfold-e2e-cache
         run: node scripts/cli-e2e.mjs --scenario "${{ matrix.scenario.name }}" --require-tty
 
   # The single stable check name this workflow contributes to branch protection.
