@@ -1,0 +1,87 @@
+name: Bug report
+description: Something purrfold generated or did is wrong
+labels: ['bug']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do not use this form for security problems — follow
+        [SECURITY.md](https://github.com/C3SC0-V4113/Scaffold/blob/main/SECURITY.md)
+        instead.
+
+  - type: textarea
+    id: command
+    attributes:
+      label: Command
+      description: The exact purrfold invocation, including every flag.
+      placeholder: npx purrfold@latest my-app --framework astro --pm pnpm --unit --yes
+      render: bash
+    validations:
+      required: true
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: The failure itself. Paste the relevant output rather than describing it.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected instead
+    validations:
+      required: true
+
+  - type: dropdown
+    id: framework
+    attributes:
+      label: Framework
+      options:
+        - next
+        - astro
+        - not sure
+    validations:
+      required: true
+
+  - type: dropdown
+    id: package-manager
+    attributes:
+      label: Package manager
+      options:
+        - npm
+        - pnpm
+        - bun
+    validations:
+      required: true
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      options:
+        - Windows
+        - macOS
+        - Linux
+    validations:
+      required: true
+
+  - type: input
+    id: versions
+    attributes:
+      label: purrfold and Node versions
+      description: Output of `npx purrfold@latest --version` and `node --version`.
+      placeholder: purrfold 0.5.0, node v22.13.0
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Anything else
+      description: >
+        Whether the generated app's own `npm run check` passed, whether a retry
+        behaved differently, or anything else that narrows it down.
+    validations:
+      required: false
