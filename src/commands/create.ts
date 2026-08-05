@@ -2,6 +2,7 @@ import { confirm, select } from '@inquirer/prompts';
 
 import { DryRunExecutor, RealExecutor } from '../executor.js';
 import { defaultFramework, frameworkRegistry, isFramework } from '../frameworks/registry.js';
+import { getPackageManagerCommands } from '../package-manager.js';
 import { createAstroApp } from '../installers/astro.js';
 import { installDocsAndClaude } from '../installers/docs.js';
 import { createNextApp } from '../installers/next.js';
@@ -219,23 +220,40 @@ export async function runCreate(targetDir: string, flags: RawCreateFlags) {
   await installDocsAndClaude(projectRoot, options, executor);
   await installShadcnMcp(projectRoot, options, executor);
 
-  if (executor instanceof DryRunExecutor) {
-    for (const operation of executor.operations) {
-      console.log(operation);
-    }
-    return;
-  }
-
   // Normalize formatting of files emitted by create-next-app, shadcn, and the
   // templates (line endings/quote style differ across tools and OSes) so the
   // generated app is Prettier-clean, then run its own quality gate as a
   // self-test. Both are skipped when no dependencies were installed (the gate
   // would fail spuriously without Prettier/ESLint/etc.).
-  if (!options.skipInstall) {
+  if (!(executor instanceof DryRunExecutor) && !options.skipInstall) {
     if (options.framework === 'astro') {
       await executor.run(options.packageManager, ['run', 'lint:fix'], { cwd: projectRoot });
     }
     await executor.run(options.packageManager, ['run', 'format'], { cwd: projectRoot });
+  }
+
+  // Scaffolders are told not to own Git initialization. Purrfold creates one
+  // predictable, commit-free repository only after the generated app files
+  // have reached their final state, including when dependency installation is
+  // skipped. Because both scaffolders run with Git disabled, this is the one
+  // and only repository initialization in the generation flow.
+  await executor.run('git', ['init', '--initial-branch=main'], { cwd: projectRoot });
+
+  if (!options.skipInstall) {
+    // Targeted dependency installs do not reliably run `prepare`, so activate
+    // the already-written hooks explicitly once the repository exists.
+    const commands = getPackageManagerCommands(options.packageManager);
+    const enableHooks = commands.exec('husky', []);
+    await executor.run(enableHooks.command, enableHooks.args, { cwd: projectRoot });
+  }
+
+  if (!(executor instanceof DryRunExecutor) && !options.skipInstall) {
     await executor.run(options.packageManager, ['run', 'check'], { cwd: projectRoot });
+  }
+
+  if (executor instanceof DryRunExecutor) {
+    for (const operation of executor.operations) {
+      console.log(operation);
+    }
   }
 }

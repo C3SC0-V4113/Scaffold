@@ -15,6 +15,7 @@ const createNextBaseArgs = [
   '--eslint',
   '--tailwind',
   '--app',
+  '--disable-git',
   '--no-src-dir',
   '--import-alias',
   '@/*',

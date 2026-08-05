@@ -43,12 +43,28 @@ export const cliE2eScenarios = [
     quick: false,
   },
   {
+    name: 'npm-skip-install-repo',
+    kind: 'real',
+    packageManager: 'npm',
+    args: ['--pm', 'npm', '--no-unit', '--no-e2e', '--no-commitlint', '--skip-install', '--yes'],
+    expect: {
+      unit: false,
+      e2e: false,
+      commitlint: false,
+      pnpm: false,
+      mcp: false,
+      skipInstall: true,
+    },
+    quick: false,
+  },
+  {
     name: 'astro-npm-ssg-unit',
     kind: 'real',
     framework: 'astro',
     packageManager: 'npm',
     args: ['--framework', 'astro', '--pm', 'npm', '--unit', '--no-e2e', '--no-commitlint', '--motion', '--yes'],
     expect: { unit: true, e2e: false, commitlint: false, pnpm: false, mcp: false, motion: true },
+    verifyDoctorDesign: true,
     quick: false,
   },
   {
@@ -89,6 +105,8 @@ export const cliE2eScenarios = [
     args: ['--pm', 'npm', '--yes', '--dry-run'],
     expectOutput: [
       'run npx create-next-app@latest',
+      '--disable-git',
+      'run git init --initial-branch=main',
       'run npx shadcn@latest init --defaults',
       'README.md',
       'AGENTS.md',
@@ -163,6 +181,8 @@ export const cliE2eScenarios = [
     args: ['--framework', 'astro', '--pm', 'npm', '--unit', '--e2e', '--no-commitlint', '--yes', '--dry-run'],
     expectOutput: [
       'run npm create astro@latest',
+      '--no-git',
+      'run git init --initial-branch=main',
       'run npx shadcn@latest init -t astro --defaults',
       pinnedDependency('@vitejs/plugin-react', 'astro'),
       pinnedDependency('react-doctor'),

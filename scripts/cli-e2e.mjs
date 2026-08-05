@@ -1,10 +1,11 @@
-﻿#!/usr/bin/env node
+#!/usr/bin/env node
 import {
   buildCli,
   cleanupContext,
   createRunContext,
   readFlag,
   readListFlag,
+  resolveExecutable,
   runScenario,
 } from './e2e/harness.mjs';
 import { scenarioMetadata, selectScenarios } from './e2e/scenarios.mjs';
@@ -27,7 +28,11 @@ if (scenarios.length === 0) {
   throw new Error('No CLI E2E scenarios matched the requested filters.');
 }
 const prefix = quick ? 'purrfold-e2e-quick-' : heavy ? 'purrfold-e2e-heavy-' : 'purrfold-e2e-';
-const context = createRunContext(process.argv, prefix);
+const requiresPnpm = scenarios.some((scenario) => scenario.packageManager === 'pnpm');
+const context = createRunContext(process.argv, prefix, {
+  requiresPnpm,
+  pnpmExecutable: requiresPnpm ? resolveExecutable('pnpm') : undefined,
+});
 const results = [];
 let hasFailures = true;
 
