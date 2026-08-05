@@ -103,6 +103,13 @@ the scenario matrix, so they cannot be required individually; `e2e-ok` passes
 when they succeed or are legitimately skipped, and fails when any of them fails
 or is cancelled.
 
+## README badges
+
+Only add a badge whose claim links to its own evidence — CI status, npm version,
+provenance. Do not add a badge for a program the project is not enrolled in, or
+one whose claim a reader cannot check by following the link. A badge that
+overstates is worse than no badge.
+
 ## Reporting problems
 
 Use the [issue forms](https://github.com/C3SC0-V4113/Scaffold/issues/new/choose).
