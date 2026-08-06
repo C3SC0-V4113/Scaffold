@@ -12,11 +12,17 @@ requires `--e2e` on top of `--ci`. Existing generated apps are untouched.
 The emitted workflows were also rebuilt around what real purrfold-generated
 projects had to hand-fix:
 
-- Action tags now come from `src/versions.json` (`actions` key) instead of being
-  inlined in the template, and Renovate has a custom manager over them. Inlined
-  tags are why generated pipelines rotted: nothing watched them, so every app
-  kept running `actions/checkout@v4` and `actions/setup-node@v4` on the
-  deprecated node20 runner. Both are now on v7.
+- Action refs now come from `src/versions.json` instead of being inlined in the
+  template, and Renovate has custom managers over them. Inlined refs are why
+  generated pipelines rotted: nothing watched them, so every app kept running
+  `actions/checkout@v4` and `actions/setup-node@v4` on the deprecated node20
+  runner. Both are now on v7.
+- Third-party actions (`pnpm/action-setup`, `oven-sh/setup-bun`) are pinned to a
+  commit SHA with the version in a trailing comment; GitHub-owned `actions/*`
+  stay on tags. A tag can be repointed by its owner after any review, a SHA
+  cannot. This mirrors the rule purrfold applies to its own workflows, so
+  generated apps no longer get a weaker supply-chain posture than the tool that
+  made them.
 - `push` is scoped to `main`. The previous `'**'` filter ran the job twice for
   every push to a branch with an open PR, with byte-identical results.
 - Added `concurrency` with `cancel-in-progress`, job `timeout-minutes`, and

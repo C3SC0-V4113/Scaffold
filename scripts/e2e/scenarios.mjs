@@ -81,6 +81,48 @@ export const cliE2eScenarios = [
     quick: false,
   },
   {
+    // Isolated CI scenario: `--ci` with every other optional feature off, so a
+    // regression in workflow generation cannot hide behind unit/e2e/commitlint
+    // output. `--skip-install` keeps it cheap — the workflows are pure file
+    // writes and need no dependency tree to validate.
+    name: 'npm-ci-only',
+    kind: 'real',
+    packageManager: 'npm',
+    execution: { requires: ['npm'] },
+    args: ['--pm', 'npm', '--ci', '--no-unit', '--no-e2e', '--no-commitlint', '--skip-install', '--yes'],
+    expect: {
+      unit: false,
+      e2e: false,
+      ci: true,
+      commitlint: false,
+      pnpm: false,
+      mcp: false,
+      skipInstall: true,
+    },
+    quick: false,
+  },
+  {
+    // The only scenario that generates a bun workflow. bun is the third package
+    // manager branch of the templates and the one whose setup action
+    // (oven-sh/setup-bun) is third-party, so this is where a broken SHA pin or
+    // a missing version comment surfaces in real generated output.
+    name: 'bun-ci-workflows',
+    kind: 'real',
+    packageManager: 'bun',
+    execution: { requires: ['bun', 'bunx'] },
+    args: ['--pm', 'bun', '--ci', '--e2e', '--no-unit', '--no-commitlint', '--skip-install', '--yes'],
+    expect: {
+      unit: false,
+      e2e: true,
+      ci: true,
+      commitlint: false,
+      pnpm: false,
+      mcp: false,
+      skipInstall: true,
+    },
+    quick: false,
+  },
+  {
     name: 'npm-skip-install-repo',
     kind: 'real',
     packageManager: 'npm',

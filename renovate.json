@@ -27,10 +27,20 @@
     {
       "customType": "jsonata",
       "fileFormat": "json",
-      "description": "GitHub Action tags purrfold pins into generated .github/workflows/. Without this manager the generated pipelines rot silently: every app scaffolded before an action's major bump keeps running a deprecated runner (the actions/checkout@v4 node20 deprecation is exactly how this was found).",
+      "description": "GitHub-owned action tags purrfold pins into generated .github/workflows/. Without this manager the generated pipelines rot silently: every app scaffolded before an action's major bump keeps running a deprecated runner (the actions/checkout@v4 node20 deprecation is exactly how this was found).",
       "managerFilePatterns": ["src/versions.json"],
       "matchStrings": [
         "$each(actions, function($v, $k) { { \"depName\": $k, \"currentValue\": $v, \"depType\": \"generated-actions\" } })"
+      ],
+      "datasourceTemplate": "github-tags"
+    },
+    {
+      "customType": "jsonata",
+      "fileFormat": "json",
+      "description": "Third-party actions purrfold pins into generated workflows, held at a commit SHA with the version alongside — the same rule tests/workflow-pinning.test.ts enforces on this repo's own workflows. Renovate needs currentDigest here so it bumps the hash and the comment together.",
+      "managerFilePatterns": ["src/versions.json"],
+      "matchStrings": [
+        "$each(thirdPartyActions, function($v, $k) { { \"depName\": $k, \"currentDigest\": $v.sha, \"currentValue\": $v.version, \"depType\": \"generated-actions\" } })"
       ],
       "datasourceTemplate": "github-tags"
     },

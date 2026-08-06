@@ -80,13 +80,49 @@ describe('generated GitHub Actions workflows', () => {
         expect(used.length).toBeGreaterThan(0);
 
         for (const reference of used) {
-          const [name, tag] = reference.split('@');
-          // Guards the whole point of this change: a tag inlined in the
+          const [name, ref] = reference.split('@');
+          // Guards the whole point of this change: a ref inlined in the
           // template is invisible to Renovate and rots into a deprecated
           // runner, which is how every app generated before this shipped ended
           // up warning about node20.
-          expect(versions.actions).toHaveProperty([name]);
-          expect(tag).toBe(versions.actions[name as keyof typeof versions.actions]);
+          if (name.startsWith('actions/')) {
+            expect(versions.actions).toHaveProperty([name]);
+            expect(ref).toBe(versions.actions[name as keyof typeof versions.actions]);
+            continue;
+          }
+
+          const pin = versions.thirdPartyActions[name as keyof typeof versions.thirdPartyActions];
+          expect(pin, `${name} is not registered in versions.json`).toBeDefined();
+          // The trailing `# vX.Y.Z` is a real YAML comment, so the parsed value
+          // is the bare SHA. The comment itself is asserted on the raw text.
+          expect(ref).toBe(pin.sha);
+        }
+      });
+
+      // Mirrors tests/workflow-pinning.test.ts, which enforces this on
+      // purrfold's own workflows. Generating tag-referenced third-party actions
+      // into other people's repositories would contradict the posture this
+      // repository adopted for itself.
+      it(`SHA-pins third-party actions in ${file} with ${packageManager}`, () => {
+        const raw = render(packageManager);
+        const references = [...raw.matchAll(/^\s*uses:\s*(\S+)(.*)$/gm)];
+
+        expect(references.length).toBeGreaterThan(0);
+
+        for (const [, reference, trailing] of references) {
+          const name = reference.split('@')[0];
+          if (name.startsWith('actions/')) {
+            // A repo already trusting GitHub with its runner gains nothing from
+            // hashing GitHub's own actions, and it costs readability.
+            expect(reference, `${name} should stay on a tag`).toMatch(/@v\d/);
+            continue;
+          }
+
+          // A tag or branch can be repointed by its owner after any review.
+          expect(reference, `${name} should be SHA-pinned`).toMatch(/@[0-9a-f]{40}$/);
+          // Without the comment a reviewer sees only a hash and cannot tell
+          // which version is running.
+          expect(trailing.trim(), `${name} has no version comment`).toMatch(/^#\s*v\d+\.\d+\.\d+/);
         }
       });
 

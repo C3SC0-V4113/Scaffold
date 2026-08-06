@@ -402,15 +402,31 @@ export const commitMsgHook = `npx commitlint --edit $1
 `;
 
 /**
- * Action tags and runtime versions for generated workflows come from
- * src/versions.json, never from literals here. Inlined tags are how the
- * generated pipelines rotted: nothing watched them, so every app scaffolded
- * before an action's major bump kept running a deprecated runner (the symptom
- * was the actions/checkout@v4 node20 deprecation warning). Renovate has a
- * custom manager over the `actions` key so a bump is a one-line commit here.
+ * Action refs for generated workflows come from src/versions.json, never from
+ * literals here. Inlined tags are how the generated pipelines rotted: nothing
+ * watched them, so every app scaffolded before an action's major bump kept
+ * running a deprecated runner (the symptom was the actions/checkout@v4 node20
+ * deprecation warning). Renovate has custom managers over both keys, so a bump
+ * is a one-line commit here.
  */
 function action(name: keyof typeof versions.actions): string {
   return `${name}@${versions.actions[name]}`;
+}
+
+/**
+ * Third-party actions are pinned to a commit SHA with the human-readable
+ * version alongside, matching the rule purrfold applies to its own workflows
+ * (see tests/workflow-pinning.test.ts): a tag or branch can be repointed by its
+ * owner after any review, a SHA cannot. GitHub-owned `actions/*` deliberately
+ * stay on tags — a repo already trusting GitHub with its runner gains nothing
+ * from pinning GitHub's own actions, and hashes there cost readability.
+ *
+ * The trailing comment is not decoration: without it a reviewer of a generated
+ * app sees only a hash and cannot tell which version is running.
+ */
+function thirdPartyAction(name: keyof typeof versions.thirdPartyActions): string {
+  const { sha, version } = versions.thirdPartyActions[name];
+  return `${name}@${sha} # ${version}`;
 }
 
 const NODE_VERSION = versions.toolchain.node;
@@ -446,7 +462,7 @@ function workflowToolchain(packageManager: string): WorkflowToolchain {
       // when both are set. That also replaces the old `version: latest`, which
       // let a pnpm major land in CI with no commit to point at when it broke.
       setupStep: `      - name: Setup pnpm
-        uses: ${action('pnpm/action-setup')}
+        uses: ${thirdPartyAction('pnpm/action-setup')}
 
 `,
     };
@@ -459,7 +475,7 @@ function workflowToolchain(packageManager: string): WorkflowToolchain {
       execCommand: 'bunx --bun',
       cache: '',
       setupStep: `      - name: Setup Bun
-        uses: ${action('oven-sh/setup-bun')}
+        uses: ${thirdPartyAction('oven-sh/setup-bun')}
 
 `,
     };
