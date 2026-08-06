@@ -86,7 +86,7 @@ describe('CLI E2E scenario definitions', () => {
     expect(matrix.some((entry) => entry.kind === 'dry-run')).toBe(false);
   });
 
-  it('fans representative Next and Astro scenarios out to Windows and macOS', async () => {
+  it('fans representative scenarios out to Windows and macOS', async () => {
     const { scenarioMatrix, crossPlatformRunners } = await loadScenarios();
     const matrix = scenarioMatrix();
     const runnersFor = (name: string) => matrix.filter((entry) => entry.name === name).map((entry) => entry.os);
@@ -94,15 +94,30 @@ describe('CLI E2E scenario definitions', () => {
     expect(crossPlatformRunners).toEqual(['ubuntu-latest', 'windows-latest', 'macos-latest']);
     expect(runnersFor('npm-default-unit')).toEqual(crossPlatformRunners);
     expect(runnersFor('astro-npm-ssg-unit')).toEqual(crossPlatformRunners);
+    expect(runnersFor('pnpm-b3-commitlint')).toEqual(crossPlatformRunners);
 
-    // One Next and one Astro representative, both on npm. The pnpm toolchain
-    // forwarder is the least-proven part of the harness and is deliberately not
-    // part of the first cross-platform slice.
+    // The set stays small and deliberate. Each member buys coverage the others
+    // cannot: Next and Astro generate differently, and the pnpm scenario is the
+    // only one that puts createPnpmToolchain — .cmd forwarder, junction, Node
+    // hardlink — on a non-Linux runner.
     const crossPlatform = matrix.filter((entry) => entry.os !== 'ubuntu-latest');
     expect(new Set(crossPlatform.map((entry) => entry.name))).toEqual(
-      new Set(['npm-default-unit', 'astro-npm-ssg-unit'])
+      new Set(['npm-default-unit', 'astro-npm-ssg-unit', 'pnpm-b3-commitlint'])
     );
-    expect(crossPlatform.every((entry) => entry.packageManager === 'npm')).toBe(true);
+  });
+
+  it('covers both frameworks and both toolchain shapes off Linux', async () => {
+    const { scenarioMatrix } = await loadScenarios();
+    const crossPlatform = scenarioMatrix().filter((entry) => entry.os !== 'ubuntu-latest');
+
+    // Stated as coverage rather than as a name list, so adding a fourth member
+    // has to justify itself against what is already represented.
+    expect(new Set(crossPlatform.map((entry) => entry.framework))).toEqual(new Set(['next', 'astro']));
+    expect(new Set(crossPlatform.map((entry) => entry.packageManager))).toEqual(new Set(['npm', 'pnpm']));
+
+    // Playwright scenarios stay Linux-only: they would triple a browser download
+    // without adding anything the lighter pnpm scenario does not already prove.
+    expect(crossPlatform.some((entry) => entry.name.includes('e2e'))).toBe(false);
   });
 
   it('gives every matrix entry a unique job name so checks do not collapse', async () => {
