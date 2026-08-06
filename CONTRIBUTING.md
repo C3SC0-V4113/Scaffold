@@ -71,8 +71,8 @@ generated apps.
 It does **not** include CI configuration, repository docs, or tests — none of
 those reach the published tarball (`files` is `dist`, `README.md`, `llms.txt`).
 
-Do not hand-edit `CHANGELOG.md` or bump `version` manually; `npm run
-changeset:version` owns both.
+Do not hand-edit `CHANGELOG.md`, bump `version` manually, or edit the version
+field in `package-lock.json`; `npm run changeset:version` owns all three.
 
 ## Single sources of truth
 

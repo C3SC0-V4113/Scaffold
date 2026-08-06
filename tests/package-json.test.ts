@@ -70,6 +70,24 @@ describe('package.json quality config', () => {
     expect(packageJson.publishConfig?.provenance).toBe(true);
   });
 
+  it('keeps package-lock.json on the same version as package.json', () => {
+    const read = (file: string) => JSON.parse(readFileSync(new URL(`../${file}`, import.meta.url), 'utf8'));
+
+    const packageJson = read('package.json') as { version?: string };
+    const lockfile = read('package-lock.json') as {
+      version?: string;
+      packages?: Record<string, { version?: string }>;
+    };
+
+    // `changeset version` bumps package.json only, so the release commit used to
+    // ship a lockfile still recording the previous version. `npm ci` does not
+    // care — it only rejects dependency mismatches — which is exactly why the
+    // drift survived several releases unnoticed. `changeset:version` now chains
+    // a `--package-lock-only` install; this pins the outcome.
+    expect(lockfile.version).toBe(packageJson.version);
+    expect(lockfile.packages?.['']?.version).toBe(packageJson.version);
+  });
+
   it('does not add npm-conflicting prettier overrides for new projects', async () => {
     const executor = new MemoryExecutor();
 
