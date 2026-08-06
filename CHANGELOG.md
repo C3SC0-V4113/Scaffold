@@ -1,5 +1,11 @@
 # purrfold
 
+## 0.6.0
+
+### Minor Changes
+
+- 26da2b0: Pin Motion for React 13 in generated apps, up from 12. Projects generated with `--motion` now install the new major.
+
 ## 0.5.1
 
 ### Patch Changes
