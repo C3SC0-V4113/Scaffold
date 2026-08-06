@@ -21,6 +21,10 @@ class RecordingExecutor implements Executor {
     this.runs.push({ command, args, cwd: options?.cwd });
   }
 
+  async capture() {
+    return undefined;
+  }
+
   async ensureDir() {}
   async pathExists(filePath: string) {
     return this.files.has(filePath);
@@ -49,6 +53,7 @@ function options(
     unit: true,
     e2e: false,
     commitlint: false,
+    ci: false,
     motion: true,
     yes: true,
     dryRun: false,

@@ -1,3 +1,5 @@
+import versions from '../versions.json' with { type: 'json' };
+
 import type { CreateOptions, IconLibrary, PackageManager } from '../types.js';
 import { getCatRender } from './icons.js';
 
@@ -399,127 +401,188 @@ export const prePushHook = `npm run check
 export const commitMsgHook = `npx commitlint --edit $1
 `;
 
+/**
+ * Action tags and runtime versions for generated workflows come from
+ * src/versions.json, never from literals here. Inlined tags are how the
+ * generated pipelines rotted: nothing watched them, so every app scaffolded
+ * before an action's major bump kept running a deprecated runner (the symptom
+ * was the actions/checkout@v4 node20 deprecation warning). Renovate has a
+ * custom manager over the `actions` key so a bump is a one-line commit here.
+ */
+function action(name: keyof typeof versions.actions): string {
+  return `${name}@${versions.actions[name]}`;
+}
+
+const NODE_VERSION = versions.toolchain.node;
+
+interface WorkflowToolchain {
+  /** Lockfile-respecting install, e.g. `npm ci`. */
+  installCommand: string;
+  /** Runs a package.json script, e.g. `pnpm run`. */
+  runCommand: string;
+  /** Runs a locally installed binary, e.g. `npx`. */
+  execCommand: string;
+  /** `cache:` input for setup-node; empty for bun, which setup-node cannot cache. */
+  cache: string;
+  /** Package-manager setup step, indented for a `steps:` list; empty for npm. */
+  setupStep: string;
+}
+
+/**
+ * The three package managers differ in five small ways across both workflows.
+ * Deriving them once keeps quality.yml and playwright.yml from drifting apart,
+ * which they already had: the two render functions carried byte-identical
+ * copies of this logic.
+ */
+function workflowToolchain(packageManager: string): WorkflowToolchain {
+  if (packageManager === 'pnpm') {
+    return {
+      installCommand: 'pnpm install --frozen-lockfile',
+      runCommand: 'pnpm run',
+      execCommand: 'pnpm exec',
+      cache: '\n          cache: pnpm',
+      // No `version:` input on purpose. The generated package.json carries a
+      // `packageManager` field, which this action reads — and it refuses to run
+      // when both are set. That also replaces the old `version: latest`, which
+      // let a pnpm major land in CI with no commit to point at when it broke.
+      setupStep: `      - name: Setup pnpm
+        uses: ${action('pnpm/action-setup')}
+
+`,
+    };
+  }
+
+  if (packageManager === 'bun') {
+    return {
+      installCommand: 'bun install --frozen-lockfile',
+      runCommand: 'bun run',
+      execCommand: 'bunx --bun',
+      cache: '',
+      setupStep: `      - name: Setup Bun
+        uses: ${action('oven-sh/setup-bun')}
+
+`,
+    };
+  }
+
+  return {
+    installCommand: 'npm ci',
+    runCommand: 'npm run',
+    execCommand: 'npx',
+    cache: `\n          cache: npm`,
+    setupStep: '',
+  };
+}
+
 export function renderQualityWorkflow(packageManager: string) {
-  const installCommand =
-    packageManager === 'pnpm'
-      ? 'pnpm install --frozen-lockfile'
-      : packageManager === 'bun'
-        ? 'bun install --frozen-lockfile'
-        : 'npm ci';
-  const checkCommand =
-    packageManager === 'pnpm'
-      ? 'pnpm run check'
-      : packageManager === 'bun'
-        ? 'bun run check'
-        : 'npm run check';
-  const cache = packageManager === 'bun' ? '' : `\n          cache: ${packageManager}`;
-  const setupPackageManager =
-    packageManager === 'pnpm'
-      ? `
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: latest
-`
-      : packageManager === 'bun'
-        ? `
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
-`
-        : '';
+  const { installCommand, runCommand, cache, setupStep } = workflowToolchain(packageManager);
 
   return `name: Quality
 
+# Only \`main\` on push. A \`'**'\` branch filter here runs this twice for every
+# push to a branch with an open PR — once for the push and once for the
+# pull_request event — and the two runs are byte-identical.
 on:
   push:
-    branches:
-      - '**'
+    branches: [main]
   pull_request:
+
+permissions:
+  contents: read
+
+# Cancel superseded runs of the same branch or PR to save Actions minutes.
+concurrency:
+  group: quality-\${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   quality:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
-${setupPackageManager}
+        uses: ${action('actions/checkout')}
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
+${setupStep}      - name: Setup Node
+        uses: ${action('actions/setup-node')}
         with:
-          node-version: 22${cache}
+          node-version: ${NODE_VERSION}${cache}
 
       - name: Install dependencies
         run: ${installCommand}
 
       - name: Run quality checks
-        run: ${checkCommand}
+        run: ${runCommand} check
 `;
 }
 
 export function renderPlaywrightWorkflow(packageManager: string) {
-  const installCommand =
-    packageManager === 'pnpm'
-      ? 'pnpm install --frozen-lockfile'
-      : packageManager === 'bun'
-        ? 'bun install --frozen-lockfile'
-        : 'npm ci';
-  const installBrowsersCommand =
-    packageManager === 'pnpm'
-      ? 'pnpm exec playwright install --with-deps'
-      : packageManager === 'bun'
-        ? 'bunx --bun playwright install --with-deps'
-        : 'npx playwright install --with-deps';
-  const testCommand =
-    packageManager === 'pnpm'
-      ? 'pnpm exec playwright test'
-      : packageManager === 'bun'
-        ? 'bunx --bun playwright test'
-        : 'npx playwright test';
-  const cache = packageManager === 'bun' ? '' : `\n          cache: ${packageManager}`;
-  const setupPackageManager =
-    packageManager === 'pnpm'
-      ? `
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: latest
-`
-      : packageManager === 'bun'
-        ? `
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
-`
-        : '';
+  const { installCommand, execCommand, cache, setupStep } = workflowToolchain(packageManager);
 
   return `name: Playwright Tests
+
 on:
   push:
-    branches: [main, master]
+    branches: [main]
   pull_request:
-    branches: [main, master]
+
+permissions:
+  contents: read
+
+# Cancel superseded runs of the same branch or PR to save Actions minutes.
+concurrency:
+  group: playwright-\${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   test:
-    timeout-minutes: 60
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
-${setupPackageManager}
-      - uses: actions/setup-node@v4
+      - name: Checkout
+        uses: ${action('actions/checkout')}
+
+${setupStep}      - name: Setup Node
+        uses: ${action('actions/setup-node')}
         with:
-          node-version: 22${cache}
+          node-version: ${NODE_VERSION}${cache}
+
       - name: Install dependencies
         run: ${installCommand}
-      - name: Install Playwright Browsers
-        run: ${installBrowsersCommand}
+
+      # CI runs chromium only; the full firefox/webkit matrix stays on the local
+      # \`test:e2e\` script. Browser binaries are cached keyed by the installed
+      # @playwright/test version so a bump invalidates the cache. OS-level deps
+      # are not cacheable, so on a hit we still run install-deps.
+      - name: Resolve Playwright version
+        id: playwright-version
+        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: ${action('actions/cache')}
+        with:
+          path: ~/.cache/ms-playwright
+          key: \${{ runner.os }}-playwright-chromium-\${{ steps.playwright-version.outputs.version }}
+
+      - name: Install Playwright browsers
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: ${execCommand} playwright install --with-deps chromium
+
+      - name: Install Playwright OS dependencies
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: ${execCommand} playwright install-deps chromium
+
       - name: Run Playwright tests
-        run: ${testCommand}
-      - uses: actions/upload-artifact@v4
+        run: ${execCommand} playwright test --project=chromium
+
+      - name: Upload Playwright report
+        uses: ${action('actions/upload-artifact')}
         if: \${{ !cancelled() }}
         with:
           name: playwright-report
           path: playwright-report/
-          retention-days: 30
+          retention-days: 7
 `;
 }
 

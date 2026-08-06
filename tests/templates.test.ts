@@ -18,6 +18,7 @@ import {
   renderReactDoctorConfig,
   renderVitestConfig,
   renderHomePage,
+  renderPlaywrightWorkflow,
   renderQualityWorkflow,
   renderReadme,
   renderRootLayout,
@@ -352,8 +353,14 @@ allowBuilds:
     expect(humanizeProjectName('app')).toBe('App');
   });
 
-  it('snapshots workflows and Claude hooks', () => {
-    expect(renderQualityWorkflow('npm')).toMatchSnapshot();
+  // Structural guarantees live in workflows.test.ts; these snapshots exist so a
+  // template edit shows up as a reviewable YAML diff.
+  it.each(['npm', 'pnpm', 'bun'])('snapshots the %s workflows', (packageManager) => {
+    expect(renderQualityWorkflow(packageManager)).toMatchSnapshot();
+    expect(renderPlaywrightWorkflow(packageManager)).toMatchSnapshot();
+  });
+
+  it('snapshots Claude hooks', () => {
     expect(claudeReactDoctorHook).toMatchSnapshot();
     expect(renderClaudeProjectMinEvaluationHook('npm', true)).toMatchSnapshot();
     expect(claudeSettings).toMatchSnapshot();

@@ -238,6 +238,82 @@ npx purrfold@latest my-app --shadcn-args --preset b5eH0WVTX --yes
 "
 `;
 
+exports[`template snapshots > snapshots Claude hooks 1`] = `
+"Set-StrictMode -Version Latest
+$ErrorActionPreference = 'Stop'
+
+$projectRoot = $env:CLAUDE_PROJECT_DIR
+if ([string]::IsNullOrWhiteSpace($projectRoot)) {
+  $projectRoot = Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..\\..')
+}
+
+Set-Location -LiteralPath $projectRoot
+
+$reactDoctor = Join-Path $projectRoot 'node_modules\\.bin\\react-doctor.cmd'
+if (Test-Path -LiteralPath $reactDoctor) {
+  & cmd /c "\`"$reactDoctor\`" --verbose --diff --blocking warning --no-score"
+  exit $LASTEXITCODE
+}
+
+& cmd /c 'npx --yes react-doctor@latest --verbose --diff --blocking warning --no-score'
+exit $LASTEXITCODE
+"
+`;
+
+exports[`template snapshots > snapshots Claude hooks 2`] = `
+"Set-StrictMode -Version Latest
+$ErrorActionPreference = 'Stop'
+
+$projectRoot = $env:CLAUDE_PROJECT_DIR
+if ([string]::IsNullOrWhiteSpace($projectRoot)) {
+  $projectRoot = Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..\\..')
+}
+
+Set-Location -LiteralPath $projectRoot
+
+$status = git status --porcelain
+if ([string]::IsNullOrWhiteSpace(($status | Out-String))) {
+  exit 0
+}
+
+$scripts = @('lint', 'typecheck', 'format:check', 'test', 'doctor', 'check')
+foreach ($scriptName in $scripts) {
+  & cmd /c "npm run $scriptName"
+  if ($LASTEXITCODE -ne 0) {
+    exit $LASTEXITCODE
+  }
+}
+"
+`;
+
+exports[`template snapshots > snapshots Claude hooks 3`] = `
+"{
+  "hooks": {
+    "PostToolBatch": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell -NoProfile -ExecutionPolicy Bypass -Command \\"& { $project = if ($env:CLAUDE_PROJECT_DIR) { $env:CLAUDE_PROJECT_DIR } else { (Get-Location).Path }; & (Join-Path $project '.claude/hooks/react-doctor.ps1') }\\""
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell -NoProfile -ExecutionPolicy Bypass -Command \\"& { $project = if ($env:CLAUDE_PROJECT_DIR) { $env:CLAUDE_PROJECT_DIR } else { (Get-Location).Path }; & (Join-Path $project '.claude/hooks/project-min-evaluation.ps1') }\\""
+          }
+        ]
+      }
+    ]
+  }
+}
+"
+`;
+
 exports[`template snapshots > snapshots ESLint and React Doctor config 1`] = `
 "import vitest from '@vitest/eslint-plugin';
 import { defineConfig, globalIgnores } from 'eslint/config';
@@ -670,6 +746,120 @@ shadcn presets are supported through \`--shadcn-args --preset <id>\`.
 "
 `;
 
+exports[`template snapshots > snapshots the bun workflows 1`] = `
+"name: Quality
+
+# Only \`main\` on push. A \`'**'\` branch filter here runs this twice for every
+# push to a branch with an open PR — once for the push and once for the
+# pull_request event — and the two runs are byte-identical.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+# Cancel superseded runs of the same branch or PR to save Actions minutes.
+concurrency:
+  group: quality-\${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7.0.1
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2.2.0
+
+      - name: Setup Node
+        uses: actions/setup-node@v7.0.0
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Run quality checks
+        run: bun run check
+"
+`;
+
+exports[`template snapshots > snapshots the bun workflows 2`] = `
+"name: Playwright Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+# Cancel superseded runs of the same branch or PR to save Actions minutes.
+concurrency:
+  group: playwright-\${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7.0.1
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2.2.0
+
+      - name: Setup Node
+        uses: actions/setup-node@v7.0.0
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      # CI runs chromium only; the full firefox/webkit matrix stays on the local
+      # \`test:e2e\` script. Browser binaries are cached keyed by the installed
+      # @playwright/test version so a bump invalidates the cache. OS-level deps
+      # are not cacheable, so on a hit we still run install-deps.
+      - name: Resolve Playwright version
+        id: playwright-version
+        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@v6.1.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: \${{ runner.os }}-playwright-chromium-\${{ steps.playwright-version.outputs.version }}
+
+      - name: Install Playwright browsers
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: bunx --bun playwright install --with-deps chromium
+
+      - name: Install Playwright OS dependencies
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: bunx --bun playwright install-deps chromium
+
+      - name: Run Playwright tests
+        run: bunx --bun playwright test --project=chromium
+
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v7.0.1
+        if: \${{ !cancelled() }}
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
+"
+`;
+
 exports[`template snapshots > snapshots the generated app shell 1`] = `
 "import { Geist, Geist_Mono } from 'next/font/google';
 import Script from 'next/script';
@@ -734,25 +924,35 @@ export default function Home() {
 "
 `;
 
-exports[`template snapshots > snapshots workflows and Claude hooks 1`] = `
+exports[`template snapshots > snapshots the npm workflows 1`] = `
 "name: Quality
 
+# Only \`main\` on push. A \`'**'\` branch filter here runs this twice for every
+# push to a branch with an open PR — once for the push and once for the
+# pull_request event — and the two runs are byte-identical.
 on:
   push:
-    branches:
-      - '**'
+    branches: [main]
   pull_request:
+
+permissions:
+  contents: read
+
+# Cancel superseded runs of the same branch or PR to save Actions minutes.
+concurrency:
+  group: quality-\${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   quality:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
-
+        uses: actions/checkout@v7.0.1
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7.0.0
         with:
           node-version: 22
           cache: npm
@@ -765,78 +965,187 @@ jobs:
 "
 `;
 
-exports[`template snapshots > snapshots workflows and Claude hooks 2`] = `
-"Set-StrictMode -Version Latest
-$ErrorActionPreference = 'Stop'
+exports[`template snapshots > snapshots the npm workflows 2`] = `
+"name: Playwright Tests
 
-$projectRoot = $env:CLAUDE_PROJECT_DIR
-if ([string]::IsNullOrWhiteSpace($projectRoot)) {
-  $projectRoot = Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..\\..')
-}
+on:
+  push:
+    branches: [main]
+  pull_request:
 
-Set-Location -LiteralPath $projectRoot
+permissions:
+  contents: read
 
-$reactDoctor = Join-Path $projectRoot 'node_modules\\.bin\\react-doctor.cmd'
-if (Test-Path -LiteralPath $reactDoctor) {
-  & cmd /c "\`"$reactDoctor\`" --verbose --diff --blocking warning --no-score"
-  exit $LASTEXITCODE
-}
+# Cancel superseded runs of the same branch or PR to save Actions minutes.
+concurrency:
+  group: playwright-\${{ github.ref }}
+  cancel-in-progress: true
 
-& cmd /c 'npx --yes react-doctor@latest --verbose --diff --blocking warning --no-score'
-exit $LASTEXITCODE
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7.0.1
+
+      - name: Setup Node
+        uses: actions/setup-node@v7.0.0
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # CI runs chromium only; the full firefox/webkit matrix stays on the local
+      # \`test:e2e\` script. Browser binaries are cached keyed by the installed
+      # @playwright/test version so a bump invalidates the cache. OS-level deps
+      # are not cacheable, so on a hit we still run install-deps.
+      - name: Resolve Playwright version
+        id: playwright-version
+        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@v6.1.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: \${{ runner.os }}-playwright-chromium-\${{ steps.playwright-version.outputs.version }}
+
+      - name: Install Playwright browsers
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium
+
+      - name: Install Playwright OS dependencies
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
+
+      - name: Run Playwright tests
+        run: npx playwright test --project=chromium
+
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v7.0.1
+        if: \${{ !cancelled() }}
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
 "
 `;
 
-exports[`template snapshots > snapshots workflows and Claude hooks 3`] = `
-"Set-StrictMode -Version Latest
-$ErrorActionPreference = 'Stop'
+exports[`template snapshots > snapshots the pnpm workflows 1`] = `
+"name: Quality
 
-$projectRoot = $env:CLAUDE_PROJECT_DIR
-if ([string]::IsNullOrWhiteSpace($projectRoot)) {
-  $projectRoot = Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..\\..')
-}
+# Only \`main\` on push. A \`'**'\` branch filter here runs this twice for every
+# push to a branch with an open PR — once for the push and once for the
+# pull_request event — and the two runs are byte-identical.
+on:
+  push:
+    branches: [main]
+  pull_request:
 
-Set-Location -LiteralPath $projectRoot
+permissions:
+  contents: read
 
-$status = git status --porcelain
-if ([string]::IsNullOrWhiteSpace(($status | Out-String))) {
-  exit 0
-}
+# Cancel superseded runs of the same branch or PR to save Actions minutes.
+concurrency:
+  group: quality-\${{ github.ref }}
+  cancel-in-progress: true
 
-$scripts = @('lint', 'typecheck', 'format:check', 'test', 'doctor', 'check')
-foreach ($scriptName in $scripts) {
-  & cmd /c "npm run $scriptName"
-  if ($LASTEXITCODE -ne 0) {
-    exit $LASTEXITCODE
-  }
-}
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7.0.1
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6.0.10
+
+      - name: Setup Node
+        uses: actions/setup-node@v7.0.0
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run quality checks
+        run: pnpm run check
 "
 `;
 
-exports[`template snapshots > snapshots workflows and Claude hooks 4`] = `
-"{
-  "hooks": {
-    "PostToolBatch": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "powershell -NoProfile -ExecutionPolicy Bypass -Command \\"& { $project = if ($env:CLAUDE_PROJECT_DIR) { $env:CLAUDE_PROJECT_DIR } else { (Get-Location).Path }; & (Join-Path $project '.claude/hooks/react-doctor.ps1') }\\""
-          }
-        ]
-      }
-    ],
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "powershell -NoProfile -ExecutionPolicy Bypass -Command \\"& { $project = if ($env:CLAUDE_PROJECT_DIR) { $env:CLAUDE_PROJECT_DIR } else { (Get-Location).Path }; & (Join-Path $project '.claude/hooks/project-min-evaluation.ps1') }\\""
-          }
-        ]
-      }
-    ]
-  }
-}
+exports[`template snapshots > snapshots the pnpm workflows 2`] = `
+"name: Playwright Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+# Cancel superseded runs of the same branch or PR to save Actions minutes.
+concurrency:
+  group: playwright-\${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7.0.1
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6.0.10
+
+      - name: Setup Node
+        uses: actions/setup-node@v7.0.0
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # CI runs chromium only; the full firefox/webkit matrix stays on the local
+      # \`test:e2e\` script. Browser binaries are cached keyed by the installed
+      # @playwright/test version so a bump invalidates the cache. OS-level deps
+      # are not cacheable, so on a hit we still run install-deps.
+      - name: Resolve Playwright version
+        id: playwright-version
+        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@v6.1.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: \${{ runner.os }}-playwright-chromium-\${{ steps.playwright-version.outputs.version }}
+
+      - name: Install Playwright browsers
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Install Playwright OS dependencies
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: pnpm exec playwright install-deps chromium
+
+      - name: Run Playwright tests
+        run: pnpm exec playwright test --project=chromium
+
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v7.0.1
+        if: \${{ !cancelled() }}
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
 "
 `;

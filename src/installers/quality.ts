@@ -16,7 +16,6 @@ import {
   renderAstroHomePage,
   renderHomePage,
   renderPrettierConfig,
-  renderQualityWorkflow,
   renderReactDoctorConfig,
   renderRootLayout,
 } from '../templates/files.js';
@@ -253,11 +252,6 @@ export async function installQualityLayer(
       renderCommitMsgHook(options.packageManager)
     );
   }
-
-  await executor.writeFile(
-    path.join(projectRoot, '.github', 'workflows', 'quality.yml'),
-    renderQualityWorkflow(options.packageManager)
-  );
 
   if (options.packageManager === 'pnpm') {
     const workspacePath = path.join(projectRoot, 'pnpm-workspace.yaml');

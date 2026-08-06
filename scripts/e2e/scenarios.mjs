@@ -17,8 +17,8 @@ export const cliE2eScenarios = [
     // toolchain forwarder is the least-proven code in the harness, so it earns
     // multi-OS coverage as its own deliberate step rather than riding along here.
     execution: { requires: ['npm'], os: crossPlatformRunners },
-    args: ['--pm', 'npm', '--unit', '--no-e2e', '--no-commitlint', '--motion', '--yes'],
-    expect: { unit: true, e2e: false, commitlint: false, pnpm: false, mcp: false, motion: true },
+    args: ['--pm', 'npm', '--unit', '--no-e2e', '--ci', '--no-commitlint', '--motion', '--yes'],
+    expect: { unit: true, e2e: false, ci: true, commitlint: false, pnpm: false, mcp: false, motion: true },
     quick: false,
   },
   {
@@ -44,8 +44,11 @@ export const cliE2eScenarios = [
     kind: 'real',
     packageManager: 'pnpm',
     execution: { requires: ['pnpm'] },
-    args: ['--pm', 'pnpm', '--unit', '--e2e', '--no-commitlint', '--shadcn-args', '--preset', 'b2qMI9ufY', '--yes'],
-    expect: { unit: true, e2e: true, commitlint: false, pnpm: true, mcp: false },
+    // Carries `--ci`: the only real scenario that generates both workflows, and
+    // it does so on the pnpm branch, which is the one with a package-manager
+    // setup step to get wrong.
+    args: ['--pm', 'pnpm', '--unit', '--e2e', '--ci', '--no-commitlint', '--shadcn-args', '--preset', 'b2qMI9ufY', '--yes'],
+    expect: { unit: true, e2e: true, ci: true, commitlint: false, pnpm: true, mcp: false },
     quick: false,
   },
   {
@@ -134,7 +137,26 @@ export const cliE2eScenarios = [
       'DESIGN.md',
       'settings.json',
     ],
-    rejectOutput: ['mcp init --client', pinnedDependency('motion'), 'motion-framer'],
+    // Workflow filenames are matched bare because output paths carry native
+    // separators and this list is compared as a raw substring.
+    rejectOutput: [
+      'mcp init --client',
+      pinnedDependency('motion'),
+      'motion-framer',
+      'quality.yml',
+      'playwright.yml',
+    ],
+    quick: true,
+  },
+  {
+    name: 'dry-run-ci-workflows',
+    kind: 'dry-run',
+    packageManager: 'npm',
+    // Proves the built CLI emits workflows at all. The full gating matrix
+    // (--ci without --e2e, --e2e without --ci) is covered far more cheaply by
+    // tests/dry-run.test.ts and does not need a scenario each.
+    args: ['--pm', 'npm', '--ci', '--e2e', '--yes', '--dry-run'],
+    expectOutput: ['quality.yml', 'playwright.yml'],
     quick: true,
   },
   {

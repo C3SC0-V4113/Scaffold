@@ -4,7 +4,6 @@ import {
   e2eSmokeTest,
   renderAstroUnitSmokeTest,
   renderPlaywrightConfig,
-  renderPlaywrightWorkflow,
   renderVitestConfig,
   motionMainUnitTest,
   unitSmokeTest,
@@ -39,9 +38,5 @@ export async function installTestingFiles(
       renderPlaywrightConfig(options.packageManager)
     );
     await executor.writeFile(path.join(projectRoot, 'tests', 'e2e', 'home.spec.ts'), e2eSmokeTest);
-    await executor.writeFile(
-      path.join(projectRoot, '.github', 'workflows', 'playwright.yml'),
-      renderPlaywrightWorkflow(options.packageManager)
-    );
   }
 }

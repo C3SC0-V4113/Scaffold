@@ -142,6 +142,10 @@ describe('Astro React integration guard', () => {
       }
     }
 
+    async capture() {
+      return undefined;
+    }
+
     async ensureDir() {}
     async pathExists(filePath: string) {
       return this.files.has(filePath);

@@ -21,6 +21,10 @@ class FailingRunExecutor implements Executor {
     throw new Error('network unavailable');
   }
 
+  async capture() {
+    return undefined;
+  }
+
   async ensureDir() {}
 
   async pathExists() {
@@ -173,6 +177,7 @@ describe('external skill install script', () => {
           unit: false,
           e2e: false,
           commitlint: false,
+          ci: false,
           motion: false,
           yes: true,
           dryRun: false,

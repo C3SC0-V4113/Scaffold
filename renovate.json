@@ -23,6 +23,27 @@
         "$each(astroOverrides, function($v, $k) { { \"depName\": $k, \"currentValue\": $v, \"depType\": \"generated-astro\" } })"
       ],
       "datasourceTemplate": "npm"
+    },
+    {
+      "customType": "jsonata",
+      "fileFormat": "json",
+      "description": "GitHub Action tags purrfold pins into generated .github/workflows/. Without this manager the generated pipelines rot silently: every app scaffolded before an action's major bump keeps running a deprecated runner (the actions/checkout@v4 node20 deprecation is exactly how this was found).",
+      "managerFilePatterns": ["src/versions.json"],
+      "matchStrings": [
+        "$each(actions, function($v, $k) { { \"depName\": $k, \"currentValue\": $v, \"depType\": \"generated-actions\" } })"
+      ],
+      "datasourceTemplate": "github-tags"
+    },
+    {
+      "customType": "jsonata",
+      "fileFormat": "json",
+      "description": "Fallback pnpm version written into a generated app's `packageManager` field when the running pnpm cannot be probed. Must stay an exact x.y.z: `packageManager` rejects ranges.",
+      "managerFilePatterns": ["src/versions.json"],
+      "matchStrings": [
+        "{ \"depName\": \"pnpm\", \"currentValue\": toolchain.pnpm, \"depType\": \"generated-toolchain\" }"
+      ],
+      "datasourceTemplate": "npm",
+      "versioningTemplate": "npm"
     }
   ],
   "packageRules": [
@@ -31,6 +52,14 @@
       "matchFileNames": ["src/versions.json"],
       "matchUpdateTypes": ["minor", "patch"],
       "groupName": "generated-app pins (non-major)",
+      "schedule": ["before 6am on monday"]
+    },
+    {
+      "description": "Action tag bumps are grouped on their own: they change generated workflow YAML but no installed dependency, so they are reviewed against the template snapshots rather than the E2E matrix. Majors stay ungrouped — a runtime bump (node20 -> node24) deserves its own PR.",
+      "matchFileNames": ["src/versions.json"],
+      "matchDepTypes": ["generated-actions"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "generated-app action pins (non-major)",
       "schedule": ["before 6am on monday"]
     },
     {

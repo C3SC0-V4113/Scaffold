@@ -8,7 +8,8 @@ description: Scaffold a new production-ready frontend app (Next.js + shadcn + st
 `purrfold` is a CLI that creates a new app from `create-next-app@latest` or
 `create-astro@latest` and applies a production-oriented quality baseline: shadcn,
 strict ESLint, Prettier, Husky, React Doctor, React Scan, agent docs, Claude
-hooks, and optional unit (Vitest), e2e (Playwright), and commitlint. The
+hooks, and optional unit (Vitest), e2e (Playwright), commitlint, and GitHub
+Actions CI. The
 generated app self-tests and is green out-of-the-box.
 
 No install step is required — run it with `npx`. Always pass `--yes` so it runs
@@ -31,6 +32,7 @@ npx purrfold@latest <target-dir> [options]
 - `--unit` / `--no-unit` — Vitest + React Testing Library (default: included).
 - `--e2e` / `--no-e2e` — Playwright e2e (default: skipped).
 - `--commitlint` / `--no-commitlint` — commitlint + commit-msg hook (default: skipped).
+- `--ci` / `--no-ci` — GitHub Actions workflows: `quality.yml`, plus `playwright.yml` with `--e2e` (default: skipped).
 - `--motion` — install Motion for React and the `motion-framer` skill (default: skipped; opt-in only).
 - `--yes` — non-interactive defaults (no prompts). **Always include this when running for the user.**
 - `--dry-run` — print operations without writing or installing.
@@ -50,7 +52,8 @@ To fetch the canonical option schema at runtime: `npx purrfold@latest info --jso
 | "use Astro SSR" / "scaffold Astro SSR" | `npx purrfold@latest <dir> --framework astro --ssr --adapter cloudflare --yes` |
 | "without testing" / "no tests" | `npx purrfold@latest <dir> --no-unit --no-e2e --yes` |
 | "with e2e" / "add Playwright" | `npx purrfold@latest <dir> --e2e --yes` |
-| "the full setup" / "everything" | `npx purrfold@latest <dir> --unit --e2e --commitlint --yes` |
+| "the full setup" / "everything" | `npx purrfold@latest <dir> --unit --e2e --commitlint --ci --yes` |
+| "with CI" / "add GitHub Actions" | `npx purrfold@latest <dir> --ci --yes` |
 | "use pnpm/bun" | `npx purrfold@latest <dir> --pm pnpm --yes` |
 | "install Motion" / "use Motion for React" | `npx purrfold@latest <dir> --motion --yes` |
 | "use phosphor/tabler icons" | `npx purrfold@latest <dir> --icons phosphor --yes` |

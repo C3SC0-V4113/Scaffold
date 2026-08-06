@@ -42,5 +42,17 @@
   },
   "astroOverrides": {
     "@vitejs/plugin-react": "5.2.0"
+  },
+  "actions": {
+    "actions/checkout": "v7.0.1",
+    "actions/setup-node": "v7.0.0",
+    "actions/cache": "v6.1.0",
+    "actions/upload-artifact": "v7.0.1",
+    "pnpm/action-setup": "v6.0.10",
+    "oven-sh/setup-bun": "v2.2.0"
+  },
+  "toolchain": {
+    "node": "22",
+    "pnpm": "11.20.0"
   }
 }

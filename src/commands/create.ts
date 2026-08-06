@@ -4,6 +4,7 @@ import { DryRunExecutor, RealExecutor } from '../executor.js';
 import { defaultFramework, frameworkRegistry, isFramework } from '../frameworks/registry.js';
 import { getPackageManagerCommands } from '../package-manager.js';
 import { createAstroApp } from '../installers/astro.js';
+import { installCiWorkflows } from '../installers/ci.js';
 import { installDocsAndClaude } from '../installers/docs.js';
 import { createNextApp } from '../installers/next.js';
 import { installMotion } from '../installers/motion.js';
@@ -23,6 +24,7 @@ export interface RawCreateFlags {
   unit?: boolean;
   e2e?: boolean;
   commitlint?: boolean;
+  ci?: boolean;
   motion?: boolean;
   yes?: boolean;
   dryRun?: boolean;
@@ -187,6 +189,7 @@ export async function resolveCreateOptions(
     unit: await resolveBoolean(flags.unit, yes, true, 'Install Vitest + React Testing Library?'),
     e2e: await resolveBoolean(flags.e2e, yes, false, 'Install Playwright E2E testing?'),
     commitlint: await resolveBoolean(flags.commitlint, yes, false, 'Install commitlint?'),
+    ci: await resolveBoolean(flags.ci, yes, false, 'Install GitHub Actions workflows?'),
     // Motion is deliberately flag-only: interactive mode and --yes both leave
     // it disabled unless the caller explicitly passes --motion.
     motion: flags.motion ?? false,
@@ -216,6 +219,7 @@ export async function runCreate(targetDir: string, flags: RawCreateFlags) {
   await installQualityLayer(projectRoot, options, executor);
   await installMotion(projectRoot, options, executor);
   await installTestingFiles(projectRoot, options, executor);
+  await installCiWorkflows(projectRoot, options, executor);
   await installSkills(projectRoot, options, executor);
   await installDocsAndClaude(projectRoot, options, executor);
   await installShadcnMcp(projectRoot, options, executor);

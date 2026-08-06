@@ -641,7 +641,34 @@ export function assertGeneratedApp(projectRoot, expected) {
     assertPath(projectRoot, '.husky/commit-msg', false);
   }
 
+  // `--ci` gates the whole workflows directory; `--e2e` decides whether
+  // playwright.yml joins quality.yml inside it.
+  if (expected.ci) {
+    assertPath(projectRoot, '.github/workflows/quality.yml');
+    const quality = readFileSync(path.join(projectRoot, '.github/workflows/quality.yml'), 'utf8');
+    assertIncludes(quality, 'concurrency:', 'quality.yml');
+    assertIncludes(quality, 'timeout-minutes:', 'quality.yml');
+    // Action tags come from src/versions.json. A bare `@v4` here means a tag
+    // was inlined in the template again, where nothing can bump it.
+    if (/uses: \S+@v4\b/.test(quality)) {
+      throw new Error('quality.yml pins an unmanaged @v4 action tag');
+    }
+    assertPath(projectRoot, '.github/workflows/playwright.yml', Boolean(expected.e2e));
+  } else {
+    assertPath(projectRoot, '.github/workflows/quality.yml', false);
+    assertPath(projectRoot, '.github/workflows/playwright.yml', false);
+  }
+
   if (expected.pnpm) {
+    // Pins the toolchain for both the developer and CI: pnpm self-manages to
+    // this version, and pnpm/action-setup reads it instead of a `version:`
+    // input, which that action refuses to accept alongside this field.
+    if (!/^pnpm@\d+\.\d+\.\d+/.test(packageJson.packageManager ?? '')) {
+      throw new Error(
+        `package.json should pin an exact packageManager, got ${packageJson.packageManager}`
+      );
+    }
+
     const workspace = readFileSync(path.join(projectRoot, 'pnpm-workspace.yaml'), 'utf8');
     assertIncludes(workspace, 'minimumReleaseAge:', 'pnpm-workspace.yaml');
     assertIncludes(workspace, 'trustPolicy: no-downgrade', 'pnpm-workspace.yaml');

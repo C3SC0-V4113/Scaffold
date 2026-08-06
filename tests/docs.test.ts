@@ -25,6 +25,7 @@ function options(framework: CreateOptions['framework'], overrides: Partial<Creat
     unit: true,
     e2e: true,
     commitlint: true,
+    ci: true,
     motion: true,
     yes: true,
     dryRun: false,
