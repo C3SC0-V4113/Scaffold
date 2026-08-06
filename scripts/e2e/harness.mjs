@@ -10,7 +10,6 @@ import {
   readlinkSync,
   realpathSync,
   rmSync,
-  symlinkSync,
   writeFileSync,
 } from 'node:fs';
 import { homedir, tmpdir } from 'node:os';
@@ -124,16 +123,25 @@ function createPnpmToolchain(toolchainDir, pnpmExecutable) {
   if (process.platform === 'win32') {
     const require = createRequire(import.meta.url);
     const tinyexecModuleUrl = pathToFileURL(require.resolve('tinyexec')).href;
-    const selectedBinParent = path.join(toolchainDir, 'selected', 'node_modules');
-    const selectedBinDir = path.join(selectedBinParent, '.bin');
-    mkdirSync(selectedBinParent, { recursive: true });
-    symlinkSync(path.dirname(pnpmExecutable), selectedBinDir, 'junction');
-    const selectedPnpm = path.join(selectedBinDir, path.basename(pnpmExecutable));
     const pnpmLauncher = path.join(toolchainDir, 'pnpm-forwarder.mjs');
+    // Invoke the selected pnpm.cmd where it actually lives.
+    //
+    // This used to reach it through a junction, so that the inner call also
+    // looked like node_modules/.bin. That breaks pnpm: its .cmd shim resolves
+    // its own payload relative to %~dp0 — `%~dp0\.tools\pnpm\<version>\…` for a
+    // standalone install, `%~dp0\global\v11\<hash>\…` for the one
+    // pnpm/action-setup lays down — so invoking it from anywhere but its real
+    // directory sends that lookup somewhere that does not exist:
+    //
+    //   Cannot find module '…\.bin\selected\node_modules\global\v11\…\pnpm.cjs'
+    //
+    // Only the forwarder needs the conventional location for tinyexec's shim
+    // escaping, and it already has it. The POSIX branch below always called the
+    // real path directly; Windows now does the same.
     writeFileSync(
       pnpmLauncher,
       `import { xSync } from ${JSON.stringify(tinyexecModuleUrl)};\n` +
-        `const result = xSync(${JSON.stringify(selectedPnpm)}, process.argv.slice(2), {\n` +
+        `const result = xSync(${JSON.stringify(pnpmExecutable)}, process.argv.slice(2), {\n` +
         `  nodePath: false,\n` +
         `  nodeOptions: { env: process.env, stdio: 'inherit' },\n` +
         `});\n` +
