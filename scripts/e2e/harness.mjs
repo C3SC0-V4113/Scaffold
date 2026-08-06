@@ -676,7 +676,59 @@ export function assertGeneratedApp(projectRoot, expected) {
     assertPath(projectRoot, '.husky/commit-msg', false);
   }
 
+  // `--ci` gates the whole workflows directory; `--e2e` decides whether
+  // playwright.yml joins quality.yml inside it.
+  if (expected.ci) {
+    assertPath(projectRoot, '.github/workflows/quality.yml');
+    assertPath(projectRoot, '.github/workflows/playwright.yml', Boolean(expected.e2e));
+
+    const workflows = ['quality.yml', ...(expected.e2e ? ['playwright.yml'] : [])];
+    for (const workflow of workflows) {
+      const content = readFileSync(path.join(projectRoot, '.github/workflows', workflow), 'utf8');
+      assertIncludes(content, 'concurrency:', workflow);
+      assertIncludes(content, 'timeout-minutes:', workflow);
+      assertIncludes(content, 'permissions:', workflow);
+
+      // Action tags come from src/versions.json. A bare `@v4` here means a ref
+      // was inlined in the template again, where nothing can bump it.
+      if (/uses: \S+@v4\b/.test(content)) {
+        throw new Error(`${workflow} pins an unmanaged @v4 action tag`);
+      }
+
+      // Same split tests/workflow-pinning.test.ts enforces on this repo's own
+      // workflows: GitHub-owned actions stay on tags, everything else is held
+      // at a commit SHA a third party cannot repoint after review.
+      for (const [, reference, trailing] of content.matchAll(/^\s*uses:\s*(\S+)(.*)$/gm)) {
+        const name = reference.split('@')[0];
+        if (name.startsWith('actions/')) {
+          if (!/@v\d/.test(reference)) {
+            throw new Error(`${workflow}: ${name} should stay on a version tag, got ${reference}`);
+          }
+          continue;
+        }
+        if (!/@[0-9a-f]{40}$/.test(reference)) {
+          throw new Error(`${workflow}: third-party ${name} is not SHA-pinned, got ${reference}`);
+        }
+        if (!/^#\s*v\d+\.\d+\.\d+/.test(trailing.trim())) {
+          throw new Error(`${workflow}: ${name} has no version comment beside its SHA`);
+        }
+      }
+    }
+  } else {
+    assertPath(projectRoot, '.github/workflows/quality.yml', false);
+    assertPath(projectRoot, '.github/workflows/playwright.yml', false);
+  }
+
   if (expected.pnpm) {
+    // Pins the toolchain for both the developer and CI: pnpm self-manages to
+    // this version, and pnpm/action-setup reads it instead of a `version:`
+    // input, which that action refuses to accept alongside this field.
+    if (!/^pnpm@\d+\.\d+\.\d+/.test(packageJson.packageManager ?? '')) {
+      throw new Error(
+        `package.json should pin an exact packageManager, got ${packageJson.packageManager}`
+      );
+    }
+
     const workspace = readFileSync(path.join(projectRoot, 'pnpm-workspace.yaml'), 'utf8');
     assertIncludes(workspace, 'minimumReleaseAge:', 'pnpm-workspace.yaml');
     assertIncludes(workspace, 'trustPolicy: no-downgrade', 'pnpm-workspace.yaml');

@@ -14,6 +14,18 @@ export class RealExecutor implements Executor {
     });
   }
 
+  async capture(command: string, args: string[], options: RunOptions = {}) {
+    try {
+      const { stdout } = await execa(command, args, {
+        cwd: options.cwd,
+        shell: process.platform === 'win32',
+      });
+      return stdout.trim();
+    } catch {
+      return undefined;
+    }
+  }
+
   async ensureDir(path: string) {
     await fs.ensureDir(path);
   }
@@ -65,6 +77,11 @@ export class DryRunExecutor implements Executor {
 
   async run(command: string, args: string[], options: RunOptions = {}) {
     this.operations.push(`run ${command} ${args.join(' ')}${options.cwd ? ` (cwd ${options.cwd})` : ''}`);
+  }
+
+  async capture(command: string, args: string[]) {
+    this.operations.push(`capture ${command} ${args.join(' ')}`);
+    return undefined;
   }
 
   async ensureDir(path: string) {

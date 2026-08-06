@@ -175,6 +175,7 @@ describe('CLI E2E catalog boundary', () => {
       const safePath = [fixtureRoot, ...safeEntries].join(path.delimiter);
       const expectedQuickScenarios = [
         'dry-run-defaults',
+        'dry-run-ci-workflows',
         'dry-run-motion-next-npm',
         'dry-run-motion-astro-pnpm',
         'dry-run-mcp-preset-pnpm',

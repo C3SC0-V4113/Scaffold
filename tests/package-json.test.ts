@@ -5,13 +5,25 @@ import { describe, expect, it } from 'vitest';
 
 import { applyPackageJsonQualityConfig, type ProjectPackageJson } from '../src/installers/package-json.js';
 import type { Executor } from '../src/types.js';
+import versions from '../src/versions.json' with { type: 'json' };
 
 class MemoryExecutor implements Executor {
   writtenJson: unknown;
+  /** stdout `capture` should return, or undefined to simulate an unprobeable binary. */
+  capturedOutput: string | undefined;
 
-  constructor(private readonly packageJson?: ProjectPackageJson) {}
+  constructor(
+    private readonly packageJson?: ProjectPackageJson,
+    capturedOutput?: string
+  ) {
+    this.capturedOutput = capturedOutput;
+  }
 
   async run() {}
+
+  async capture() {
+    return this.capturedOutput;
+  }
 
   async ensureDir() {}
 
@@ -150,6 +162,78 @@ describe('package.json quality config', () => {
         'doctor:ci': 'astro check && react-doctor . --yes --blocking warning',
         check: 'pnpm run lint && pnpm run typecheck && pnpm run format:check && pnpm run test && pnpm run doctor:ci',
       }),
+    });
+  });
+
+  // `packageManager` is what makes the local toolchain and CI agree: pnpm
+  // self-manages to it, and pnpm/action-setup reads it instead of taking a
+  // `version:` input (passing both makes that action refuse to run).
+  describe('packageManager field', () => {
+    it('records the pnpm that is actually running', async () => {
+      const executor = new MemoryExecutor(undefined, '10.14.0');
+
+      await applyPackageJsonQualityConfig('app', executor, {
+        framework: 'next',
+        packageManager: 'pnpm',
+        unit: false,
+        e2e: false,
+      });
+
+      // The running pnpm wins over the versions.json pin: writing a version the
+      // developer does not have would make pnpm download another major during
+      // the installs and `check` that purrfold runs itself.
+      expect((executor.writtenJson as ProjectPackageJson).packageManager).toBe('pnpm@10.14.0');
+    });
+
+    it('falls back to the pinned version when pnpm cannot be probed', async () => {
+      const executor = new MemoryExecutor(undefined, undefined);
+
+      await applyPackageJsonQualityConfig('app', executor, {
+        framework: 'next',
+        packageManager: 'pnpm',
+        unit: false,
+        e2e: false,
+      });
+
+      expect((executor.writtenJson as ProjectPackageJson).packageManager).toBe(
+        `pnpm@${versions.toolchain.pnpm}`
+      );
+    });
+
+    it('ignores unusable pnpm output', async () => {
+      const executor = new MemoryExecutor(undefined, 'ERR_PNPM_NO_SCRIPT');
+
+      await applyPackageJsonQualityConfig('app', executor, {
+        framework: 'next',
+        packageManager: 'pnpm',
+        unit: false,
+        e2e: false,
+      });
+
+      // `packageManager` only accepts an exact x.y.z; anything else would make
+      // every later pnpm invocation fail on a malformed field.
+      expect((executor.writtenJson as ProjectPackageJson).packageManager).toBe(
+        `pnpm@${versions.toolchain.pnpm}`
+      );
+    });
+
+    it.each(['npm', 'bun'] as const)('is not written for %s', async (packageManager) => {
+      const executor = new MemoryExecutor(undefined, '10.14.0');
+
+      await applyPackageJsonQualityConfig('app', executor, {
+        framework: 'next',
+        packageManager,
+        unit: false,
+        e2e: false,
+      });
+
+      // npm ships with Node (already pinned by setup-node) and bun is not
+      // corepack-managed, so neither has the drift this field solves.
+      expect((executor.writtenJson as ProjectPackageJson).packageManager).toBeUndefined();
+    });
+
+    it('pins an exact version so corepack accepts it', () => {
+      expect(versions.toolchain.pnpm).toMatch(/^\d+\.\d+\.\d+$/);
     });
   });
 });

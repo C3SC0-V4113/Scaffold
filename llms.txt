@@ -2,7 +2,8 @@
 
 > purrfold is a CLI that scaffolds a production-ready frontend app with shadcn,
 > strict quality tooling (ESLint, Prettier, React Doctor, React Scan), agent
-> docs, Claude hooks, and optional unit (Vitest) / e2e (Playwright) / commitlint.
+> docs, Claude hooks, and optional unit (Vitest) / e2e (Playwright) / commitlint /
+> GitHub Actions CI.
 > It starts from `create-next-app@latest` or `create-astro@latest`. No install needed — run it with `npx`.
 
 ## Install / run
@@ -24,6 +25,7 @@ fails if it is not green.
 - `--unit` / `--no-unit` — Vitest + React Testing Library (default: included).
 - `--e2e` / `--no-e2e` — Playwright e2e (default: skipped).
 - `--commitlint` / `--no-commitlint` — commitlint + commit-msg hook (default: skipped).
+- `--ci` / `--no-ci` — GitHub Actions workflows: `quality.yml`, plus `playwright.yml` with `--e2e` (default: skipped).
 - `--motion` — install Motion for React and the `motion-framer` skill (default: skipped; opt-in only).
 - `--yes` — non-interactive defaults (no prompts).
 - `--dry-run` — print operations without writing or installing.
@@ -48,6 +50,7 @@ npx purrfold@latest info --json
 | No testing at all | `npx purrfold@latest my-app --no-unit --no-e2e --yes` |
 | Full setup (unit + e2e + commitlint) | `npx purrfold@latest my-app --unit --e2e --commitlint --yes` |
 | A specific package manager | `npx purrfold@latest my-app --pm pnpm --yes` |
+| GitHub Actions CI in the generated app | `npx purrfold@latest my-app --ci --yes` |
 | Motion for React | `npx purrfold@latest my-app --motion --yes` |
 | A specific icon library for the cat | `npx purrfold@latest my-app --icons phosphor --yes` |
 | shadcn MCP for Claude/Codex/OpenCode | `npx purrfold@latest my-app --mcp --yes` |

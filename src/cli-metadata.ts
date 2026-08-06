@@ -58,6 +58,12 @@ export const cliOptions: CliOption[] = [
     default: 'skipped',
   },
   {
+    flags: '--ci / --no-ci',
+    description:
+      'Include or skip GitHub Actions workflows (quality.yml, plus playwright.yml with --e2e).',
+    default: 'skipped',
+  },
+  {
     flags: '--motion',
     description: 'Install Motion for React and the motion-framer agent skill.',
     default: 'skipped (opt-in only)',
@@ -119,6 +125,10 @@ export const cliScenarios: CliScenario[] = [
   {
     intent: 'Use a specific package manager (pnpm or bun)',
     command: 'npx purrfold@latest my-app --pm pnpm --yes',
+  },
+  {
+    intent: 'Add GitHub Actions CI workflows to the generated app',
+    command: 'npx purrfold@latest my-app --ci --yes',
   },
   {
     intent: 'Install Motion for React and its agent skill',

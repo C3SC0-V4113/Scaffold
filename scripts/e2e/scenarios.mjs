@@ -17,13 +17,16 @@ export const cliE2eScenarios = [
     // toolchain forwarder is the least-proven code in the harness, so it earns
     // multi-OS coverage as its own deliberate step rather than riding along here.
     execution: { requires: ['npm'], os: crossPlatformRunners },
-    args: ['--pm', 'npm', '--unit', '--no-e2e', '--no-commitlint', '--motion', '--yes'],
+    args: ['--pm', 'npm', '--unit', '--no-e2e', '--ci', '--no-commitlint', '--motion', '--yes'],
     // The only scenario asserting that external skills were actually fetched.
     // It carries the check because it is the cross-platform representative, and
-    // Windows is exactly where that failure went unnoticed.
+    // Windows is exactly where that failure went unnoticed. It also carries
+    // `--ci`, which puts the npm branch of the workflow templates on all three
+    // runners at no extra install cost.
     expect: {
       unit: true,
       e2e: false,
+      ci: true,
       commitlint: false,
       pnpm: false,
       mcp: false,
@@ -61,8 +64,11 @@ export const cliE2eScenarios = [
     kind: 'real',
     packageManager: 'pnpm',
     execution: { requires: ['pnpm'] },
-    args: ['--pm', 'pnpm', '--unit', '--e2e', '--no-commitlint', '--shadcn-args', '--preset', 'b2qMI9ufY', '--yes'],
-    expect: { unit: true, e2e: true, commitlint: false, pnpm: true, mcp: false },
+    // Carries `--ci`: the only real scenario that generates both workflows, and
+    // it does so on the pnpm branch, which is the one with a package-manager
+    // setup step to get wrong.
+    args: ['--pm', 'pnpm', '--unit', '--e2e', '--ci', '--no-commitlint', '--shadcn-args', '--preset', 'b2qMI9ufY', '--yes'],
+    expect: { unit: true, e2e: true, ci: true, commitlint: false, pnpm: true, mcp: false },
     quick: false,
   },
   {
@@ -72,6 +78,48 @@ export const cliE2eScenarios = [
     execution: { requires: ['bun', 'bunx'] },
     args: ['--pm', 'bun', '--no-unit', '--no-e2e', '--no-commitlint', '--shadcn-args', '--preset', 'b5eH0WVTX', '--yes'],
     expect: { unit: false, e2e: false, commitlint: false, pnpm: false, mcp: false },
+    quick: false,
+  },
+  {
+    // Isolated CI scenario: `--ci` with every other optional feature off, so a
+    // regression in workflow generation cannot hide behind unit/e2e/commitlint
+    // output. `--skip-install` keeps it cheap — the workflows are pure file
+    // writes and need no dependency tree to validate.
+    name: 'npm-ci-only',
+    kind: 'real',
+    packageManager: 'npm',
+    execution: { requires: ['npm'] },
+    args: ['--pm', 'npm', '--ci', '--no-unit', '--no-e2e', '--no-commitlint', '--skip-install', '--yes'],
+    expect: {
+      unit: false,
+      e2e: false,
+      ci: true,
+      commitlint: false,
+      pnpm: false,
+      mcp: false,
+      skipInstall: true,
+    },
+    quick: false,
+  },
+  {
+    // The only scenario that generates a bun workflow. bun is the third package
+    // manager branch of the templates and the one whose setup action
+    // (oven-sh/setup-bun) is third-party, so this is where a broken SHA pin or
+    // a missing version comment surfaces in real generated output.
+    name: 'bun-ci-workflows',
+    kind: 'real',
+    packageManager: 'bun',
+    execution: { requires: ['bun', 'bunx'] },
+    args: ['--pm', 'bun', '--ci', '--e2e', '--no-unit', '--no-commitlint', '--skip-install', '--yes'],
+    expect: {
+      unit: false,
+      e2e: true,
+      ci: true,
+      commitlint: false,
+      pnpm: false,
+      mcp: false,
+      skipInstall: true,
+    },
     quick: false,
   },
   {
@@ -151,7 +199,26 @@ export const cliE2eScenarios = [
       'DESIGN.md',
       'settings.json',
     ],
-    rejectOutput: ['mcp init --client', pinnedDependency('motion'), 'motion-framer'],
+    // Workflow filenames are matched bare because output paths carry native
+    // separators and this list is compared as a raw substring.
+    rejectOutput: [
+      'mcp init --client',
+      pinnedDependency('motion'),
+      'motion-framer',
+      'quality.yml',
+      'playwright.yml',
+    ],
+    quick: true,
+  },
+  {
+    name: 'dry-run-ci-workflows',
+    kind: 'dry-run',
+    packageManager: 'npm',
+    // Proves the built CLI emits workflows at all. The full gating matrix
+    // (--ci without --e2e, --e2e without --ci) is covered far more cheaply by
+    // tests/dry-run.test.ts and does not need a scenario each.
+    args: ['--pm', 'npm', '--ci', '--e2e', '--yes', '--dry-run'],
+    expectOutput: ['quality.yml', 'playwright.yml'],
     quick: true,
   },
   {
@@ -270,9 +337,19 @@ export const cliE2eScenarios = [
       { waitFor: 'Install Vitest', send: '\r' },
       { waitFor: 'Install Playwright', send: 'n\r' },
       { waitFor: 'Install commitlint', send: 'n\r' },
+      { waitFor: 'Install GitHub Actions', send: 'n\r' },
       { waitFor: 'Install shadcn MCP', send: 'n\r' },
     ],
-    expectOutput: ['Package manager', 'Install Vitest + React Testing Library?', 'Install shadcn MCP for Claude, Codex, and OpenCode?'],
+    expectOutput: [
+      'Package manager',
+      'Install Vitest + React Testing Library?',
+      // Every prompt resolveCreateOptions can ask needs an answer scripted
+      // above, or the run blocks until the harness times out. Asserting the
+      // text here makes a missing answer fail as a mismatch rather than as an
+      // unexplained 120s timeout.
+      'Install GitHub Actions workflows?',
+      'Install shadcn MCP for Claude, Codex, and OpenCode?',
+    ],
     quick: false,
     requiresTty: true,
   },
@@ -293,6 +370,7 @@ export const cliE2eScenarios = [
       { waitFor: 'Install Vitest', send: '\r' },
       { waitFor: 'Install Playwright', send: '\r' },
       { waitFor: 'Install commitlint', send: '\r' },
+      { waitFor: 'Install GitHub Actions', send: '\r' },
       { waitFor: 'Install shadcn MCP', send: '\r' },
       // Emitted by the external tools; absent on some versions, so optional.
       { waitFor: 'Turbopack', send: '\r', optional: true },

@@ -33,6 +33,8 @@ export function buildProgram(): Command {
     .option('--no-e2e', 'Skip Playwright E2E testing')
     .option('--commitlint', 'Install commitlint and the commit-msg hook')
     .option('--no-commitlint', 'Skip commitlint')
+    .option('--ci', 'Install GitHub Actions workflows')
+    .option('--no-ci', 'Skip GitHub Actions workflows')
     .option('--motion', 'Install Motion for React and the motion-framer agent skill')
     .option('--yes', 'Use non-interactive defaults')
     .option('--dry-run', 'Print operations without writing files or installing packages')
@@ -50,6 +52,7 @@ export function buildProgram(): Command {
         unit: rawOptions.unit as boolean | undefined,
         e2e: rawOptions.e2e as boolean | undefined,
         commitlint: rawOptions.commitlint as boolean | undefined,
+        ci: rawOptions.ci as boolean | undefined,
         motion: rawOptions.motion as boolean | undefined,
         yes: rawOptions.yes as boolean | undefined,
         dryRun: rawOptions.dryRun as boolean | undefined,

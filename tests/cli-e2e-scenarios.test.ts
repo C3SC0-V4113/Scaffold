@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
@@ -25,6 +26,7 @@ type CliE2eScenario = {
   };
   expectOutput?: string[];
   rejectOutput?: string[];
+  interactions?: Array<{ waitFor: string; send: string; optional?: boolean }>;
 };
 
 type ScenarioMetadata = {
@@ -286,6 +288,37 @@ describe('CLI E2E scenario definitions', () => {
     const selected = scenarioMetadata(selectScenarios({ quick: true }));
     expect(selected.length).toBeGreaterThan(0);
     expect(selected.every((entry) => entry.kind === 'dry-run')).toBe(true);
+  });
+
+  it('scripts an answer for every prompt the interactive scenarios reach', async () => {
+    const source = readFileSync(new URL('../src/commands/create.ts', import.meta.url), 'utf8');
+    // Confirm prompts are the only single-quoted strings in create.ts that end
+    // in a question mark; the `select` prompts ("Framework", "Package manager")
+    // do not.
+    const prompts = [...source.matchAll(/'([^']+\?)'/g)].map((match) => match[1]);
+
+    expect(prompts.length).toBeGreaterThan(0);
+
+    // Only fires on the Astro path, and every interactive scenario takes the
+    // Next default at the framework prompt.
+    const reachable = prompts.filter((prompt) => prompt !== 'Enable Astro SSR?');
+
+    const { cliE2eScenarios } = await loadScenarios();
+    const interactive = cliE2eScenarios.filter((scenario) => scenario.interactions);
+
+    expect(interactive.length).toBeGreaterThan(0);
+
+    for (const scenario of interactive) {
+      const scripted = scenario.interactions ?? [];
+      for (const prompt of reachable) {
+        // An unanswered prompt does not fail loudly — the CLI just blocks on
+        // stdin until the harness kills it at 120s, which reads as a hang
+        // rather than as "someone added a prompt". Adding `--ci` did exactly
+        // that. Matching on a prefix keeps `waitFor` free to stay short.
+        const answered = scripted.some((step) => prompt.startsWith(step.waitFor));
+        expect(answered, `${scenario.name} has no answer scripted for "${prompt}"`).toBe(true);
+      }
+    }
   });
 
   it('marks external interactive prompt coverage as TTY-gated', async () => {

@@ -246,4 +246,47 @@ describe('dry-run integration', () => {
     expect(output).toContain('run pnpm dlx shadcn@latest mcp init --client codex');
     expect(output).toContain('run pnpm dlx shadcn@latest mcp init --client opencode');
   });
+
+  // `--ci` gates the whole .github/workflows directory; `--e2e` still decides
+  // whether playwright.yml is among the files written. quality.yml used to be
+  // the CLI's only ungated side effect on .github/, and nothing asserted on
+  // either path.
+  describe('CI workflow generation', () => {
+    async function operations(flags: Parameters<typeof runCreate>[1]) {
+      const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+      await runCreate('my-app', { pm: 'npm', yes: true, dryRun: true, ...flags });
+      return log.mock.calls
+        .map((call) => call.join(' '))
+        .join('\n')
+        .replaceAll('\\', '/');
+    }
+
+    it('writes no workflows by default', async () => {
+      const output = await operations({ unit: true, e2e: true });
+
+      expect(output).not.toContain('.github/workflows/');
+    });
+
+    it('writes quality.yml with --ci', async () => {
+      const output = await operations({ ci: true, unit: true, e2e: false });
+
+      expect(output).toContain('my-app/.github/workflows/quality.yml');
+      expect(output).not.toContain('playwright.yml');
+    });
+
+    it('writes both workflows with --ci --e2e', async () => {
+      const output = await operations({ ci: true, unit: true, e2e: true });
+
+      expect(output).toContain('my-app/.github/workflows/quality.yml');
+      expect(output).toContain('my-app/.github/workflows/playwright.yml');
+    });
+
+    it('writes Playwright config but no workflow for --e2e without --ci', async () => {
+      const output = await operations({ ci: false, unit: false, e2e: true });
+
+      expect(output).toContain('my-app/playwright.config.ts');
+      expect(output).toContain('my-app/tests/e2e/home.spec.ts');
+      expect(output).not.toContain('.github/workflows/');
+    });
+  });
 });
