@@ -18,7 +18,18 @@ export const cliE2eScenarios = [
     // multi-OS coverage as its own deliberate step rather than riding along here.
     execution: { requires: ['npm'], os: crossPlatformRunners },
     args: ['--pm', 'npm', '--unit', '--no-e2e', '--no-commitlint', '--motion', '--yes'],
-    expect: { unit: true, e2e: false, commitlint: false, pnpm: false, mcp: false, motion: true },
+    // The only scenario asserting that external skills were actually fetched.
+    // It carries the check because it is the cross-platform representative, and
+    // Windows is exactly where that failure went unnoticed.
+    expect: {
+      unit: true,
+      e2e: false,
+      commitlint: false,
+      pnpm: false,
+      mcp: false,
+      motion: true,
+      externalSkills: true,
+    },
     quick: false,
   },
   {
