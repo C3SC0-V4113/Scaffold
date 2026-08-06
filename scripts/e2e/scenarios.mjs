@@ -36,7 +36,13 @@ export const cliE2eScenarios = [
     name: 'pnpm-b3-commitlint',
     kind: 'real',
     packageManager: 'pnpm',
-    execution: { requires: ['pnpm'] },
+    // The cross-platform pnpm representative, and the only scenario that puts
+    // createPnpmToolchain on a non-Linux runner: the .cmd forwarder, the junction
+    // and the Node hardlink are Windows-only code that no real scenario reached
+    // before. The lightest pnpm scenario carries it on purpose — the other two
+    // install Playwright browsers, which would triple that download for no extra
+    // coverage of the toolchain itself.
+    execution: { requires: ['pnpm'], os: crossPlatformRunners },
     args: ['--pm', 'pnpm', '--unit', '--no-e2e', '--commitlint', '--shadcn-args', '--preset', 'b3REw8vwo', '--yes'],
     expect: { unit: true, e2e: false, commitlint: true, pnpm: true, mcp: false },
     quick: false,
