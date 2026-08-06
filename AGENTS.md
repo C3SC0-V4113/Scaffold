@@ -49,7 +49,14 @@ The release job installs a pinned npm major rather than the runner's bundled 10.
 
 Do not hand-edit `CHANGELOG.md`, bump `version` manually, or run `npm run changeset:version` locally — the release workflow owns all three.
 
-**Emergency local publish.** Only when the workflow itself is broken and a release cannot wait: `npm run changeset:version`, commit, then `npm run release`. This uses maintainer credentials and produces no provenance, so prefer fixing the workflow. `main` requires pull requests, so this path depends on the repository-admin bypass.
+Two repository settings this workflow depends on, neither of which lives in a file. If either is off, the release fails in a way the repository cannot explain on its own:
+
+- **Actions → General → "Allow GitHub Actions to create and approve pull requests"** must be enabled, or `changesets/action` cannot open the version pull request.
+- Workflow runs on that pull request need a maintainer to press **"Approve and run workflows"**, because GitHub gates workflows on bot-authored pull requests. That is a deliberate human checkpoint before publishing, not a defect to engineer around — the alternative is a long-lived token, which is exactly what trusted publishing removed.
+
+**Emergency local publish.** Only when the workflow itself is broken and a release cannot wait: `npm run changeset:version`, commit, then `npm run release`. This produces no provenance, so prefer fixing the workflow. Two frictions are intentional and should not be filed away: `main` requires pull requests with no bypass actors, so the version commit still needs a pull request; and npm publishing access disallows bypass-2FA tokens, so the publish prompts for 2FA.
+
+**Rules note.** Branch rules govern merges into `main`; tag creation is governed by separate tag rulesets, and none exist today. If tag protection is ever added and blocks the release workflow, allow the workflow or the version-tag pattern specifically — never widen the `main` branch rules to work around it.
 
 ## Agent-facing docs
 
