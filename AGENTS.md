@@ -49,6 +49,8 @@ Publishing uses npm **trusted publishing** (OIDC) with provenance. There is no `
 
 The release job installs a pinned npm major rather than the runner's bundled 10.x (too old for OIDC) or `npm@latest` (floats, and npm 12 changed the `npm pack --json` payload shape mid-flight). Raise that pin deliberately, and run `npm run test:pack` under the new major first — CI and the release job intentionally run different npm versions, which is how packaging differences between them get caught.
 
+`changeset:version` runs `changeset version` **and then** `npm install --package-lock-only --ignore-scripts`. Both halves are load-bearing: `changeset version` bumps `package.json` but never touches `package-lock.json`, so the version commit used to leave the lockfile recording the previous version. `npm ci` does not fail on that — it only rejects dependency mismatches, not a stale `version` field — so the drift accumulated silently across releases. Do not split the two commands apart; the `--package-lock-only` install writes no `node_modules` and, with the lockfile already satisfying every range, changes nothing but the version fields. `tests/package-json.test.ts` asserts the two files agree.
+
 Do not hand-edit `CHANGELOG.md`, bump `version` manually, or run `npm run changeset:version` locally — the release workflow owns all three.
 
 Two repository settings this workflow depends on, neither of which lives in a file. If either is off, the release fails in a way the repository cannot explain on its own:

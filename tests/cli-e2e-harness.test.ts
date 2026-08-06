@@ -158,9 +158,14 @@ describe('CLI E2E harness', () => {
       if (process.platform === 'win32') {
         expect(forwarderContent).toContain('@"%~dp0node.exe" "%~dp0pnpm-forwarder.mjs" %*');
         expect(forwarderContent.toLowerCase()).not.toContain('call ');
-        expect(readFileSync(path.join(toolchainDir, 'pnpm-forwarder.mjs'), 'utf8')).toContain(
-          path.basename(selectedPnpm)
-        );
+
+        // The launcher must target pnpm where it really lives. Reaching it
+        // through a junction breaks pnpm's own %~dp0-relative lookup of
+        // pnpm.cjs, which is what failed the first Windows run of this scenario.
+        const launcher = readFileSync(path.join(toolchainDir, 'pnpm-forwarder.mjs'), 'utf8');
+        expect(launcher).toContain(JSON.stringify(selectedPnpm).slice(1, -1));
+        expect(launcher).not.toContain('selected\\\\node_modules');
+        expect(existsSync(path.join(toolchainDir, 'selected'))).toBe(false);
       } else {
         expect(forwarderContent).toContain(`exec '${selectedPnpm}' "$@"`);
       }
