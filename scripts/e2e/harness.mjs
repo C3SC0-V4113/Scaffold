@@ -453,6 +453,30 @@ function runMotionImportCheck(projectRoot, env, nodeExecutable) {
   }
 }
 
+/**
+ * External skills are fetched over the network by the `skills` CLI, and
+ * installSkills swallows a failure on purpose — an unreachable third-party
+ * repository should not fail a scaffold. The cost is that a generation which
+ * fetched nothing looked exactly like one that fetched everything: skills.sh and
+ * the .claude/skills junction are both written before any fetch is attempted, so
+ * every other assertion here passes either way. A real Windows CI failure went
+ * undiagnosed for that reason.
+ *
+ * One representative skill is deliberate. Asserting all of them would tie every
+ * run to the availability of eight third-party repositories and turn their
+ * outages into our red builds; one is enough to make total failure loud.
+ */
+function assertExternalSkillsFetched(projectRoot) {
+  // Shipped by shadcn/ui, requested for every framework and flag combination.
+  const skillDir = path.join(projectRoot, '.agents', 'skills', 'shadcn');
+  if (!existsSync(path.join(skillDir, 'SKILL.md'))) {
+    throw new Error(
+      `No external skill content in ${skillDir}. The scaffold succeeded, so the ` +
+        `skills CLI failed and installSkills degraded silently.`
+    );
+  }
+}
+
 export function assertGeneratedApp(projectRoot, expected) {
   const framework = expected.framework ?? 'next';
   const packageJson = readJson(path.join(projectRoot, 'package.json'));
@@ -468,6 +492,9 @@ export function assertGeneratedApp(projectRoot, expected) {
   assertPath(projectRoot, '.claude/hooks/project-min-evaluation.ps1');
   assertPath(projectRoot, '.claude/settings.json');
   assertPath(projectRoot, '.claude/skills');
+  if (expected.externalSkills) {
+    assertExternalSkillsFetched(projectRoot);
+  }
   assertIncludes(readme, '## Quality', 'README.md');
   assertIncludes(readme, '## Agent Docs', 'README.md');
   assertIncludes(readme, '## shadcn MCP', 'README.md');
