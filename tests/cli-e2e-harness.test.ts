@@ -327,6 +327,20 @@ describe('CLI E2E harness', () => {
           path.isAbsolute(relativeCachePath)
       ).toBe(true);
       expect(existsSync(context.env.npm_config_cache)).toBe(true);
+
+      // pnpm's cacheDir must NOT be shared. It holds `dlx/`, and a dlx entry is
+      // a materialized node_modules tree linked into the store, not a
+      // content-addressed download. Archiving one and restoring it elsewhere
+      // yields dead links — that is how a cached `pnpm dlx shadcn@latest` failed
+      // a Windows scenario with `Cannot find package 'zod'`, and pnpm reuses the
+      // entry for 24h because it keys on the spec string, not the resolution.
+      const pnpmCacheDir = context.env.npm_config_cache_dir;
+      expect(pnpmCacheDir).toBeTruthy();
+      expect(context.env.pnpm_config_cache_dir).toBe(pnpmCacheDir);
+      expect(context.env.PNPM_CONFIG_CACHE_DIR).toBe(pnpmCacheDir);
+      expect(path.relative(context.cacheRoot, pnpmCacheDir!).startsWith('..')).toBe(true);
+      // Inside the per-run work dir, so cleanup removes it between runs.
+      expect(path.relative(context.workDir, pnpmCacheDir!).startsWith('..')).toBe(false);
     } finally {
       cleanupContext(context);
     }

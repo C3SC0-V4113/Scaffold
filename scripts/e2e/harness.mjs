@@ -172,6 +172,17 @@ export function createRunContext(argv, prefix = 'purrfold-e2e-') {
   const homeDir = path.join(stateDir, 'home');
   const tempDir = path.join(stateDir, 'tmp');
   const pnpmHome = path.join(stateDir, 'pnpm-home');
+  // Per-run on purpose. pnpm's cacheDir holds `dlx/`, and a dlx entry is not a
+  // download — it is a materialized node_modules tree whose packages are links
+  // into the store. Archiving that into the shared cache and restoring it
+  // elsewhere produces a tree whose links no longer resolve, which surfaced as
+  // `Cannot find package 'zod'` from a cached `pnpm dlx shadcn@latest` on a
+  // Windows runner. pnpm keys dlx entries on the spec string, so `shadcn@latest`
+  // reuses a poisoned entry for dlxCacheMaxAge (24h by default) across runs.
+  // There is no separate dlx-dir setting, so the whole cacheDir moves; that also
+  // gives up pnpm's registry-metadata cache, which is cheap to refetch. The
+  // expensive part, the content-addressed store, stays shared below.
+  const pnpmCache = path.join(stateDir, 'pnpm-cache');
   const appDataDir = path.join(homeDir, 'AppData', 'Roaming');
   const localAppDataDir = path.join(homeDir, 'AppData', 'Local');
   // Shared across runs (never cleaned up by cleanupContext).
@@ -185,6 +196,7 @@ export function createRunContext(argv, prefix = 'purrfold-e2e-') {
     homeDir,
     tempDir,
     pnpmHome,
+    pnpmCache,
     appDataDir,
     localAppDataDir,
     npmCache,
@@ -217,6 +229,10 @@ export function createRunContext(argv, prefix = 'purrfold-e2e-') {
       npm_config_store_dir: pnpmStore,
       pnpm_config_store_dir: pnpmStore,
       PNPM_CONFIG_STORE_DIR: pnpmStore,
+      // Keeps `dlx/` out of the shared cache; see pnpmCache above.
+      npm_config_cache_dir: pnpmCache,
+      pnpm_config_cache_dir: pnpmCache,
+      PNPM_CONFIG_CACHE_DIR: pnpmCache,
       PNPM_HOME: pnpmHome,
       BUN_INSTALL_CACHE_DIR: bunCache,
       TMP: tempDir,

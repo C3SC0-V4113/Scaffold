@@ -130,7 +130,13 @@ describe('CLI E2E catalog boundary', () => {
     // not resolve consistently across the three runner families.
     expect(workflow).toContain('PURRFOLD_E2E_CACHE_DIR: ${{ runner.temp }}/purrfold-e2e-cache');
     expect(workflow).toContain('path: ${{ runner.temp }}/purrfold-e2e-cache');
-    expect(workflow).toContain('key: e2e-pm-cache-${{ matrix.scenario.os }}-');
+    // Matched on the matrix references rather than the whole literal: the key
+    // carries a version segment that gets bumped to retire stale caches, and
+    // pinning the exact prefix here fails every such bump for no reason. What
+    // matters is that the runner and package manager come from the matrix, so
+    // a Linux cache is never restored on Windows.
+    const cacheKey = /\n\s*key: \S*\$\{\{ matrix\.scenario\.os \}\}-\$\{\{ matrix\.scenario\.packageManager \}\}-/;
+    expect(workflow).toMatch(cacheKey);
 
     // The `runner` context does not exist at job level — putting it in a job's
     // `env:` fails the entire workflow at parse time, before any job starts.
