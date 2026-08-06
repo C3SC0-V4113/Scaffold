@@ -34,6 +34,33 @@ jobs:
       - name: Run quality gate
         run: npm run check
 
+  # src/versions.json lands inside every generated app, so a bump there is
+  # user-visible and needs a changeset. renovate.json already asked for one in
+  # prose; across seven pin-bump commits that never once happened. The decision
+  # lives in scripts/changeset-rules.mjs, where it is unit-tested.
+  changeset-guard:
+    name: changeset-guard
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7.0.0
+        with:
+          node-version: 22
+
+      # No npm ci: the guard uses Node builtins only.
+      - name: Require a changeset for generated-app pin bumps
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          HEAD_REF: ${{ github.head_ref }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: node scripts/changeset-guard.mjs
+
   # Runs on both runner families on purpose: the executable shim npm links is
   # platform-specific (purrfold.cmd on Windows), so a single-OS job would leave
   # half of that assertion permanently unexecuted.
