@@ -295,9 +295,19 @@ export const cliE2eScenarios = [
       { waitFor: 'Install Vitest', send: '\r' },
       { waitFor: 'Install Playwright', send: 'n\r' },
       { waitFor: 'Install commitlint', send: 'n\r' },
+      { waitFor: 'Install GitHub Actions', send: 'n\r' },
       { waitFor: 'Install shadcn MCP', send: 'n\r' },
     ],
-    expectOutput: ['Package manager', 'Install Vitest + React Testing Library?', 'Install shadcn MCP for Claude, Codex, and OpenCode?'],
+    expectOutput: [
+      'Package manager',
+      'Install Vitest + React Testing Library?',
+      // Every prompt resolveCreateOptions can ask needs an answer scripted
+      // above, or the run blocks until the harness times out. Asserting the
+      // text here makes a missing answer fail as a mismatch rather than as an
+      // unexplained 120s timeout.
+      'Install GitHub Actions workflows?',
+      'Install shadcn MCP for Claude, Codex, and OpenCode?',
+    ],
     quick: false,
     requiresTty: true,
   },
@@ -318,6 +328,7 @@ export const cliE2eScenarios = [
       { waitFor: 'Install Vitest', send: '\r' },
       { waitFor: 'Install Playwright', send: '\r' },
       { waitFor: 'Install commitlint', send: '\r' },
+      { waitFor: 'Install GitHub Actions', send: '\r' },
       { waitFor: 'Install shadcn MCP', send: '\r' },
       // Emitted by the external tools; absent on some versions, so optional.
       { waitFor: 'Turbopack', send: '\r', optional: true },
