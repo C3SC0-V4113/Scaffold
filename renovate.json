@@ -92,6 +92,6 @@
     }
   ],
   "prBodyNotes": [
-    "This PR changes what purrfold installs into **generated apps** (`src/versions.json`). Before merging: the full E2E matrix (`E2E` workflow) must be green. After merging: add a changeset (`npm run changeset`) so the bump ships in the next release."
+    "This PR changes what purrfold installs into **generated apps** (`src/versions.json`). Before merging: the full E2E matrix (`E2E` workflow) must be green, and this PR must add a changeset (`npm run changeset`) so the bump appears in the changelog. The `changeset-guard` check enforces that and will block the merge until the changeset is committed to this branch."
   ]
 }

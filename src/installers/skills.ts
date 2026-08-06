@@ -84,6 +84,8 @@ async function installLocalSkills(
 interface SkillInstallCommand {
   command: string;
   args: string[];
+  /** The skills this one command fetches, so a failure can name them. */
+  skills: string[];
 }
 
 function selectExternalSkillEntries(options: SkillSelectionOptions) {
@@ -103,6 +105,7 @@ export function buildSkillInstallCommands(
 
   return [...skillsBySource.entries()].map(([source, skills]) => ({
     command: 'npx',
+    skills,
     args: [
       '--yes',
       'skills@latest',
@@ -137,15 +140,30 @@ export async function installSkills(projectRoot: string, options: CreateOptions,
   );
   await executor.writeFile(path.join(projectRoot, 'skills.sh'), renderSkillsScript(options));
 
-  for (const { command, args } of buildSkillInstallCommands(options)) {
+  const failures: string[] = [];
+
+  for (const { command, args, skills } of buildSkillInstallCommands(options)) {
     try {
       await executor.run(command, args, { cwd: projectRoot });
     } catch (error) {
+      failures.push(...skills);
       console.warn(
         `Skipping external skill install after failure: ${command} ${args.join(' ')}\n` +
           `You can retry it from the generated skills.sh file.`
       );
       console.warn(error);
     }
+  }
+
+  // The per-failure warnings above scroll away behind installer output, so a
+  // generation that fetched nothing looks identical to one that fetched
+  // everything. Continuing is right — an unreachable third-party repository
+  // should not fail a scaffold — but doing it invisibly is not.
+  if (failures.length > 0) {
+    console.warn(
+      `\n⚠ ${failures.length} external skill${failures.length === 1 ? '' : 's'} could not be installed:\n` +
+        failures.map((skill) => `    - ${skill}`).join('\n') +
+        `\n  The project is otherwise complete. Retry them with: sh skills.sh\n`
+    );
   }
 }

@@ -46,6 +46,10 @@ class FailingRunExecutor implements Executor {
   async symlinkOrJunction() {}
 }
 
+class SucceedingRunExecutor extends FailingRunExecutor {
+  override async run() {}
+}
+
 describe('skill selection', () => {
   it('selects always-on skills', () => {
     expect(selectSkillNames({ framework: 'next', unit: false, e2e: false, motion: false })).toEqual(
@@ -197,6 +201,76 @@ describe('external skill install script', () => {
       ])
     );
     expect(warn).toHaveBeenCalledWith(expect.stringContaining('Skipping external skill install'));
+  });
+
+  it('closes with a summary naming every skill that could not be installed', async () => {
+    // mockClear matters: vi.spyOn returns the existing spy when console.warn is
+    // already mocked, so without it this reads the previous test's output.
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    warn.mockClear();
+
+    await installSkills(
+      'my-app',
+      {
+        targetDir: 'my-app',
+        framework: 'next',
+        packageManager: 'npm',
+        ssr: false,
+        unit: true,
+        e2e: false,
+        commitlint: false,
+        ci: false,
+        motion: true,
+        yes: true,
+        dryRun: false,
+        skipInstall: false,
+        shadcnArgs: [],
+        mcp: false,
+      },
+      new FailingRunExecutor()
+    );
+
+    const summary = warn.mock.calls.map((call) => String(call[0])).find((message) => message.includes('could not be installed'));
+
+    // The per-source warnings scroll away behind installer output. Without a
+    // closing summary, a generation that fetched nothing looks like one that
+    // fetched everything — which is how a real Windows CI failure stayed
+    // undiagnosed.
+    expect(summary).toBeDefined();
+    for (const skill of ['shadcn', 'next-dev-loop', 'vitest', 'motion-framer']) {
+      expect(summary).toContain(skill);
+    }
+    expect(summary).toContain('skills.sh');
+  });
+
+  it('stays silent when every external skill installs', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    warn.mockClear();
+
+    await installSkills(
+      'my-app',
+      {
+        targetDir: 'my-app',
+        framework: 'next',
+        packageManager: 'npm',
+        ssr: false,
+        unit: false,
+        e2e: false,
+        commitlint: false,
+        ci: false,
+        motion: false,
+        yes: true,
+        dryRun: false,
+        skipInstall: false,
+        shadcnArgs: [],
+        mcp: false,
+      },
+      new SucceedingRunExecutor()
+    );
+
+    expect(warn.mock.calls.map((call) => String(call[0])).some((message) => message.includes('could not be installed'))).toBe(
+      false
+    );
   });
 });
 

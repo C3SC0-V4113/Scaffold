@@ -20,7 +20,7 @@ The matrix comes from `scripts/cli-e2e.mjs --list-matrix`, which emits real scen
 
 `npm run test:pack` (`scripts/pack-smoke.mjs`) is the only test that exercises the artifact users install rather than the local `dist/` bundle: it packs the package, installs the tarball into a throwaway project, and drives the installed CLI. It runs on ubuntu and windows in CI because the executable shim npm links is platform-specific. Run it after touching `files`, `bin`, `prepack`, or the tsup output layout — `src/cli.ts` resolves `../package.json` from the bundle, so `dist/index.js` must stay exactly one directory below the package root.
 
-Required checks on `main`: `check`, `pack-smoke (ubuntu-latest)`, `pack-smoke (windows-latest)`, `e2e-quick (ubuntu-latest)`, `e2e-quick (windows-latest)`, and `e2e-ok`.
+Required checks on `main`: `check`, `changeset-guard`, `pack-smoke (ubuntu-latest)`, `pack-smoke (windows-latest)`, `e2e-quick (ubuntu-latest)`, `e2e-quick (windows-latest)`, and `e2e-ok`.
 
 ## Development Rules
 
@@ -31,7 +31,7 @@ Required checks on `main`: `check`, `pack-smoke (ubuntu-latest)`, `pack-smoke (w
 - Preserve support for `npm`, `pnpm`, and `bun` unless a change explicitly narrows scope.
 - Keep generated project docs generic; do not hardcode Cost Console or other project-specific language.
 - `src/cli-metadata.ts` is the single source of truth for CLI options and scenarios. When you add or change a flag, update it there — `--help`, `info --json`, `llms.txt`, the README table, and `skills/purrfold/SKILL.md` all mirror it.
-- `src/versions.json` is the single source of truth for the dependency versions pinned into generated apps. `src/installers/config-model.ts`, the E2E harness/scenarios, and the tests all read from it — never hardcode a generated-app version anywhere else. Renovate bumps these pins automatically (custom regex manager in `renovate.json`); manual bumps must run the CLI E2E suite (`npm run test:e2e:cli`). Pin bumps change generated-app behavior, so they need a changeset before release.
+- `src/versions.json` is the single source of truth for the dependency versions pinned into generated apps. `src/installers/config-model.ts`, the E2E harness/scenarios, and the tests all read from it — never hardcode a generated-app version anywhere else. Renovate bumps these pins automatically (custom regex manager in `renovate.json`); manual bumps must run the CLI E2E suite (`npm run test:e2e:cli`). Pin bumps change generated-app behavior, so they need a changeset **in the same pull request** — the `changeset-guard` check enforces this and blocks the merge otherwise. It skips the changesets release branch, which consumes changesets rather than adding them. The rule lives in `scripts/changeset-rules.mjs`.
 - The same file's `actions` and `toolchain` keys pin the GitHub Action tags and Node/pnpm versions written into generated workflows. `toolchain.pnpm` must stay an exact `x.y.z`: it is the fallback for a generated app's `packageManager` field, which rejects ranges. Never inline an action tag in `src/templates/files.ts`: an inlined tag is invisible to Renovate, and every app scaffolded before the next major bump keeps running a deprecated runner. That is exactly how generated pipelines ended up warning about node20. `tests/workflows.test.ts` fails if a workflow references an action that is not registered in `versions.json`.
 - Generated CI is opt-in behind `--ci`. `src/installers/ci.ts` is the sole writer of `.github/workflows/` — do not emit workflow files from any other installer.
 

@@ -18,7 +18,21 @@ export const cliE2eScenarios = [
     // multi-OS coverage as its own deliberate step rather than riding along here.
     execution: { requires: ['npm'], os: crossPlatformRunners },
     args: ['--pm', 'npm', '--unit', '--no-e2e', '--ci', '--no-commitlint', '--motion', '--yes'],
-    expect: { unit: true, e2e: false, ci: true, commitlint: false, pnpm: false, mcp: false, motion: true },
+    // The only scenario asserting that external skills were actually fetched.
+    // It carries the check because it is the cross-platform representative, and
+    // Windows is exactly where that failure went unnoticed. It also carries
+    // `--ci`, which puts the npm branch of the workflow templates on all three
+    // runners at no extra install cost.
+    expect: {
+      unit: true,
+      e2e: false,
+      ci: true,
+      commitlint: false,
+      pnpm: false,
+      mcp: false,
+      motion: true,
+      externalSkills: true,
+    },
     quick: false,
   },
   {
