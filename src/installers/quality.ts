@@ -83,9 +83,30 @@ function renderCommitMsgHook(packageManager: string) {
   return commitMsgHook.replace('npx commitlint', execCommand(packageManager, 'commitlint'));
 }
 
-async function appendGitIgnore(projectRoot: string, executor: Executor) {
+/**
+ * Local state the Cloudflare adapter produces once the app is developed or
+ * deployed. `.dev.vars` is the one that matters: it holds Cloudflare secrets,
+ * and purrfold installs the adapter that reads it.
+ */
+const cloudflareGitIgnoreEntries = ['.wrangler/', '.dev.vars', 'worker-configuration.d.ts'];
+
+function usesCloudflareAdapter(options: CreateOptions) {
+  return options.ssr && options.astroAdapter === 'cloudflare';
+}
+
+export async function appendGitIgnore(
+  projectRoot: string,
+  options: CreateOptions,
+  executor: Executor
+) {
   const gitIgnorePath = path.join(projectRoot, '.gitignore');
-  const additions = ['.claude/skills/', '.react-scan/', 'playwright-report/', 'test-results/'];
+  const additions = [
+    '.claude/skills/',
+    '.react-scan/',
+    'playwright-report/',
+    'test-results/',
+    ...(usesCloudflareAdapter(options) ? cloudflareGitIgnoreEntries : []),
+  ];
   const current = (await executor.pathExists(gitIgnorePath))
     ? await executor.readFile(gitIgnorePath)
     : '';
@@ -234,7 +255,7 @@ export async function installQualityLayer(
     path.join(projectRoot, 'doctor.config.json'),
     renderReactDoctorConfig(options.framework, options.motion)
   );
-  await appendGitIgnore(projectRoot, executor);
+  await appendGitIgnore(projectRoot, options, executor);
 
   await executor.writeFile(
     path.join(projectRoot, '.husky', 'pre-commit'),
