@@ -123,6 +123,13 @@ describe('Astro React integration guard', () => {
     [packageJsonPath]: JSON.stringify({ dependencies: {} }),
     [configPath]: 'export default defineConfig({});\n',
   };
+  // create-astro reported "✔ Integrations added", wrote the config, and never
+  // installed the package. `astro add` cannot repair this: it loads the config
+  // to edit it and dies on the missing import (issue #54).
+  const configOnly = {
+    [packageJsonPath]: JSON.stringify({ dependencies: {} }),
+    [configPath]: withReact[configPath],
+  };
 
   class FakeExecutor implements Executor {
     readonly runs: Array<{ command: string; args: string[]; cwd?: string }> = [];
@@ -130,15 +137,26 @@ describe('Astro React integration guard', () => {
 
     constructor(
       initialFiles: Record<string, string>,
-      private readonly onAstroAdd?: (files: Map<string, string>) => void
+      private readonly onAstroAdd?: (files: Map<string, string>) => void,
+      private readonly onInstall?: (files: Map<string, string>) => void
     ) {
       this.files = new Map(Object.entries(initialFiles));
     }
 
+    /** Set to make the direct `@astrojs/react` install reject. */
+    failInstall = false;
+
     async run(command: string, args: string[], options?: { cwd?: string }) {
       this.runs.push({ command, args, cwd: options?.cwd });
-      if (args.join(' ').includes('astro add react')) {
+      const joined = args.join(' ');
+      if (joined.includes('astro add react')) {
         this.onAstroAdd?.(this.files);
+      }
+      if (joined.includes('@astrojs/react')) {
+        if (this.failInstall) {
+          throw new Error('registry unavailable');
+        }
+        this.onInstall?.(this.files);
       }
     }
 
@@ -194,5 +212,57 @@ describe('Astro React integration guard', () => {
     await expect(ensureAstroReactIntegration(projectRoot, options, executor)).rejects.toThrow(
       'The Astro React integration is missing'
     );
+  });
+
+  // Issue #54: create-astro claimed success, wrote `react()` into the config,
+  // and never installed the package. `astro add` cannot recover from it — the
+  // config it must load imports the module that is missing.
+  it('installs the dependency directly when only the config half landed', async () => {
+    const executor = new FakeExecutor(configOnly, undefined, (files) => {
+      files.set(packageJsonPath, withReact[packageJsonPath]);
+    });
+
+    await ensureAstroReactIntegration(projectRoot, options, executor);
+
+    // The config already says `react()`, so the install alone completes it and
+    // `astro add` never has to run.
+    expect(executor.runs).toEqual([
+      {
+        command: 'pnpm',
+        args: ['add', '@astrojs/react'],
+        cwd: projectRoot,
+      },
+    ]);
+  });
+
+  it('still falls back to astro add when the direct install fails', async () => {
+    const executor = new FakeExecutor(configOnly, (files) => {
+      files.set(packageJsonPath, withReact[packageJsonPath]);
+    });
+    executor.failInstall = true;
+
+    await ensureAstroReactIntegration(projectRoot, options, executor);
+
+    // A failed install must not turn a recoverable scaffold into a failed run:
+    // this path only ever adds a chance to recover.
+    expect(executor.runs.map((entry) => entry.args.join(' '))).toEqual([
+      'add @astrojs/react',
+      'exec astro add react --yes',
+    ]);
+  });
+
+  it('goes straight to astro add when the config half is missing too', async () => {
+    const executor = new FakeExecutor(withoutReact, (files) => {
+      files.set(packageJsonPath, withReact[packageJsonPath]);
+      files.set(configPath, withReact[configPath]);
+    });
+
+    await ensureAstroReactIntegration(projectRoot, options, executor);
+
+    // astro can load a config that does not import the missing module, so it
+    // still owns this state — no direct install needed.
+    expect(executor.runs.map((entry) => entry.args.join(' '))).toEqual([
+      'exec astro add react --yes',
+    ]);
   });
 });
