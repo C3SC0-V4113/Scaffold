@@ -518,6 +518,27 @@ export function assertGeneratedApp(projectRoot, expected) {
   assertNotIncludes(packageJson.scripts?.['doctor:ci'] ?? '', '--design', 'package.json doctor:ci script');
   assertNotIncludes(eslintConfig, 'reactDoctor.configs.all', 'eslint.config.mjs');
 
+  // purrfold only ignores what purrfold creates, so the wrangler entries must
+  // follow the adapter it actually installed. Every non-cloudflare scenario is
+  // the negative case; astro-npm-ssr-node covers "SSR but a different adapter".
+  const gitIgnoreEntries = readFileSync(path.join(projectRoot, '.gitignore'), 'utf8')
+    .split(/\r?\n/)
+    .map((line) => line.trim());
+  for (const entry of ['.claude/skills/', '.react-scan/', 'playwright-report/', 'test-results/']) {
+    if (!gitIgnoreEntries.includes(entry)) {
+      throw new Error(`.gitignore should ignore ${entry}`);
+    }
+  }
+  for (const entry of ['.wrangler/', '.dev.vars', 'worker-configuration.d.ts']) {
+    const ignored = gitIgnoreEntries.includes(entry);
+    if (expected.ssrAdapter === 'cloudflare' && !ignored) {
+      throw new Error(`.gitignore should ignore ${entry} for the Cloudflare adapter`);
+    }
+    if (expected.ssrAdapter !== 'cloudflare' && ignored) {
+      throw new Error(`.gitignore should not ignore ${entry} without the Cloudflare adapter`);
+    }
+  }
+
   const doctorIgnoredFiles = doctorConfig.ignore?.files ?? [];
   for (const ignoredPath of [
     '.agents/**',
