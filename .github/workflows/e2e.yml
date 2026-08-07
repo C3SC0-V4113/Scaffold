@@ -160,13 +160,17 @@ jobs:
       # Shared harness cache: package-manager download caches for the generated-app
       # installs. Keyed by runner too — a Linux npm cache is not reusable on
       # Windows, and sharing one key across them thrashes instead of helping.
+      #
+      # The v2 segment retires every cache written before pnpm's cacheDir moved
+      # out of this directory. Those archives still carry `xdg/pnpm/dlx` trees,
+      # and the restore-keys prefix would keep pulling them forward forever.
       - name: Restore E2E package cache
         uses: actions/cache@v6
         with:
           path: ${{ runner.temp }}/purrfold-e2e-cache
-          key: e2e-pm-cache-${{ matrix.scenario.os }}-${{ matrix.scenario.packageManager }}-${{ hashFiles('src/versions.json') }}
+          key: e2e-pm-cache-v2-${{ matrix.scenario.os }}-${{ matrix.scenario.packageManager }}-${{ hashFiles('src/versions.json') }}
           restore-keys: |
-            e2e-pm-cache-${{ matrix.scenario.os }}-${{ matrix.scenario.packageManager }}-
+            e2e-pm-cache-v2-${{ matrix.scenario.os }}-${{ matrix.scenario.packageManager }}-
 
       - name: Install dependencies
         run: npm ci
@@ -228,9 +232,9 @@ jobs:
         uses: actions/cache@v6
         with:
           path: ~/.cache/purrfold-e2e
-          key: e2e-pm-cache-npm-${{ hashFiles('src/versions.json') }}
+          key: e2e-pm-cache-v2-npm-${{ hashFiles('src/versions.json') }}
           restore-keys: |
-            e2e-pm-cache-npm-
+            e2e-pm-cache-v2-npm-
 
       - name: Install dependencies
         run: npm ci
