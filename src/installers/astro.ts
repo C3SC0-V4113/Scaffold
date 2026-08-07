@@ -195,19 +195,26 @@ function assertAstroPackageManager(packageManager: CreateOptions['packageManager
   }
 }
 
-async function hasReactIntegration(projectRoot: string, executor: Executor) {
+/**
+ * The two halves `astro add react` is responsible for, read independently:
+ * the dependency in package.json and the `react()` call in astro.config.mjs.
+ * They are reported separately because one specific mismatch between them is
+ * not recoverable the same way as the others — see ensureAstroReactIntegration.
+ */
+async function readReactIntegration(projectRoot: string, executor: Executor) {
+  const missing = { dependency: false, config: false };
   const packageJsonPath = path.join(projectRoot, 'package.json');
   const configPath = path.join(projectRoot, 'astro.config.mjs');
 
   if (!(await executor.pathExists(packageJsonPath)) || !(await executor.pathExists(configPath))) {
-    return false;
+    return missing;
   }
 
   let packageJson: unknown;
   try {
     packageJson = JSON.parse(await executor.readFile(packageJsonPath));
   } catch {
-    return false;
+    return missing;
   }
 
   const dependencies = isJsonObject(packageJson) && isJsonObject(packageJson.dependencies)
@@ -215,16 +222,25 @@ async function hasReactIntegration(projectRoot: string, executor: Executor) {
     : {};
   const config = await executor.readFile(configPath);
 
-  return Boolean(dependencies['@astrojs/react']) && config.includes('react(');
+  return {
+    dependency: Boolean(dependencies['@astrojs/react']),
+    config: config.includes('react('),
+  };
+}
+
+async function hasReactIntegration(projectRoot: string, executor: Executor) {
+  const { dependency, config } = await readReactIntegration(projectRoot, executor);
+  return dependency && config;
 }
 
 /**
  * create-astro's `--add react` step can fail and still exit 0: it prints
  * "Failed to add integrations, please run astro add react" and finishes the
  * scaffold anyway, leaving an app whose React components cannot typecheck.
- * Verify the integration actually landed and, if not, run `astro add react`
- * ourselves; if it is still missing afterwards, fail hard instead of shipping
- * a broken app.
+ * Verify the integration actually landed and, if not, recover: install the
+ * dependency directly when only that half is missing, otherwise run
+ * `astro add react` ourselves. If it is still missing afterwards, fail hard
+ * instead of shipping a broken app.
  */
 export async function ensureAstroReactIntegration(
   projectRoot: string,
@@ -235,11 +251,37 @@ export async function ensureAstroReactIntegration(
     return;
   }
 
-  if (await hasReactIntegration(projectRoot, executor)) {
+  const state = await readReactIntegration(projectRoot, executor);
+  if (state.dependency && state.config) {
     return;
   }
 
   const commands = getPackageManagerCommands(options.packageManager);
+
+  // One half-applied state is unrecoverable through `astro add`: the config
+  // already imports @astrojs/react but the package was never installed. To edit
+  // the config, `astro add` first has to load it, and loading it fails on the
+  // missing import — astro exits with "Cannot find module '@astrojs/react'"
+  // before doing any work. It is the tool meant to repair the damage, blocked
+  // by the damage. A nightly Windows run failed exactly there (issue #54).
+  //
+  // Nothing needs rewriting in that state: create-astro already put `react()`
+  // where it belongs, so installing the missing package on its own completes
+  // the integration. Failure here is deliberately swallowed — this path only
+  // adds a recovery, so it must never turn a broken app into a broken run.
+  if (state.config && !state.dependency) {
+    const addDependency = commands.add(['@astrojs/react']);
+    try {
+      await executor.run(addDependency.command, addDependency.args, { cwd: projectRoot });
+    } catch {
+      // Fall through: `astro add` still owns every other way this can break.
+    }
+
+    if (await hasReactIntegration(projectRoot, executor)) {
+      return;
+    }
+  }
+
   const addReact = commands.exec('astro', ['add', 'react', '--yes']);
   await executor.run(addReact.command, addReact.args, { cwd: projectRoot });
 
