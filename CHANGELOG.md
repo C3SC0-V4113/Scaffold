@@ -1,5 +1,12 @@
 # purrfold
 
+## 0.7.1
+
+### Patch Changes
+
+- dd80ff1: Let purrfold control Astro dependency installation to avoid create-astro's fixed install timeout.
+- 9be1f46: Update generated-app dependency and toolchain pins to their latest compatible non-major releases.
+
 ## 0.7.0
 
 ### Minor Changes
