@@ -214,6 +214,22 @@ describe('Astro React integration guard', () => {
     );
   });
 
+  it('repairs a config-only state when astro add writes config and then rejects', async () => {
+    const executor = new FakeExecutor(withoutReact, (files) => {
+      files.set(configPath, withReact[configPath]);
+      throw new Error('install timed out');
+    }, (files) => {
+      files.set(packageJsonPath, withReact[packageJsonPath]);
+    });
+
+    await ensureAstroReactIntegration(projectRoot, options, executor);
+
+    expect(executor.runs.map((entry) => entry.args.join(' '))).toEqual([
+      'exec astro add react --yes',
+      'add @astrojs/react',
+    ]);
+  });
+
   // Issue #54: create-astro claimed success, wrote `react()` into the config,
   // and never installed the package. `astro add` cannot recover from it — the
   // config it must load imports the module that is missing.

@@ -6,6 +6,7 @@ export interface PackageManagerCommands {
   shadcnMcp: (client: ShadcnMcpClient) => { command: string; args: string[] };
   addDev: (packages: string[]) => { command: string; args: string[] };
   add: (packages: string[]) => { command: string; args: string[] };
+  install: () => { command: string; args: string[] };
   remove: (packages: string[]) => { command: string; args: string[] };
   exec: (binary: string, args: string[]) => { command: string; args: string[] };
 }
@@ -42,6 +43,7 @@ export function getPackageManagerCommands(packageManager: PackageManager): Packa
       }),
       addDev: (packages) => ({ command: 'pnpm', args: ['add', '-D', ...packages] }),
       add: (packages) => ({ command: 'pnpm', args: ['add', ...packages] }),
+      install: () => ({ command: 'pnpm', args: ['install'] }),
       remove: (packages) => ({ command: 'pnpm', args: ['remove', ...packages] }),
       exec: (binary, args) => ({ command: 'pnpm', args: ['exec', binary, ...args] }),
     };
@@ -67,6 +69,7 @@ export function getPackageManagerCommands(packageManager: PackageManager): Packa
       }),
       addDev: (packages) => ({ command: 'bun', args: ['add', '-d', ...packages] }),
       add: (packages) => ({ command: 'bun', args: ['add', ...packages] }),
+      install: () => ({ command: 'bun', args: ['install'] }),
       remove: (packages) => ({ command: 'bun', args: ['remove', ...packages] }),
       exec: (binary, args) => ({ command: 'bunx', args: ['--bun', binary, ...args] }),
     };
@@ -90,6 +93,7 @@ export function getPackageManagerCommands(packageManager: PackageManager): Packa
     }),
     addDev: (packages) => ({ command: 'npm', args: ['install', '--save-dev', ...packages] }),
     add: (packages) => ({ command: 'npm', args: ['install', ...packages] }),
+    install: () => ({ command: 'npm', args: ['install'] }),
     remove: (packages) => ({ command: 'npm', args: ['uninstall', ...packages] }),
     exec: (binary, args) => ({ command: 'npx', args: [binary, ...args] }),
   };

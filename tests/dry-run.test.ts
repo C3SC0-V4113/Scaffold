@@ -81,7 +81,19 @@ describe('dry-run integration', () => {
     });
 
     const output = log.mock.calls.map((call) => call.join(' ')).join('\n');
+    const normalizedOutput = output.replaceAll('\\', '/');
     expect(output).toContain('run pnpm create astro@latest my-app');
+    expect(output).toContain('--no-install');
+    expect(output).not.toContain('--add react');
+    expect(normalizedOutput).toContain('/my-app/pnpm-workspace.yaml');
+    expect(output).toContain('run pnpm install (cwd ');
+    expect(output).toContain('run pnpm exec astro add react --yes (cwd ');
+    expect(normalizedOutput.indexOf('/my-app/pnpm-workspace.yaml')).toBeLessThan(
+      normalizedOutput.indexOf('run pnpm install (cwd ')
+    );
+    expect(normalizedOutput.indexOf('run pnpm install (cwd ')).toBeLessThan(
+      normalizedOutput.indexOf('run pnpm exec astro add react --yes (cwd ')
+    );
     expect(output.match(/--no-git/g)).toHaveLength(1);
     expect(output).not.toContain(' --git');
     expect(output).toContain('run pnpm dlx shadcn@latest init -t astro --defaults');
@@ -103,6 +115,23 @@ describe('dry-run integration', () => {
     expect(output.replaceAll('\\', '/')).toContain('/my-app/.claude/settings.json');
     expect(output).not.toContain('--no-ai');
     expect(output).not.toContain('create-next-app@latest');
+  });
+
+  it('keeps Astro base installation when additional quality installs are skipped', async () => {
+    const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    await runCreate('my-app', {
+      framework: 'astro',
+      pm: 'npm',
+      yes: true,
+      dryRun: true,
+      skipInstall: true,
+    });
+
+    const output = log.mock.calls.map((call) => call.join(' ')).join('\n');
+    expect(output).toContain('run npm install (cwd ');
+    expect(output).toContain('run npx astro add react --yes (cwd ');
+    expect(output).not.toContain('run npm install --save-dev');
   });
 
   it('prints Astro SSR adapter operations when SSR is enabled', async () => {
