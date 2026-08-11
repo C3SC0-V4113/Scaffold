@@ -28,6 +28,7 @@ describe('package manager command mapping', () => {
       command: 'npm',
       args: ['install', '--save-dev', 'vitest'],
     });
+    expect(commands.install()).toEqual({ command: 'npm', args: ['install'] });
   });
 
   it('maps pnpm commands', () => {
@@ -51,6 +52,7 @@ describe('package manager command mapping', () => {
       command: 'pnpm',
       args: ['add', '-D', 'vitest'],
     });
+    expect(commands.install()).toEqual({ command: 'pnpm', args: ['install'] });
   });
 
   it('maps bun commands', () => {
@@ -74,5 +76,6 @@ describe('package manager command mapping', () => {
       command: 'bun',
       args: ['add', '-d', 'vitest'],
     });
+    expect(commands.install()).toEqual({ command: 'bun', args: ['install'] });
   });
 });

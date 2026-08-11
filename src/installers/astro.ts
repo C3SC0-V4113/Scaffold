@@ -2,6 +2,7 @@ import path from 'node:path';
 
 import { DryRunExecutor } from '../executor.js';
 import { getPackageManagerCommands } from '../package-manager.js';
+import { mergePnpmBuildPolicy } from '../templates/files.js';
 import type { CreateOptions, Executor } from '../types.js';
 import { pinnedSpecifier } from './config-model.js';
 import { validateTargetDir } from './next.js';
@@ -9,9 +10,7 @@ import { validateTargetDir } from './next.js';
 const createAstroBaseArgs = [
   '--template',
   'with-tailwindcss',
-  '--install',
-  '--add',
-  'react',
+  '--no-install',
   '--no-git',
 ];
 
@@ -234,13 +233,11 @@ async function hasReactIntegration(projectRoot: string, executor: Executor) {
 }
 
 /**
- * create-astro's `--add react` step can fail and still exit 0: it prints
- * "Failed to add integrations, please run astro add react" and finishes the
- * scaffold anyway, leaving an app whose React components cannot typecheck.
- * Verify the integration actually landed and, if not, recover: install the
- * dependency directly when only that half is missing, otherwise run
- * `astro add react` ourselves. If it is still missing afterwards, fail hard
- * instead of shipping a broken app.
+ * `astro add react` can fail after changing only one half of the integration,
+ * leaving an app whose React components cannot typecheck. Verify the
+ * integration actually landed and recover by installing the dependency
+ * directly when only that half is missing. If it is still incomplete, fail
+ * hard instead of shipping a broken app.
  */
 export async function ensureAstroReactIntegration(
   projectRoot: string,
@@ -248,6 +245,9 @@ export async function ensureAstroReactIntegration(
   executor: Executor
 ) {
   if (executor instanceof DryRunExecutor) {
+    const commands = getPackageManagerCommands(options.packageManager);
+    const addReact = commands.exec('astro', ['add', 'react', '--yes']);
+    await executor.run(addReact.command, addReact.args, { cwd: projectRoot });
     return;
   }
 
@@ -283,14 +283,43 @@ export async function ensureAstroReactIntegration(
   }
 
   const addReact = commands.exec('astro', ['add', 'react', '--yes']);
-  await executor.run(addReact.command, addReact.args, { cwd: projectRoot });
+  try {
+    await executor.run(addReact.command, addReact.args, { cwd: projectRoot });
+  } catch {
+    // `astro add` can write the config before dependency installation fails.
+    // Inspect and repair that partial state below instead of discarding the
+    // otherwise valid scaffold because the integration command rejected.
+  }
+
+  const stateAfterAdd = await readReactIntegration(projectRoot, executor);
+  if (stateAfterAdd.config && !stateAfterAdd.dependency) {
+    const addDependency = commands.add(['@astrojs/react']);
+    await executor.run(addDependency.command, addDependency.args, { cwd: projectRoot });
+  }
 
   if (!(await hasReactIntegration(projectRoot, executor))) {
     throw new Error(
-      'The Astro React integration is missing: create-astro failed to add it and `astro add react --yes` did not recover. ' +
+      'The Astro React integration is missing: `astro add react --yes` did not complete or recover. ' +
         `Run "astro add react" manually inside ${projectRoot}, then re-run purrfold with --skip-install to finish the setup.`
     );
   }
+}
+
+async function prepareAstroInstall(
+  projectRoot: string,
+  options: CreateOptions,
+  executor: Executor
+) {
+  if (options.packageManager === 'pnpm') {
+    const workspacePath = path.join(projectRoot, 'pnpm-workspace.yaml');
+    const existing = (await executor.pathExists(workspacePath))
+      ? await executor.readFile(workspacePath)
+      : '';
+    await executor.writeFile(workspacePath, mergePnpmBuildPolicy(existing));
+  }
+
+  const install = getPackageManagerCommands(options.packageManager).install();
+  await executor.run(install.command, install.args, { cwd: projectRoot });
 }
 
 export async function createAstroApp(options: CreateOptions, executor: Executor) {
@@ -308,6 +337,7 @@ export async function createAstroApp(options: CreateOptions, executor: Executor)
   ];
 
   await executor.run(command, args);
+  await prepareAstroInstall(projectRoot, options, executor);
   await ensureAstroReactIntegration(projectRoot, options, executor);
   await configureAstroPathAliases(projectRoot, executor);
 
