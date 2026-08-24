@@ -216,6 +216,15 @@ export async function runCreate(targetDir: string, flags: RawCreateFlags) {
       ? await createAstroApp(options, executor)
       : await createNextApp(options, executor);
   await initializeShadcn(projectRoot, options, executor);
+
+  // npm 10 can leave the lockfile in an inconsistent state after shadcn init.
+  // Reify it with a plain install before adding quality-layer dev dependencies.
+  if (options.packageManager === 'npm' && !options.skipInstall) {
+    const commands = getPackageManagerCommands('npm');
+    const normalize = commands.install();
+    await executor.run(normalize.command, normalize.args, { cwd: projectRoot });
+  }
+
   await installQualityLayer(projectRoot, options, executor);
   await installMotion(projectRoot, options, executor);
   await installTestingFiles(projectRoot, options, executor);

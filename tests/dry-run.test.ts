@@ -8,6 +8,59 @@ afterEach(() => {
 });
 
 describe('dry-run integration', () => {
+  it('npm scaffold places a bare lockfile-normalizing install between shadcn init and quality dev deps', async () => {
+    const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    await runCreate('my-app', {
+      pm: 'npm',
+      unit: true,
+      e2e: true,
+      commitlint: true,
+      yes: true,
+      dryRun: true,
+    });
+
+    const output = log.mock.calls.map((call) => call.join(' ')).join('\n');
+    const normalizedOutput = output.replaceAll('\\', '/');
+    const shadcnInitIndex = output.indexOf('run npx shadcn@latest init --defaults');
+    const normalizeIndex = output.indexOf('run npm install (cwd ');
+    const qualityInstallIndex = output.indexOf('run npm install --save-dev');
+
+    expect(shadcnInitIndex).toBeGreaterThan(-1);
+    expect(normalizeIndex).toBeGreaterThan(-1);
+    expect(qualityInstallIndex).toBeGreaterThan(-1);
+    expect(normalizeIndex).toBeGreaterThan(shadcnInitIndex);
+    expect(normalizeIndex).toBeLessThan(qualityInstallIndex);
+    // Bare install has no package arguments and targets the project root.
+    expect(normalizedOutput).toMatch(/run npm install \(cwd .*\/my-app\)/);
+    expect(output.match(/run npm install \(cwd /g)).toHaveLength(1);
+  });
+
+  it('pnpm, bun, and skip-install scaffolds do not run a bare npm install normalization', async () => {
+    const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    await runCreate('pnpm-app', {
+      pm: 'pnpm',
+      yes: true,
+      dryRun: true,
+    });
+    await runCreate('bun-app', {
+      pm: 'bun',
+      yes: true,
+      dryRun: true,
+    });
+    await runCreate('skip-app', {
+      pm: 'npm',
+      yes: true,
+      dryRun: true,
+      skipInstall: true,
+    });
+
+    const output = log.mock.calls.map((call) => call.join(' ')).join('\n');
+    expect(output).not.toContain('run npm install (cwd ');
+    expect(output).not.toContain('run npm install --save-dev');
+  });
+
   it('prints npm all-options operations without executing real commands', async () => {
     const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
 
