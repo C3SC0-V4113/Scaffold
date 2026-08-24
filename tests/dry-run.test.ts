@@ -8,7 +8,7 @@ afterEach(() => {
 });
 
 describe('dry-run integration', () => {
-  it('npm scaffold places a bare lockfile-normalizing install between shadcn init and quality dev deps', async () => {
+  it('npm scaffold installs quality dev deps with --legacy-peer-deps after shadcn init', async () => {
     const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
 
     await runCreate('my-app', {
@@ -23,20 +23,20 @@ describe('dry-run integration', () => {
     const output = log.mock.calls.map((call) => call.join(' ')).join('\n');
     const normalizedOutput = output.replaceAll('\\', '/');
     const shadcnInitIndex = output.indexOf('run npx shadcn@latest init --defaults');
-    const normalizeIndex = output.indexOf('run npm install (cwd ');
-    const qualityInstallIndex = output.indexOf('run npm install --save-dev');
+    const qualityInstallIndex = output.indexOf('run npm install --legacy-peer-deps --save-dev');
 
     expect(shadcnInitIndex).toBeGreaterThan(-1);
-    expect(normalizeIndex).toBeGreaterThan(-1);
     expect(qualityInstallIndex).toBeGreaterThan(-1);
-    expect(normalizeIndex).toBeGreaterThan(shadcnInitIndex);
-    expect(normalizeIndex).toBeLessThan(qualityInstallIndex);
-    // Bare install has no package arguments and targets the project root.
-    expect(normalizedOutput).toMatch(/run npm install \(cwd .*\/my-app\)/);
-    expect(output.match(/run npm install \(cwd /g)).toHaveLength(1);
+    expect(qualityInstallIndex).toBeGreaterThan(shadcnInitIndex);
+    // npm 10 peer-dep workaround: the quality-layer dev-dep install must use
+    // --legacy-peer-deps so arborist does not crash with "edgesOut".
+    expect(normalizedOutput).toMatch(
+      /run npm install --legacy-peer-deps --save-dev .*\/my-app\)/
+    );
+    expect(output.match(/run npm install --legacy-peer-deps --save-dev /g)).toHaveLength(1);
   });
 
-  it('pnpm, bun, and skip-install scaffolds do not run a bare npm install normalization', async () => {
+  it('pnpm, bun, and skip-install scaffolds do not run an npm dev-dep install', async () => {
     const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
 
     await runCreate('pnpm-app', {
@@ -57,7 +57,7 @@ describe('dry-run integration', () => {
     });
 
     const output = log.mock.calls.map((call) => call.join(' ')).join('\n');
-    expect(output).not.toContain('run npm install (cwd ');
+    expect(output).not.toContain('run npm install --legacy-peer-deps --save-dev');
     expect(output).not.toContain('run npm install --save-dev');
   });
 
@@ -228,7 +228,7 @@ describe('dry-run integration', () => {
   });
 
   it.each([
-    ['npm', `run npm install ${pinnedSpecifier('motion')}`],
+    ['npm', `run npm install --legacy-peer-deps ${pinnedSpecifier('motion')}`],
     ['pnpm', `run pnpm add ${pinnedSpecifier('motion')}`],
     ['bun', `run bun add ${pinnedSpecifier('motion')}`],
   ] as const)('prints the optional Motion install for %s', async (pm, expected) => {

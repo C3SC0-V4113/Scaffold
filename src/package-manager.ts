@@ -91,8 +91,11 @@ export function getPackageManagerCommands(packageManager: PackageManager): Packa
       command: 'npx',
       args: ['shadcn@latest', 'mcp', 'init', '--client', client],
     }),
-    addDev: (packages) => ({ command: 'npm', args: ['install', '--save-dev', ...packages] }),
-    add: (packages) => ({ command: 'npm', args: ['install', ...packages] }),
+    addDev: (packages) => ({
+      command: 'npm',
+      args: ['install', '--legacy-peer-deps', '--save-dev', ...packages],
+    }),
+    add: (packages) => ({ command: 'npm', args: ['install', '--legacy-peer-deps', ...packages] }),
     install: () => ({ command: 'npm', args: ['install'] }),
     remove: (packages) => ({ command: 'npm', args: ['uninstall', ...packages] }),
     exec: (binary, args) => ({ command: 'npx', args: [binary, ...args] }),

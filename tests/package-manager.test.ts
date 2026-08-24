@@ -26,7 +26,11 @@ describe('package manager command mapping', () => {
     });
     expect(commands.addDev(['vitest'])).toEqual({
       command: 'npm',
-      args: ['install', '--save-dev', 'vitest'],
+      args: ['install', '--legacy-peer-deps', '--save-dev', 'vitest'],
+    });
+    expect(commands.add(['motion'])).toEqual({
+      command: 'npm',
+      args: ['install', '--legacy-peer-deps', 'motion'],
     });
     expect(commands.install()).toEqual({ command: 'npm', args: ['install'] });
   });
