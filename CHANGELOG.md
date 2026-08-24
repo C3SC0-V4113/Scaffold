@@ -1,5 +1,11 @@
 # purrfold
 
+## 0.7.2
+
+### Patch Changes
+
+- 33b5e8e: Use legacy peer dependency resolution for npm package additions after shadcn initialization to avoid npm 10 resolver crashes.
+
 ## 0.7.1
 
 ### Patch Changes
