@@ -34,3 +34,6 @@ Thumbs.db
 .claude/skills/
 .atl/.skill-registry.cache.json
 .atl/skill-registry.md
+
+# local CodeGraph index
+.codegraph/
