@@ -66,7 +66,7 @@ function options(
 
 describe('Motion installer', () => {
   it.each([
-    ['npm', 'npm', ['install', motionPin]],
+    ['npm', 'npm', ['install', '--legacy-peer-deps', motionPin]],
     ['pnpm', 'pnpm', ['add', motionPin]],
     ['bun', 'bun', ['add', motionPin]],
   ] as const)('installs the pinned runtime package with %s', async (packageManager, command, args) => {

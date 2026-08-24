@@ -227,7 +227,7 @@ export const cliE2eScenarios = [
     packageManager: 'npm',
     args: ['--pm', 'npm', '--motion', '--yes', '--dry-run'],
     expectOutput: [
-      `run npm install ${pinnedDependency('motion')}`,
+      `run npm install --legacy-peer-deps ${pinnedDependency('motion')}`,
       'freshtechbro/claudedesignskills --skill motion-framer',
     ],
     quick: true,
