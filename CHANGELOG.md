@@ -1,5 +1,13 @@
 # purrfold
 
+## 0.7.3
+
+### Patch Changes
+
+- 061e448: Scope the Astro Motion wrapper ESLint override to `src/components/common/motion-main.tsx` so generated Astro projects with Motion lint cleanly under `eslint-plugin-react-doctor@0.9.12` without relaxing `--max-warnings 0`.
+- 27795d1: Fix generated Next.js ESLint configuration compatibility with React Doctor 0.9.12.
+- 3aeeb84: Update the dependency versions pinned into generated apps. Notably, `react-doctor` and `eslint-plugin-react-doctor` move to `0.9.12`, which the scoped App Router and Motion wrapper ESLint overrides already account for; `astro` moves to `7.2.8` with its adapters, and the fallback `packageManager` pnpm moves to `11.24.0`.
+
 ## 0.7.2
 
 ### Patch Changes
