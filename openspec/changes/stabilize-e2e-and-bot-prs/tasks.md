@@ -4,8 +4,8 @@
 
 | Field | Value |
 |-------|-------|
-| Estimated changed lines | ~450–550 (full change); Unit 1 correction ~40 |
-| 400-line budget risk | High (full change); Low (Unit 1 correction) |
+| Estimated changed lines | ~450–550 (full change); Unit 1 correction ~40; Unit 2 Astro ~25 |
+| 400-line budget risk | High (full change); Low (per unit) |
 | Chained PRs recommended | Yes |
 | Suggested split | PR 1 → PR 2 → PR 3 |
 | Delivery strategy | ask-on-risk |
@@ -21,7 +21,7 @@ Chain strategy: stacked-to-main
 | Unit | Goal | Likely PR | Focused test command | Runtime harness | Rollback boundary |
 |------|------|-----------|----------------------|-----------------|-------------------|
 | 1 | npm 10 peer-dep workaround | PR 1 | `npm test -- tests/dry-run.test.ts tests/package-manager.test.ts tests/motion.test.ts` | `node scripts/cli-e2e.mjs --scenario npm-default-unit` and `--scenario astro-npm-ssg-unit` | Revert `package-manager.ts` npm flags + remove test updates |
-| 2 | App Router lint override | PR 2 | `npm test -- tests/templates.test.ts` | `node scripts/cli-e2e.mjs --scenario astro-npm-ssg-unit` + npm-default-unit | Revert `eslint.ts` + template tests/snapshot |
+| 2 | App Router + Astro Motion lint override | PR 2 | `npm test -- tests/templates.test.ts` | Generated Astro Motion project with react-doctor 0.9.12 | Revert `eslint.ts` + template tests |
 | 3 | Actionable nightly issue signal | PR 3 | `npm test -- tests/nightly-e2e-report.test.ts tests/cli-e2e-catalog.test.ts` | N/A — reporter runs only under Actions schedule context; design forbids manual reruns; wiring locked by catalog test | Revert `nightly-report.mjs` + e2e.yml job + tests |
 
 ## Phase 1: npm 10 Install Sequencing (Unit 1) — CORRECTED
@@ -41,6 +41,9 @@ Chain strategy: stacked-to-main
 - [x] 2.4 RED `tests/templates.test.ts`: assert Next config with `motion: true` includes a `components/common/motion-main.tsx` override that disables only `react-doctor/jsx-no-new-object-as-prop`; Astro and non-Motion Next configs omit it
 - [x] 2.5 GREEN `src/templates/eslint.ts`: add the conditional Motion wrapper override after the App Router metadata override; keep `motion` optional in the template API
 - [x] 2.6 REFACTOR: snapshot the Motion-enabled Next ESLint config; verify generated Next Motion project lints cleanly with `eslint-plugin-react-doctor@0.9.12` and `--max-warnings 0`, and that removing either override reproduces the expected warnings
+- [x] 2.7 RED `tests/templates.test.ts`: assert Astro config with `motion: true` includes a `src/components/common/motion-main.tsx` override that disables only `react-doctor/jsx-no-new-object-as-prop`; non-Motion Astro and Next configs omit it
+- [x] 2.8 GREEN `src/templates/eslint.ts`: add the conditional Astro Motion wrapper override after the React Doctor presets in `renderAstroEslintConfig`; keep `motion` optional in the template API
+- [x] 2.9 REFACTOR: run focused template tests green; verify generated Astro Motion project lints cleanly with `eslint-plugin-react-doctor@0.9.12` and `--max-warnings 0`
 
 ## Phase 3: Nightly Issue Signal (Unit 3)
 

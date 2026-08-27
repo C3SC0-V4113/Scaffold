@@ -267,7 +267,7 @@ allowBuilds:
     expect(nextScripts['lint:fix']).toContain('--max-warnings 0');
   });
 
-  it('scopes the generated Motion wrapper away from react-doctor/jsx-no-new-object-as-prop', () => {
+  it('scopes the generated Motion wrapper away from react-doctor/jsx-no-new-object-as-prop in Next and Astro', () => {
     const nextConfig = renderEslintConfig({ framework: 'next', unit: true, e2e: true, motion: true });
     const astroConfig = renderEslintConfig({ framework: 'astro', unit: true, e2e: true, motion: true });
 
@@ -277,17 +277,25 @@ allowBuilds:
       'react-doctor/jsx-no-new-object-as-prop': 'off',
     },
   },`);
+    expect(astroConfig).toContain(`  {
+    files: ['src/components/common/motion-main.tsx'],
+    rules: {
+      'react-doctor/jsx-no-new-object-as-prop': 'off',
+    },
+  },`);
+    expect(nextConfig).not.toContain("files: ['src/components/common/motion-main.tsx']");
     expect(nextConfig).not.toContain("'react-doctor/jsx-no-new-object-as-prop': 'off',\n      'react-doctor/only-export-components': 'off'");
-
-    expect(astroConfig).not.toContain("files: ['components/common/motion-main.tsx']");
-    expect(astroConfig).not.toContain("'react-doctor/jsx-no-new-object-as-prop': 'off'");
+    expect(astroConfig).not.toContain("'react-doctor/jsx-no-new-object-as-prop': 'off',\n      'react-doctor/only-export-components': 'off'");
   });
 
   it('omits the Motion wrapper override when Motion is not selected', () => {
     const nextConfig = renderEslintConfig({ framework: 'next', unit: true, e2e: true });
+    const astroConfig = renderEslintConfig({ framework: 'astro', unit: true, e2e: true });
 
     expect(nextConfig).not.toContain("files: ['components/common/motion-main.tsx']");
     expect(nextConfig).not.toContain("'react-doctor/jsx-no-new-object-as-prop': 'off'");
+    expect(astroConfig).not.toContain("files: ['src/components/common/motion-main.tsx']");
+    expect(astroConfig).not.toContain("'react-doctor/jsx-no-new-object-as-prop': 'off'");
   });
 
   it('renders a valid Astro app shell with an existing layout import', () => {
