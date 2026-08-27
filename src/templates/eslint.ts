@@ -2,6 +2,7 @@ import type { CreateOptions } from '../types.js';
 
 interface EslintConfigOptions extends Pick<CreateOptions, 'framework' | 'unit' | 'e2e'> {
   registerImportPlugin?: boolean;
+  motion?: boolean;
 }
 
 function renderNextEslintConfig(options: EslintConfigOptions) {
@@ -23,6 +24,22 @@ function renderNextEslintConfig(options: EslintConfigOptions) {
     '  reactDoctor.configs.recommended,',
     '  reactDoctor.configs.next,',
     '  reactYouMightNotNeedAnEffect.configs.recommended,',
+    '  {',
+    "    files: ['app/**/layout.{tsx,jsx,ts,js}', 'app/**/page.{tsx,jsx,ts,js}'],",
+    '    rules: {',
+    "      'react-doctor/only-export-components': 'off',",
+    '    },',
+    '  },',
+    ...(options.motion
+      ? [
+          '  {',
+          "    files: ['components/common/motion-main.tsx'],",
+          '    rules: {',
+          "      'react-doctor/jsx-no-new-object-as-prop': 'off',",
+          '    },',
+          '  },',
+        ]
+      : []),
     '  {',
     "    files: ['**/*.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],",
     options.registerImportPlugin ? '    plugins: {' : '',
