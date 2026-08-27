@@ -35,9 +35,12 @@ Chain strategy: stacked-to-main
 
 ## Phase 2: App Router Lint Override (Unit 2)
 
-- [ ] 2.1 RED `tests/templates.test.ts`: assert Next config override is exactly `app/**/layout.{tsx,jsx,ts,js}` + `app/**/page.{tsx,jsx,ts,js}` with only `react-doctor/only-export-components: 'off'`; Astro config has no `app/**` override; `--max-warnings 0` unchanged (spec reqs 1–3)
-- [ ] 2.2 GREEN `src/templates/eslint.ts`: append scoped override block in `renderNextEslintConfig` after reactDoctor presets, before prettier/ignores; never in `renderAstroEslintConfig`
-- [ ] 2.3 GREEN: update `tests/__snapshots__/templates.test.ts.snap` to reviewed Next config; run `npm test -- tests/templates.test.ts` green
+- [x] 2.1 RED `tests/templates.test.ts`: assert Next config override is exactly `app/**/layout.{tsx,jsx,ts,js}` + `app/**/page.{tsx,jsx,ts,js}` with only `react-doctor/only-export-components: 'off'`; Astro config has no `app/**` override; `--max-warnings 0` unchanged (spec reqs 1–3)
+- [x] 2.2 GREEN `src/templates/eslint.ts`: append scoped override block in `renderNextEslintConfig` after reactDoctor presets, before prettier/ignores; never in `renderAstroEslintConfig`
+- [x] 2.3 GREEN: update `tests/__snapshots__/templates.test.ts.snap` to reviewed Next config; run `npm test -- tests/templates.test.ts` green
+- [x] 2.4 RED `tests/templates.test.ts`: assert Next config with `motion: true` includes a `components/common/motion-main.tsx` override that disables only `react-doctor/jsx-no-new-object-as-prop`; Astro and non-Motion Next configs omit it
+- [x] 2.5 GREEN `src/templates/eslint.ts`: add the conditional Motion wrapper override after the App Router metadata override; keep `motion` optional in the template API
+- [x] 2.6 REFACTOR: snapshot the Motion-enabled Next ESLint config; verify generated Next Motion project lints cleanly with `eslint-plugin-react-doctor@0.9.12` and `--max-warnings 0`, and that removing either override reproduces the expected warnings
 
 ## Phase 3: Nightly Issue Signal (Unit 3)
 

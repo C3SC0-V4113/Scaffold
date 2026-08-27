@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { buildScripts } from '../src/installers/config-model.js';
 import { renderEslintConfig } from '../src/templates/eslint.js';
 import {
   astroRootLayout,
@@ -139,6 +140,10 @@ allowBuilds:
     expect(reactDoctorConfig).toMatchSnapshot();
   });
 
+  it('snapshots the Next ESLint config when Motion is enabled', () => {
+    expect(renderEslintConfig({ framework: 'next', unit: true, e2e: true, motion: true })).toMatchSnapshot();
+  });
+
   it('produces an ESLint config that survives pnpm and ignores vendored ui', () => {
     const config = renderEslintConfig({ framework: 'next', unit: true, e2e: true });
 
@@ -242,6 +247,47 @@ allowBuilds:
     expect(config).toContain('reactDoctor.configs.recommended');
     expect(config).toContain('reactDoctor.configs.next');
     expect(config).not.toContain('reactDoctor.configs.all');
+  });
+
+  it('scopes App Router metadata exports away from react-doctor/only-export-components', () => {
+    const nextConfig = renderEslintConfig({ framework: 'next', unit: true, e2e: true });
+    const astroConfig = renderEslintConfig({ framework: 'astro', unit: true, e2e: true });
+
+    expect(nextConfig).toContain(
+      "files: ['app/**/layout.{tsx,jsx,ts,js}', 'app/**/page.{tsx,jsx,ts,js}']"
+    );
+    expect(nextConfig).toContain("'react-doctor/only-export-components': 'off'");
+    expect(nextConfig).not.toContain("'react-doctor/require-reduced-motion': 'off'");
+
+    expect(astroConfig).not.toContain("files: ['app/**/layout.{tsx,jsx,ts,js}'");
+    expect(astroConfig).not.toContain("'react-doctor/only-export-components': 'off'");
+
+    const nextScripts = buildScripts({ framework: 'next', packageManager: 'npm', unit: true, e2e: true });
+    expect(nextScripts.lint).toContain('--max-warnings 0');
+    expect(nextScripts['lint:fix']).toContain('--max-warnings 0');
+  });
+
+  it('scopes the generated Motion wrapper away from react-doctor/jsx-no-new-object-as-prop', () => {
+    const nextConfig = renderEslintConfig({ framework: 'next', unit: true, e2e: true, motion: true });
+    const astroConfig = renderEslintConfig({ framework: 'astro', unit: true, e2e: true, motion: true });
+
+    expect(nextConfig).toContain(`  {
+    files: ['components/common/motion-main.tsx'],
+    rules: {
+      'react-doctor/jsx-no-new-object-as-prop': 'off',
+    },
+  },`);
+    expect(nextConfig).not.toContain("'react-doctor/jsx-no-new-object-as-prop': 'off',\n      'react-doctor/only-export-components': 'off'");
+
+    expect(astroConfig).not.toContain("files: ['components/common/motion-main.tsx']");
+    expect(astroConfig).not.toContain("'react-doctor/jsx-no-new-object-as-prop': 'off'");
+  });
+
+  it('omits the Motion wrapper override when Motion is not selected', () => {
+    const nextConfig = renderEslintConfig({ framework: 'next', unit: true, e2e: true });
+
+    expect(nextConfig).not.toContain("files: ['components/common/motion-main.tsx']");
+    expect(nextConfig).not.toContain("'react-doctor/jsx-no-new-object-as-prop': 'off'");
   });
 
   it('renders a valid Astro app shell with an existing layout import', () => {

@@ -37,9 +37,26 @@ The generated Next.js ESLint config MUST include an override that turns `react-d
 - THEN no `app/**` override is present
 - AND the Astro lint behavior matches the pre-change configuration
 
+### Requirement: Motion wrapper exempted from jsx-no-new-object-as-prop
+
+When Motion is enabled for a Next.js project, the generated `components/common/motion-main.tsx` file MUST be exempted from `react-doctor/jsx-no-new-object-as-prop` only. The override SHALL NOT apply to Astro projects, to non-Motion Next projects, or to any other rule.
+
+#### Scenario: generated Motion wrapper lints cleanly with inline animation props
+
+- GIVEN a scaffolded Next App Router project with Motion enabled
+- WHEN the generated `lint` script runs with `--max-warnings 0`
+- THEN `react-doctor/jsx-no-new-object-as-prop` produces zero warnings for `components/common/motion-main.tsx`
+- AND the lint command exits 0
+
+#### Scenario: Motion override is absent when Motion is not selected
+
+- GIVEN a scaffolded Next project without Motion
+- WHEN its generated ESLint config is inspected
+- THEN no `components/common/motion-main.tsx` override is present
+
 ### Requirement: strict linting retained
 
-The generated `lint` script MUST continue to use `--max-warnings 0`. The override MUST be narrowly scoped to the App Router metadata-export files; it SHALL NOT relax `--max-warnings 0` or disable any rule other than `react-doctor/only-export-components` on those paths.
+The generated `lint` script MUST continue to use `--max-warnings 0`. Overrides MUST be narrowly scoped to the named paths and rules; they SHALL NOT relax `--max-warnings 0` or disable any rule other than the one named for each glob.
 
 #### Scenario: max-warnings stays zero
 
@@ -56,7 +73,7 @@ The generated `lint` script MUST continue to use `--max-warnings 0`. The overrid
 
 ### Requirement: rendered template is regression-locked
 
-A template test MUST assert the rendered Next ESLint config contains the App Router override scoped to the named paths and rule, and MUST assert the Astro config does not contain it.
+A template test MUST assert the rendered Next ESLint config contains the App Router override scoped to the named paths and rule, the Motion wrapper override scoped to `components/common/motion-main.tsx` and `react-doctor/jsx-no-new-object-as-prop` when Motion is enabled, and MUST assert the Astro config does not contain either Next-only override.
 
 #### Scenario: snapshot asserts override presence in Next config
 
