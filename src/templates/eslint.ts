@@ -185,6 +185,16 @@ function renderAstroEslintConfig(options: EslintConfigOptions) {
     '    ...reactYouMightNotNeedAnEffect.configs.recommended,',
     "    files: ['**/*.{jsx,tsx}'],",
     '  },',
+    ...(options.motion
+      ? [
+          '  {',
+          "    files: ['src/components/common/motion-main.tsx'],",
+          '    rules: {',
+          "      'react-doctor/jsx-no-new-object-as-prop': 'off',",
+          '    },',
+          '  },',
+        ]
+      : []),
     '  {',
     "    files: ['**/*.{js,mjs,cjs,ts,mts,cts,jsx,tsx,astro}'],",
     options.registerImportPlugin ? '    plugins: {' : '',
