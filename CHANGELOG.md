@@ -1,5 +1,25 @@
 # purrfold
 
+## 0.7.4
+
+### Patch Changes
+
+- 73a9ebb: Make a freshly generated project pass its own `npm run check`.
+  
+  The scaffold already ran `lint:fix` and `format` as its last step, but a failing `shadcn mcp init` aborted the whole run before reaching them, shipping a project that failed its own quality gate. Wiring an MCP client is a convenience around a third-party CLI that hits the network and the app works without it, so a failure now warns and the run continues.
+  
+  Two template defects the aborted tail had been masking are fixed at the source: the Astro hero emitted its internal import before the external one with no blank line, violating the `import/order` rule the generated ESLint config itself enables, and `@types/canvas-confetti` was left behind when the starter's `canvas-confetti` dependency was removed, leaving a type package with no runtime package and no usage. `lint:fix` now also runs for Next projects, not only Astro.
+- fa5120c: Fix the Astro SSR + Cloudflare scaffold aborting on pnpm 11.
+  
+  `workerd` is now pre-approved in `allowBuilds` before `@astrojs/cloudflare` is ever resolved, and the build policy rewrites the `set this to true or false` placeholder pnpm 11 writes for an undecided build script instead of mistaking it for a decided entry. A deliberate `false` is preserved, and build scripts purrfold was not asked to approve are still left undecided rather than silently auto-approving an unvetted postinstall.
+  
+  The supply-chain hardening also moved to the end of the run. `minimumReleaseAge: 1440` used to land mid-scaffold, so every later `pnpm add` / `pnpm dlx` re-resolved under a 24-hour release floor and one freshly published transitive dependency could take down the rest of the run. Generated pnpm apps now also set `verifyDepsBeforeRun: false`: these policies are applied to a tree that was already resolved without them, and pnpm 11 otherwise re-validates the lockfile before *every* `pnpm run`, failing the app's own `lint`, `format` and `check` whenever any of its hundreds of packages is under a day old. Enforcement is unchanged — `pnpm install` still rejects a lockfile the policies refuse.
+- 92f222f: Load React Scan before React in generated Astro apps.
+  
+  The Astro layout injected it with `defer`, which postpones the script past React and guaranteed `[React Scan] Failed to load. Must import React Scan before React runs.` on every dev page load of a freshly generated project. The tag now carries neither `defer` nor `async`.
+  
+  The script URL also pins the `react-scan` version registered in `src/versions.json` instead of tracking whatever unpkg serves as latest, which is what produced the outdated `react-grab` warning alongside the error.
+
 ## 0.7.3
 
 ### Patch Changes
