@@ -770,8 +770,22 @@ export function assertGeneratedApp(projectRoot, expected) {
     assertIncludes(workspace, 'minimumReleaseAge:', 'pnpm-workspace.yaml');
     assertIncludes(workspace, 'trustPolicy: no-downgrade', 'pnpm-workspace.yaml');
     assertIncludes(workspace, 'trustPolicyExclude:', 'pnpm-workspace.yaml');
+    assertIncludes(workspace, 'verifyDepsBeforeRun: false', 'pnpm-workspace.yaml');
     assertIncludes(workspace, 'allowBuilds:', 'pnpm-workspace.yaml');
     assertIncludes(workspace, 'unrs-resolver: true', 'pnpm-workspace.yaml');
+
+    // pnpm 11 writes this placeholder for an undecided build script and then
+    // refuses to install, so any survivor is a scaffold that cannot be
+    // installed by the very pnpm version versions.json pins (issue #88).
+    if (workspace.includes('set this to true or false')) {
+      throw new Error(
+        `pnpm-workspace.yaml left a build script undecided:\n${workspace}`
+      );
+    }
+
+    if (expected.ssrAdapter === 'cloudflare') {
+      assertIncludes(workspace, 'workerd: true', 'pnpm-workspace.yaml');
+    }
   }
 
   if (expected.mcp && framework === 'next') {

@@ -4,7 +4,6 @@ import { getPackageManagerCommands } from '../package-manager.js';
 import {
   commitMsgHook,
   commitlintConfig,
-  astroRootLayout,
   gitAttributes,
   mergePnpmBuildPolicy,
   mergePnpmHardening,
@@ -14,6 +13,7 @@ import {
   prettierIgnore,
   renderAstroHomeHero,
   renderAstroHomePage,
+  renderAstroRootLayout,
   renderHomePage,
   renderPrettierConfig,
   renderReactDoctorConfig,
@@ -33,7 +33,10 @@ import {
   writeProjectPackageJson,
 } from './package-json.js';
 
-const astroStarterDependencies = ['@astrojs/mdx', 'canvas-confetti'];
+// `@types/canvas-confetti` rides along with the starter's confetti hero. The
+// shadcn preset replaces that component, so leaving the types behind meant a
+// dependency with no runtime package and no usage anywhere in src/.
+const astroStarterDependencies = ['@astrojs/mdx', 'canvas-confetti', '@types/canvas-confetti'];
 
 async function removeAstroStarterDependencies(projectRoot: string, executor: Executor) {
   const packageJson = await readProjectPackageJson(projectRoot, executor);
@@ -220,7 +223,10 @@ async function writeAppShell(
       path.join(projectRoot, 'src', 'pages', 'index.astro'),
       renderAstroHomePage(projectName, motion)
     );
-    await executor.writeFile(path.join(projectRoot, 'src', 'layouts', 'main.astro'), astroRootLayout);
+    await executor.writeFile(
+      path.join(projectRoot, 'src', 'layouts', 'main.astro'),
+      renderAstroRootLayout()
+    );
     return;
   }
 
@@ -290,13 +296,28 @@ export async function installQualityLayer(
 
   const iconLibrary = await reconcileIconLibrary(projectRoot, options, executor);
   await writeAppShell(projectRoot, executor, iconLibrary, options.framework, options.motion);
+}
 
-  // pnpm-only: merge the remaining supply-chain hardening after installs.
-  if (options.packageManager === 'pnpm') {
-    const workspacePath = path.join(projectRoot, 'pnpm-workspace.yaml');
-    const existing = (await executor.pathExists(workspacePath))
-      ? await executor.readFile(workspacePath)
-      : '';
-    await executor.writeFile(workspacePath, mergePnpmHardening(existing));
+/**
+ * pnpm-only supply-chain hardening, deliberately the last thing written.
+ * `minimumReleaseAge: 1440` makes pnpm reject any dependency published in the
+ * last 24 hours, and every later step that shells out to `pnpm add`/`pnpm dlx`
+ * — motion, testing, skills, shadcn MCP — re-resolves the tree under whatever
+ * is in this file. Writing it mid-run made a single freshly published
+ * transitive dependency abort the tail of the scaffold (issue #88).
+ */
+export async function installPnpmHardening(
+  projectRoot: string,
+  options: Pick<CreateOptions, 'packageManager'>,
+  executor: Executor
+) {
+  if (options.packageManager !== 'pnpm') {
+    return;
   }
+
+  const workspacePath = path.join(projectRoot, 'pnpm-workspace.yaml');
+  const existing = (await executor.pathExists(workspacePath))
+    ? await executor.readFile(workspacePath)
+    : '';
+  await executor.writeFile(workspacePath, mergePnpmHardening(existing));
 }

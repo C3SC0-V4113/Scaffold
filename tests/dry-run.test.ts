@@ -372,3 +372,43 @@ describe('dry-run integration', () => {
     });
   });
 });
+
+describe('pnpm supply-chain hardening ordering', () => {
+  it('writes the release-age floor after every step that resolves dependencies', async () => {
+    const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    await runCreate('my-app', {
+      pm: 'pnpm',
+      framework: 'astro',
+      ssr: true,
+      adapter: 'cloudflare',
+      mcp: true,
+      yes: true,
+      dryRun: true,
+    });
+
+    const output = log.mock.calls
+      .map((call) => call.join(' '))
+      .join('\n')
+      .replaceAll('\\', '/');
+    const lines = output.split('\n');
+    const lastIndexWhere = (matches: (line: string) => boolean) =>
+      lines.reduce((found, line, index) => (matches(line) ? index : found), -1);
+
+    const lastWorkspaceWrite = lastIndexWhere((line) =>
+      line.endsWith('my-app/pnpm-workspace.yaml')
+    );
+    const lastResolvingStep = lastIndexWhere(
+      (line) =>
+        line.includes('mcp init --client') ||
+        / (add|install)( |$)/.test(line.replace(/\(cwd .*\)$/, ''))
+    );
+
+    // minimumReleaseAge: 1440 makes pnpm reject anything published in the last
+    // 24h. Written mid-run it took down `shadcn mcp init` and everything after
+    // it, including the formatting pass and the self-check (issues #88, #90).
+    expect(lastWorkspaceWrite).toBeGreaterThan(-1);
+    expect(lastResolvingStep).toBeGreaterThan(-1);
+    expect(lastWorkspaceWrite).toBeGreaterThan(lastResolvingStep);
+  });
+});

@@ -8,7 +8,7 @@ import { installCiWorkflows } from '../installers/ci.js';
 import { installDocsAndClaude } from '../installers/docs.js';
 import { createNextApp } from '../installers/next.js';
 import { installMotion } from '../installers/motion.js';
-import { installQualityLayer } from '../installers/quality.js';
+import { installPnpmHardening, installQualityLayer } from '../installers/quality.js';
 import { installShadcnMcp } from '../installers/shadcn-mcp.js';
 import { initializeShadcn } from '../installers/shadcn.js';
 import { installSkills } from '../installers/skills.js';
@@ -224,15 +224,18 @@ export async function runCreate(targetDir: string, flags: RawCreateFlags) {
   await installDocsAndClaude(projectRoot, options, executor);
   await installShadcnMcp(projectRoot, options, executor);
 
-  // Normalize formatting of files emitted by create-next-app, shadcn, and the
-  // templates (line endings/quote style differ across tools and OSes) so the
-  // generated app is Prettier-clean, then run its own quality gate as a
-  // self-test. Both are skipped when no dependencies were installed (the gate
-  // would fail spuriously without Prettier/ESLint/etc.).
+  // Last write to pnpm-workspace.yaml: nothing after this point resolves
+  // dependencies, so the 24h release floor cannot break a later step.
+  await installPnpmHardening(projectRoot, options, executor);
+
+  // Normalize the files emitted by create-next-app, create-astro, `astro add`,
+  // shadcn and the templates: import order and line endings/quote style differ
+  // across tools and OSes, and the generated app has to satisfy its own lint
+  // and Prettier config out of the box. Then run its quality gate as a
+  // self-test. All of it is skipped when no dependencies were installed (the
+  // gate would fail spuriously without Prettier/ESLint/etc.).
   if (!(executor instanceof DryRunExecutor) && !options.skipInstall) {
-    if (options.framework === 'astro') {
-      await executor.run(options.packageManager, ['run', 'lint:fix'], { cwd: projectRoot });
-    }
+    await executor.run(options.packageManager, ['run', 'lint:fix'], { cwd: projectRoot });
     await executor.run(options.packageManager, ['run', 'format'], { cwd: projectRoot });
   }
 

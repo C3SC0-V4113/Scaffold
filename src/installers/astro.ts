@@ -3,7 +3,7 @@ import path from 'node:path';
 import { DryRunExecutor } from '../executor.js';
 import { getPackageManagerCommands } from '../package-manager.js';
 import { mergePnpmBuildPolicy } from '../templates/files.js';
-import type { CreateOptions, Executor } from '../types.js';
+import type { AstroServerAdapter, CreateOptions, Executor } from '../types.js';
 import { pinnedSpecifier } from './config-model.js';
 import { validateTargetDir } from './next.js';
 
@@ -20,6 +20,19 @@ const astroAdapterPackages = {
   netlify: '@astrojs/netlify',
   cloudflare: '@astrojs/cloudflare',
 } as const;
+
+/**
+ * Build scripts each adapter drags in that pnpm 11 refuses to run undecided.
+ * They have to be pre-approved before the adapter is installed, which is why
+ * this is applied in prepareAstroInstall rather than in the quality layer:
+ * installAstroAdapter runs `pnpm add` long before that layer writes anything.
+ */
+const astroAdapterPnpmBuilds: Record<AstroServerAdapter, string[]> = {
+  node: [],
+  vercel: [],
+  netlify: [],
+  cloudflare: ['workerd'],
+};
 
 type JsonObject = Record<string, unknown>;
 
@@ -305,7 +318,19 @@ export async function ensureAstroReactIntegration(
   }
 }
 
-async function prepareAstroInstall(
+function adapterPnpmBuilds(options: CreateOptions) {
+  if (!options.ssr || options.astroAdapter === undefined) {
+    return [];
+  }
+
+  return astroAdapterPnpmBuilds[options.astroAdapter];
+}
+
+/**
+ * Exported for testing: the build allowlist has to be on disk before the first
+ * install resolves anything, and that ordering is the whole point of the fix.
+ */
+export async function prepareAstroInstall(
   projectRoot: string,
   options: CreateOptions,
   executor: Executor
@@ -315,7 +340,10 @@ async function prepareAstroInstall(
     const existing = (await executor.pathExists(workspacePath))
       ? await executor.readFile(workspacePath)
       : '';
-    await executor.writeFile(workspacePath, mergePnpmBuildPolicy(existing));
+    await executor.writeFile(
+      workspacePath,
+      mergePnpmBuildPolicy(existing, adapterPnpmBuilds(options))
+    );
   }
 
   const install = getPackageManagerCommands(options.packageManager).install();

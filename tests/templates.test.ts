@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
+import versions from '../src/versions.json' with { type: 'json' };
+
 import { buildScripts } from '../src/installers/config-model.js';
 import { renderEslintConfig } from '../src/templates/eslint.js';
 import {
-  astroRootLayout,
   designDoc,
   gitAttributes,
   humanizeProjectName,
@@ -15,6 +16,7 @@ import {
   renderAgents,
   renderAstroHomeHero,
   renderAstroHomePage,
+  renderAstroRootLayout,
   renderPrettierConfig,
   renderReactDoctorConfig,
   renderVitestConfig,
@@ -99,12 +101,71 @@ allowBuilds:
     expect(config).toContain('unrs-resolver: true');
   });
 
+  it('decides the build scripts pnpm 11 left undecided', () => {
+    // pnpm 11 writes this placeholder and then treats it as a fatal error, so
+    // an entry that merely exists is not enough — the value has to be decided.
+    const config = mergePnpmBuildPolicy(
+      `allowBuilds:
+  esbuild: set this to true or false
+  workerd: set this to true or false
+`,
+      ['workerd']
+    );
+
+    expect(config).toContain('esbuild: true');
+    expect(config).toContain('workerd: true');
+    expect(config).not.toContain('set this to true or false');
+  });
+
+  it('leaves build scripts it was never asked to approve undecided', () => {
+    // Deciding an arbitrary placeholder would auto-approve a postinstall
+    // script nobody vetted. pnpm stopping on it is the intended outcome.
+    const config = mergePnpmBuildPolicy(
+      `allowBuilds:
+  some-unvetted-package: set this to true or false
+`
+    );
+
+    expect(config).toContain('some-unvetted-package: set this to true or false');
+  });
+
+  it('keeps a deliberate opt-out and stays idempotent', () => {
+    const optedOut = `allowBuilds:
+  esbuild: false
+  unrs-resolver: true
+`;
+
+    expect(mergePnpmBuildPolicy(optedOut)).toContain('esbuild: false');
+    expect(mergePnpmBuildPolicy(mergePnpmBuildPolicy(optedOut))).toBe(
+      mergePnpmBuildPolicy(optedOut)
+    );
+  });
+
+  it('pre-approves adapter-specific builds passed by the caller', () => {
+    const fresh = mergePnpmBuildPolicy('', ['workerd']);
+    const existing = mergePnpmBuildPolicy(
+      `allowBuilds:
+  esbuild: true
+`,
+      ['workerd']
+    );
+
+    expect(fresh).toContain('workerd: true');
+    expect(existing).toContain('workerd: true');
+    expect(existing.match(/esbuild: true/g)).toHaveLength(1);
+    expect(mergePnpmBuildPolicy('')).not.toContain('workerd');
+  });
+
   it('keeps pnpm trust hardening with exact transitive exceptions', () => {
     const config = mergePnpmHardening('');
 
     expect(config).toContain('trustPolicy: no-downgrade');
     expect(config).toContain("  - 'chokidar@4.0.3'");
     expect(config).toContain("  - 'semver@6.3.1'");
+    // The policies land on an already-resolved tree, so pnpm 11's implicit
+    // pre-script re-validation would fail `pnpm run lint:fix` (and the app's
+    // own `check`) whenever any installed package is younger than 24h.
+    expect(config).toContain('verifyDepsBeforeRun: false');
   });
 
   const options = {
@@ -302,15 +363,42 @@ allowBuilds:
     const page = renderAstroHomePage('my-app');
     const hero = renderAstroHomeHero('my-app');
 
+    const layout = renderAstroRootLayout();
+
     expect(page).toContain("import Layout from '../layouts/main.astro'");
     expect(hero).toContain("import { Button } from '@/components/ui/button'");
     expect(hero).toContain('<Button type="button">');
-    expect(astroRootLayout).toContain("import '../styles/global.css'");
-    expect(astroRootLayout).toContain('import.meta.env.DEV');
-    expect(astroRootLayout).toContain('is:inline');
-    expect(astroRootLayout).toContain('crossorigin="anonymous"');
-    expect(astroRootLayout).toContain('//unpkg.com/react-scan/dist/auto.global.js');
-    expect(astroRootLayout).toContain('<slot />');
+    expect(layout).toContain("import '../styles/global.css'");
+    expect(layout).toContain('import.meta.env.DEV');
+    expect(layout).toContain('is:inline');
+    expect(layout).toContain('crossorigin="anonymous"');
+    expect(layout).toContain('<slot />');
+  });
+
+  it('loads React Scan eagerly and pinned so it can patch React first', () => {
+    const layout = renderAstroRootLayout();
+
+    // `defer` (or `async`) postpones the script past React, which is exactly
+    // what made the generated dev server log "Must import React Scan before
+    // React runs" on every page load.
+    expect(layout).not.toContain('defer');
+    expect(layout).not.toContain('async');
+    expect(layout).toContain(
+      `//unpkg.com/react-scan@${versions.dependencies['react-scan']}/dist/auto.global.js`
+    );
+  });
+
+  it('orders the Astro hero imports the way the generated eslint config demands', () => {
+    const hero = renderAstroHomeHero('my-app');
+    const withMotion = renderAstroHomeHero('my-app', 'lucide', true);
+
+    // external group, blank line, then internal imports alphabetized by path.
+    expect(hero).toMatch(
+      /^import \{ Cat \} from 'lucide-react';\n\nimport \{ Button \} from '@\/components\/ui\/button';\n/
+    );
+    expect(withMotion).toMatch(
+      /^import \{ Cat \} from 'lucide-react';\n\nimport \{ MotionMain \} from '@\/components\/common\/motion-main';\nimport \{ Button \} from '@\/components\/ui\/button';\n/
+    );
   });
 
   it('hydrates the Astro React island only when Motion is enabled', () => {
