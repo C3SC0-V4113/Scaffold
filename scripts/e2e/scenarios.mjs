@@ -184,6 +184,34 @@ export const cliE2eScenarios = [
     quick: false,
   },
   {
+    // The combination that shipped issue #88 with no coverage at all: the only
+    // other real SSR scenario is npm + node, and neither half of that pair can
+    // reach the failure. Cloudflare is what pulls in workerd, and pnpm 11 is
+    // what turns an undecided build script into a fatal error rather than a
+    // warning — and versions.json pins generated apps to pnpm 11.
+    name: 'astro-pnpm-ssr-cloudflare',
+    kind: 'real',
+    framework: 'astro',
+    packageManager: 'pnpm',
+    execution: { requires: ['pnpm'] },
+    ssrAdapter: 'cloudflare',
+    args: [
+      '--framework',
+      'astro',
+      '--pm',
+      'pnpm',
+      '--ssr',
+      '--adapter',
+      'cloudflare',
+      '--unit',
+      '--no-e2e',
+      '--no-commitlint',
+      '--yes',
+    ],
+    expect: { unit: true, e2e: false, commitlint: false, pnpm: true, mcp: false },
+    quick: false,
+  },
+  {
     name: 'dry-run-defaults',
     kind: 'dry-run',
     packageManager: 'npm',

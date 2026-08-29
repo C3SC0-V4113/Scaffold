@@ -8,7 +8,7 @@ import { installCiWorkflows } from '../installers/ci.js';
 import { installDocsAndClaude } from '../installers/docs.js';
 import { createNextApp } from '../installers/next.js';
 import { installMotion } from '../installers/motion.js';
-import { installQualityLayer } from '../installers/quality.js';
+import { installPnpmHardening, installQualityLayer } from '../installers/quality.js';
 import { installShadcnMcp } from '../installers/shadcn-mcp.js';
 import { initializeShadcn } from '../installers/shadcn.js';
 import { installSkills } from '../installers/skills.js';
@@ -223,6 +223,10 @@ export async function runCreate(targetDir: string, flags: RawCreateFlags) {
   await installSkills(projectRoot, options, executor);
   await installDocsAndClaude(projectRoot, options, executor);
   await installShadcnMcp(projectRoot, options, executor);
+
+  // Last write to pnpm-workspace.yaml: nothing after this point resolves
+  // dependencies, so the 24h release floor cannot break a later step.
+  await installPnpmHardening(projectRoot, options, executor);
 
   // Normalize formatting of files emitted by create-next-app, shadcn, and the
   // templates (line endings/quote style differ across tools and OSes) so the

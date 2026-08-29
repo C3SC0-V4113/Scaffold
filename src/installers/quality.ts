@@ -290,13 +290,28 @@ export async function installQualityLayer(
 
   const iconLibrary = await reconcileIconLibrary(projectRoot, options, executor);
   await writeAppShell(projectRoot, executor, iconLibrary, options.framework, options.motion);
+}
 
-  // pnpm-only: merge the remaining supply-chain hardening after installs.
-  if (options.packageManager === 'pnpm') {
-    const workspacePath = path.join(projectRoot, 'pnpm-workspace.yaml');
-    const existing = (await executor.pathExists(workspacePath))
-      ? await executor.readFile(workspacePath)
-      : '';
-    await executor.writeFile(workspacePath, mergePnpmHardening(existing));
+/**
+ * pnpm-only supply-chain hardening, deliberately the last thing written.
+ * `minimumReleaseAge: 1440` makes pnpm reject any dependency published in the
+ * last 24 hours, and every later step that shells out to `pnpm add`/`pnpm dlx`
+ * — motion, testing, skills, shadcn MCP — re-resolves the tree under whatever
+ * is in this file. Writing it mid-run made a single freshly published
+ * transitive dependency abort the tail of the scaffold (issue #88).
+ */
+export async function installPnpmHardening(
+  projectRoot: string,
+  options: Pick<CreateOptions, 'packageManager'>,
+  executor: Executor
+) {
+  if (options.packageManager !== 'pnpm') {
+    return;
   }
+
+  const workspacePath = path.join(projectRoot, 'pnpm-workspace.yaml');
+  const existing = (await executor.pathExists(workspacePath))
+    ? await executor.readFile(workspacePath)
+    : '';
+  await executor.writeFile(workspacePath, mergePnpmHardening(existing));
 }

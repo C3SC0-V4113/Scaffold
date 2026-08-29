@@ -68,6 +68,13 @@ export function mergePnpmHardening(existing: string): string {
     ['minimumReleaseAge', 'minimumReleaseAge: 1440'],
     ['trustPolicy', 'trustPolicy: no-downgrade'],
     ['blockExoticSubdeps', 'blockExoticSubdeps: true'],
+    // These policies are applied to a tree that was already resolved without
+    // them, so pnpm 11's implicit pre-script check re-validates the lockfile
+    // and fails `pnpm run <anything>` the moment one of the hundreds of
+    // installed packages happens to be less than 24h old — including the
+    // scaffold's own lint, format and check steps. Enforcement is not
+    // weakened: `pnpm install` still rejects a lockfile the policies refuse.
+    ['verifyDepsBeforeRun', 'verifyDepsBeforeRun: false'],
   ];
 
   let content = existing.replace(/\s+$/, '');
@@ -100,8 +107,16 @@ export function mergePnpmHardening(existing: string): string {
   return `${content}\n`;
 }
 
-export function mergePnpmBuildPolicy(existing: string): string {
-  const required = ['esbuild', 'unrs-resolver'];
+/**
+ * Pre-approve the build scripts a generated app may run. An entry that merely
+ * *exists* is not enough: pnpm 11 writes `name: set this to true or false` for
+ * an undecided build and then treats that undecided state as a fatal error
+ * (pnpm 10 only warned), so every required entry has to carry a decided value.
+ * A deliberate `false` is left alone. `extra` carries the builds only some
+ * configurations pull in — `workerd` behind the Astro Cloudflare adapter.
+ */
+export function mergePnpmBuildPolicy(existing: string, extra: string[] = []): string {
+  const required = [...new Set(['esbuild', 'unrs-resolver', ...extra])];
   const lines = existing.replace(/\s+$/, '').split(/\r?\n/);
   const headerIndex = lines.findIndex((line) => /^allowBuilds\s*:/.test(line));
 
@@ -115,10 +130,24 @@ export function mergePnpmBuildPolicy(existing: string): string {
     blockEnd += 1;
   }
 
-  const block = lines.slice(headerIndex + 1, blockEnd);
-  const missing = required.filter(
-    (name) => !block.some((line) => new RegExp(`^\\s+${name}\\s*:`).test(line))
-  );
+  const missing: string[] = [];
+  for (const name of required) {
+    const entry = new RegExp(`^(\\s+)${name}\\s*:\\s*(.*)$`);
+    const entryIndex = lines.findIndex(
+      (line, index) => index > headerIndex && index < blockEnd && entry.test(line)
+    );
+
+    if (entryIndex === -1) {
+      missing.push(name);
+      continue;
+    }
+
+    const [, indent, value] = entry.exec(lines[entryIndex]) as RegExpExecArray;
+    if (value.trim() !== 'true' && value.trim() !== 'false') {
+      lines[entryIndex] = `${indent}${name}: true`;
+    }
+  }
+
   lines.splice(blockEnd, 0, ...missing.map((name) => `  ${name}: true`));
 
   return `${lines.join('\n')}\n`;

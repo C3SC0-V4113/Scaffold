@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   ensureAstroReactIntegration,
+  prepareAstroInstall,
   rewriteAstroConfigForAdapter,
   rewriteAstroTsconfigForShadcn,
 } from '../src/installers/astro.js';
@@ -280,5 +281,82 @@ describe('Astro React integration guard', () => {
     expect(executor.runs.map((entry) => entry.args.join(' '))).toEqual([
       'exec astro add react --yes',
     ]);
+  });
+});
+
+describe('Astro pnpm build allowlist', () => {
+  const projectRoot = path.join('/tmp', 'my-app');
+  const workspacePath = path.join(projectRoot, 'pnpm-workspace.yaml');
+
+  class RecordingExecutor implements Executor {
+    readonly operations: string[] = [];
+    readonly files = new Map<string, string>();
+
+    async run(command: string, args: string[]) {
+      this.operations.push(`run ${command} ${args.join(' ')}`);
+    }
+    async capture() {
+      return undefined;
+    }
+    async ensureDir() {}
+    async pathExists(filePath: string) {
+      return this.files.has(filePath);
+    }
+    async readFile(filePath: string) {
+      return this.files.get(filePath) ?? '';
+    }
+    async writeFile(filePath: string, content: string) {
+      this.operations.push(`write ${filePath}`);
+      this.files.set(filePath, content ?? '');
+    }
+    async writeJson() {}
+    async remove() {}
+    async symlinkOrJunction() {}
+  }
+
+  function astroOptions(overrides: Partial<CreateOptions>) {
+    return { packageManager: 'pnpm', framework: 'astro', ...overrides } as CreateOptions;
+  }
+
+  it('pre-approves workerd before the cloudflare adapter is ever resolved', async () => {
+    const executor = new RecordingExecutor();
+
+    await prepareAstroInstall(
+      projectRoot,
+      astroOptions({ ssr: true, astroAdapter: 'cloudflare' }),
+      executor
+    );
+
+    // pnpm 11 aborts on an undecided build script, and installAstroAdapter
+    // runs `pnpm add @astrojs/cloudflare` after this point (issue #88).
+    expect(executor.files.get(workspacePath)).toContain('workerd: true');
+    expect(executor.operations.indexOf(`write ${workspacePath}`)).toBeLessThan(
+      executor.operations.indexOf('run pnpm install')
+    );
+  });
+
+  it('does not approve workerd for adapters that never pull it in', async () => {
+    const node = new RecordingExecutor();
+    const ssg = new RecordingExecutor();
+
+    await prepareAstroInstall(projectRoot, astroOptions({ ssr: true, astroAdapter: 'node' }), node);
+    await prepareAstroInstall(projectRoot, astroOptions({ ssr: false }), ssg);
+
+    expect(node.files.get(workspacePath)).not.toContain('workerd');
+    expect(node.files.get(workspacePath)).toContain('esbuild: true');
+    expect(ssg.files.get(workspacePath)).not.toContain('workerd');
+  });
+
+  it('leaves the workspace file alone for npm', async () => {
+    const executor = new RecordingExecutor();
+
+    await prepareAstroInstall(
+      projectRoot,
+      astroOptions({ packageManager: 'npm', ssr: true, astroAdapter: 'cloudflare' }),
+      executor
+    );
+
+    expect(executor.files.has(workspacePath)).toBe(false);
+    expect(executor.operations).toEqual(['run npm install']);
   });
 });

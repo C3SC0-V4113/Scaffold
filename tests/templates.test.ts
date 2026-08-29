@@ -99,12 +99,71 @@ allowBuilds:
     expect(config).toContain('unrs-resolver: true');
   });
 
+  it('decides the build scripts pnpm 11 left undecided', () => {
+    // pnpm 11 writes this placeholder and then treats it as a fatal error, so
+    // an entry that merely exists is not enough — the value has to be decided.
+    const config = mergePnpmBuildPolicy(
+      `allowBuilds:
+  esbuild: set this to true or false
+  workerd: set this to true or false
+`,
+      ['workerd']
+    );
+
+    expect(config).toContain('esbuild: true');
+    expect(config).toContain('workerd: true');
+    expect(config).not.toContain('set this to true or false');
+  });
+
+  it('leaves build scripts it was never asked to approve undecided', () => {
+    // Deciding an arbitrary placeholder would auto-approve a postinstall
+    // script nobody vetted. pnpm stopping on it is the intended outcome.
+    const config = mergePnpmBuildPolicy(
+      `allowBuilds:
+  some-unvetted-package: set this to true or false
+`
+    );
+
+    expect(config).toContain('some-unvetted-package: set this to true or false');
+  });
+
+  it('keeps a deliberate opt-out and stays idempotent', () => {
+    const optedOut = `allowBuilds:
+  esbuild: false
+  unrs-resolver: true
+`;
+
+    expect(mergePnpmBuildPolicy(optedOut)).toContain('esbuild: false');
+    expect(mergePnpmBuildPolicy(mergePnpmBuildPolicy(optedOut))).toBe(
+      mergePnpmBuildPolicy(optedOut)
+    );
+  });
+
+  it('pre-approves adapter-specific builds passed by the caller', () => {
+    const fresh = mergePnpmBuildPolicy('', ['workerd']);
+    const existing = mergePnpmBuildPolicy(
+      `allowBuilds:
+  esbuild: true
+`,
+      ['workerd']
+    );
+
+    expect(fresh).toContain('workerd: true');
+    expect(existing).toContain('workerd: true');
+    expect(existing.match(/esbuild: true/g)).toHaveLength(1);
+    expect(mergePnpmBuildPolicy('')).not.toContain('workerd');
+  });
+
   it('keeps pnpm trust hardening with exact transitive exceptions', () => {
     const config = mergePnpmHardening('');
 
     expect(config).toContain('trustPolicy: no-downgrade');
     expect(config).toContain("  - 'chokidar@4.0.3'");
     expect(config).toContain("  - 'semver@6.3.1'");
+    // The policies land on an already-resolved tree, so pnpm 11's implicit
+    // pre-script re-validation would fail `pnpm run lint:fix` (and the app's
+    // own `check`) whenever any installed package is younger than 24h.
+    expect(config).toContain('verifyDepsBeforeRun: false');
   });
 
   const options = {
