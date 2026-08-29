@@ -33,7 +33,10 @@ import {
   writeProjectPackageJson,
 } from './package-json.js';
 
-const astroStarterDependencies = ['@astrojs/mdx', 'canvas-confetti'];
+// `@types/canvas-confetti` rides along with the starter's confetti hero. The
+// shadcn preset replaces that component, so leaving the types behind meant a
+// dependency with no runtime package and no usage anywhere in src/.
+const astroStarterDependencies = ['@astrojs/mdx', 'canvas-confetti', '@types/canvas-confetti'];
 
 async function removeAstroStarterDependencies(projectRoot: string, executor: Executor) {
   const packageJson = await readProjectPackageJson(projectRoot, executor);

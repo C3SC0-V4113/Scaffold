@@ -363,11 +363,11 @@ allowBuilds:
     const page = renderAstroHomePage('my-app');
     const hero = renderAstroHomeHero('my-app');
 
+    const layout = renderAstroRootLayout();
+
     expect(page).toContain("import Layout from '../layouts/main.astro'");
     expect(hero).toContain("import { Button } from '@/components/ui/button'");
     expect(hero).toContain('<Button type="button">');
-    const layout = renderAstroRootLayout();
-
     expect(layout).toContain("import '../styles/global.css'");
     expect(layout).toContain('import.meta.env.DEV');
     expect(layout).toContain('is:inline');
@@ -385,6 +385,19 @@ allowBuilds:
     expect(layout).not.toContain('async');
     expect(layout).toContain(
       `//unpkg.com/react-scan@${versions.dependencies['react-scan']}/dist/auto.global.js`
+    );
+  });
+
+  it('orders the Astro hero imports the way the generated eslint config demands', () => {
+    const hero = renderAstroHomeHero('my-app');
+    const withMotion = renderAstroHomeHero('my-app', 'lucide', true);
+
+    // external group, blank line, then internal imports alphabetized by path.
+    expect(hero).toMatch(
+      /^import \{ Cat \} from 'lucide-react';\n\nimport \{ Button \} from '@\/components\/ui\/button';\n/
+    );
+    expect(withMotion).toMatch(
+      /^import \{ Cat \} from 'lucide-react';\n\nimport \{ MotionMain \} from '@\/components\/common\/motion-main';\nimport \{ Button \} from '@\/components\/ui\/button';\n/
     );
   });
 

@@ -253,13 +253,19 @@ export function renderAstroHomeHero(
 ) {
   const appName = humanizeProjectName(projectName);
   const { importLine, markup } = getCatRender(iconLibrary);
+  // Internal imports sort ahead of the button by path: common/ before ui/.
   const motionImport = motionEnabled
-    ? "\nimport { MotionMain } from '@/components/common/motion-main';"
+    ? "import { MotionMain } from '@/components/common/motion-main';\n"
     : '';
   const mainTag = motionEnabled ? 'MotionMain' : 'main';
 
-  return `import { Button } from '@/components/ui/button';
-${importLine}${motionImport}
+  // External imports first, then a blank line, then internal ones in
+  // alphabetical order: the eslint config this scaffold writes enables
+  // import/order with newlines-between and alphabetize, and a generated
+  // project has to pass its own lint without a fixup pass first.
+  return `${importLine}
+
+${motionImport}import { Button } from '@/components/ui/button';
 
 export default function HomeHero() {
   return (
