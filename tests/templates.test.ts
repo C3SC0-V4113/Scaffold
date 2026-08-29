@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
+import versions from '../src/versions.json' with { type: 'json' };
+
 import { buildScripts } from '../src/installers/config-model.js';
 import { renderEslintConfig } from '../src/templates/eslint.js';
 import {
-  astroRootLayout,
   designDoc,
   gitAttributes,
   humanizeProjectName,
@@ -15,6 +16,7 @@ import {
   renderAgents,
   renderAstroHomeHero,
   renderAstroHomePage,
+  renderAstroRootLayout,
   renderPrettierConfig,
   renderReactDoctorConfig,
   renderVitestConfig,
@@ -364,12 +366,26 @@ allowBuilds:
     expect(page).toContain("import Layout from '../layouts/main.astro'");
     expect(hero).toContain("import { Button } from '@/components/ui/button'");
     expect(hero).toContain('<Button type="button">');
-    expect(astroRootLayout).toContain("import '../styles/global.css'");
-    expect(astroRootLayout).toContain('import.meta.env.DEV');
-    expect(astroRootLayout).toContain('is:inline');
-    expect(astroRootLayout).toContain('crossorigin="anonymous"');
-    expect(astroRootLayout).toContain('//unpkg.com/react-scan/dist/auto.global.js');
-    expect(astroRootLayout).toContain('<slot />');
+    const layout = renderAstroRootLayout();
+
+    expect(layout).toContain("import '../styles/global.css'");
+    expect(layout).toContain('import.meta.env.DEV');
+    expect(layout).toContain('is:inline');
+    expect(layout).toContain('crossorigin="anonymous"');
+    expect(layout).toContain('<slot />');
+  });
+
+  it('loads React Scan eagerly and pinned so it can patch React first', () => {
+    const layout = renderAstroRootLayout();
+
+    // `defer` (or `async`) postpones the script past React, which is exactly
+    // what made the generated dev server log "Must import React Scan before
+    // React runs" on every page load.
+    expect(layout).not.toContain('defer');
+    expect(layout).not.toContain('async');
+    expect(layout).toContain(
+      `//unpkg.com/react-scan@${versions.dependencies['react-scan']}/dist/auto.global.js`
+    );
   });
 
   it('hydrates the Astro React island only when Motion is enabled', () => {

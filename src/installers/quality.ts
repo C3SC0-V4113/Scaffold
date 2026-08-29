@@ -4,7 +4,6 @@ import { getPackageManagerCommands } from '../package-manager.js';
 import {
   commitMsgHook,
   commitlintConfig,
-  astroRootLayout,
   gitAttributes,
   mergePnpmBuildPolicy,
   mergePnpmHardening,
@@ -14,6 +13,7 @@ import {
   prettierIgnore,
   renderAstroHomeHero,
   renderAstroHomePage,
+  renderAstroRootLayout,
   renderHomePage,
   renderPrettierConfig,
   renderReactDoctorConfig,
@@ -220,7 +220,10 @@ async function writeAppShell(
       path.join(projectRoot, 'src', 'pages', 'index.astro'),
       renderAstroHomePage(projectName, motion)
     );
-    await executor.writeFile(path.join(projectRoot, 'src', 'layouts', 'main.astro'), astroRootLayout);
+    await executor.writeFile(
+      path.join(projectRoot, 'src', 'layouts', 'main.astro'),
+      renderAstroRootLayout()
+    );
     return;
   }
 

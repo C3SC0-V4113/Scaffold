@@ -329,7 +329,20 @@ import Layout from '../layouts/main.astro';
 `;
 }
 
-export const astroRootLayout = `---
+/**
+ * React Scan has to execute before React does — it patches React on the way in
+ * — so the tag carries neither `defer` nor `async`, and stays above anything
+ * that hydrates an island. Loading it deferred made every dev page log
+ * "Must import React Scan before React runs" (issue #89).
+ *
+ * The URL pins the same version src/versions.json registers instead of
+ * tracking whatever unpkg serves as latest, which is what produced the
+ * outdated react-grab warning alongside that error.
+ */
+export function renderAstroRootLayout() {
+  const reactScan = `react-scan@${versions.dependencies['react-scan']}`;
+
+  return `---
 import '../styles/global.css';
 ---
 
@@ -340,9 +353,8 @@ import '../styles/global.css';
     {import.meta.env.DEV && (
       <script
         is:inline
-        defer
         crossorigin="anonymous"
-        src="//unpkg.com/react-scan/dist/auto.global.js"
+        src="//unpkg.com/${reactScan}/dist/auto.global.js"
       ></script>
     )}
     <slot name="head" />
@@ -352,6 +364,7 @@ import '../styles/global.css';
   </body>
 </html>
 `;
+}
 
 export const reactDoctorConfig = `{
   "ignore": {
