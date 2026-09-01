@@ -1,5 +1,11 @@
 # purrfold
 
+## 0.7.5
+
+### Patch Changes
+
+- 2cd0ca9: Update generated-app dependency and toolchain pins to their latest compatible non-major releases.
+
 ## 0.7.4
 
 ### Patch Changes
