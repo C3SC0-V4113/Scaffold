@@ -184,11 +184,56 @@ export const cliE2eScenarios = [
     quick: false,
   },
   {
-    // The combination that shipped issue #88 with no coverage at all: the only
-    // other real SSR scenario is npm + node, and neither half of that pair can
-    // reach the failure. Cloudflare is what pulls in workerd, and pnpm 11 is
-    // what turns an undecided build script into a fatal error rather than a
-    // warning — and versions.json pins generated apps to pnpm 11.
+    name: 'astro-npm-ssr-vercel',
+    kind: 'real',
+    framework: 'astro',
+    packageManager: 'npm',
+    execution: { requires: ['npm'] },
+    ssrAdapter: 'vercel',
+    args: [
+      '--framework',
+      'astro',
+      '--pm',
+      'npm',
+      '--ssr',
+      '--adapter',
+      'vercel',
+      '--no-unit',
+      '--no-e2e',
+      '--no-commitlint',
+      '--yes',
+    ],
+    expect: { unit: false, e2e: false, commitlint: false, pnpm: false, mcp: false },
+    quick: false,
+  },
+  {
+    name: 'astro-npm-ssr-netlify',
+    kind: 'real',
+    framework: 'astro',
+    packageManager: 'npm',
+    execution: { requires: ['npm'] },
+    ssrAdapter: 'netlify',
+    args: [
+      '--framework',
+      'astro',
+      '--pm',
+      'npm',
+      '--ssr',
+      '--adapter',
+      'netlify',
+      '--no-unit',
+      '--no-e2e',
+      '--no-commitlint',
+      '--yes',
+    ],
+    expect: { unit: false, e2e: false, commitlint: false, pnpm: false, mcp: false },
+    quick: false,
+  },
+  {
+    // The combination that shipped issue #88 with no coverage at all: the npm
+    // SSR adapter scenarios cannot reach the failure. Cloudflare pulls in
+    // workerd, while pnpm 11 turns an undecided build script into a fatal error
+    // rather than a warning — and versions.json pins generated apps to pnpm 11.
     name: 'astro-pnpm-ssr-cloudflare',
     kind: 'real',
     framework: 'astro',

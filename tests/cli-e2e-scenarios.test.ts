@@ -174,6 +174,11 @@ describe('CLI E2E scenario definitions', () => {
       ])
     );
 
+    const realSsrAdapters = cliE2eScenarios
+      .filter((scenario) => scenario.kind === 'real' && scenario.framework === 'astro' && scenario.ssrAdapter)
+      .map((scenario) => scenario.ssrAdapter);
+    expect(new Set(realSsrAdapters)).toEqual(new Set(['node', 'vercel', 'netlify', 'cloudflare']));
+
     expect(selectScenarios({ framework: 'astro' }).every((scenario) => scenario.framework === 'astro')).toBe(
       true
     );
