@@ -22,6 +22,10 @@ import type { CreateOptions } from '../types.js';
  * - `eslint-plugin-astro` stays on v1: v2 peer-requires eslint >= 10, so it
  *   moves together with the eslint major (npm fails ERESOLVE on it; pnpm only
  *   warns, which is why only npm Astro scenarios caught it).
+ * - `vite` is pinned to the 7 line: it is the only major that both vitest and
+ *   @vitejs/plugin-react 5.1.x accept (plugin-react gains Vite 8 support in
+ *   5.2, which the Next line deliberately does not take). Moving vite past 7
+ *   means moving plugin-react first.
  * - astroOverrides['@vitejs/plugin-react']: Astro 7 installs Vite 8 and
  *   @astrojs/react 6 requires plugin-react 5.2+, while Next stays on the
  *   Vite-6-compatible line.
@@ -85,6 +89,7 @@ export const astroCoreDevDependencies = [
 
 export const unitDevDependencies = [
   'vitest',
+  'vite',
   '@vitejs/plugin-react',
   'vite-tsconfig-paths',
   'jsdom',
@@ -93,6 +98,16 @@ export const unitDevDependencies = [
   'eslint-plugin-testing-library',
   '@vitest/eslint-plugin',
 ];
+
+/**
+ * Unit-test dependencies a generated Astro app must not install, and why.
+ *
+ * - `vite`: Astro depends on Vite directly, so declaring it again would pin a
+ *   second, narrower range against the one Astro already resolved.
+ * - `vite-tsconfig-paths`: the Vite 8 Astro installs resolves tsconfig paths
+ *   natively, which renderVitestConfig('astro') uses instead.
+ */
+const ASTRO_UNIT_DEPENDENCY_EXCLUSIONS = new Set(['vite', 'vite-tsconfig-paths']);
 
 export const e2eDevDependencies = ['@playwright/test', '@types/node', 'eslint-plugin-playwright'];
 
@@ -106,7 +121,7 @@ export function buildDevDependencies(
 ) {
   const frameworkUnitDependencies =
     options.framework === 'astro'
-      ? unitDevDependencies.filter((name) => name !== 'vite-tsconfig-paths')
+      ? unitDevDependencies.filter((name) => !ASTRO_UNIT_DEPENDENCY_EXCLUSIONS.has(name))
       : unitDevDependencies;
 
   return [

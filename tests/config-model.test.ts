@@ -20,6 +20,7 @@ describe('quality config model', () => {
           'react-doctor',
           'react-scan',
           'vitest',
+          'vite',
           '@vitejs/plugin-react',
           'vite-tsconfig-paths',
           '@testing-library/react',
@@ -31,14 +32,19 @@ describe('quality config model', () => {
         ].map((name) => pinnedSpecifier(name))
       )
     );
-    expect(
-      buildDevDependencies({ framework: 'next', unit: true, e2e: false, commitlint: false }).some((dependency) =>
-        dependency === '@vitejs/plugin-react@6.0.2'
-      )
-    ).toBe(false);
-    expect(buildDevDependencies({ framework: 'next', unit: true, e2e: false, commitlint: false })).not.toEqual(
-      expect.arrayContaining(['vite@7.2.7'])
-    );
+    // @vitejs/plugin-react 6 pulled an unrequested vite into the toolchain, which
+    // is what put the plugin-react major behind a renovate rule. vite is now a
+    // declared dependency rather than a transitive accident, so the guard is that
+    // it stays on the major plugin-react 5.1.x peer-accepts, not that it is absent.
+    const nextUnitDeps = buildDevDependencies({
+      framework: 'next',
+      unit: true,
+      e2e: false,
+      commitlint: false,
+    });
+
+    expect(nextUnitDeps).not.toEqual(expect.arrayContaining(['@vitejs/plugin-react@6.0.2']));
+    expect(versions.dependencies.vite).toMatch(/^7./);
   });
 
   it('includes Astro-specific quality dependencies', () => {
@@ -56,6 +62,9 @@ describe('quality config model', () => {
     expect(deps).toContain(pinnedSpecifier('@vitejs/plugin-react', 'astro'));
     expect(deps).not.toContain(pinnedSpecifier('@vitejs/plugin-react'));
     expect(deps).not.toContain(pinnedSpecifier('vite-tsconfig-paths'));
+    // astro depends on Vite directly; declaring it again would pin a second,
+    // narrower range against the one Astro already resolved.
+    expect(deps).not.toContain(pinnedSpecifier('vite'));
   });
 
   it('omits optional dependency groups when disabled', () => {
