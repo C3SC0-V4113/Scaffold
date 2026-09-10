@@ -1,5 +1,32 @@
 # purrfold
 
+## 0.7.6
+
+### Patch Changes
+
+- 24692e2: Install `vite` explicitly in generated Next apps that have unit tests, pinned to the 7 line.
+  
+  Until now nothing declared Vite: it arrived because `vitest@4` listed it under `dependencies`. Vitest 5 moves it to a peer dependency, and generated apps install with `npm install --legacy-peer-deps` (added in 0.7.2 to get past the npm 10 resolver after `shadcn init`), which does not install peers. A Next app on Vitest 5 would therefore fail its own `npm run check` with `Cannot find package 'vite'`.
+  
+  The 7 line is the only major both Vitest and the pinned `@vitejs/plugin-react@5.1.x` accept — plugin-react gains Vite 8 support in 5.2, which the Next line deliberately does not take. That constraint is now enforced by a Renovate rule instead of being rediscovered later.
+  
+  Astro apps are untouched: `astro` depends on Vite directly, so declaring it again would pin a second, narrower range against the one Astro already resolved.
+- 918bdf1: Update generated-app dependency pins to their latest non-major releases.
+  
+  Worth naming in this batch: `astro` moves to `7.3.2` with `@astrojs/vercel` 11.0.10 and `@astrojs/cloudflare` 14.3.1; `react-doctor` and `eslint-plugin-react-doctor` move to `0.9.13` together, which is the only way they work; `lucide-react` picks up five minors of icons (1.38.0 to 1.43.0); `motion` reaches 13.2.0 and `@playwright/test` 1.63.0. `@types/node`, `lint-staged` and `typescript-eslint` follow their own lines, and the fallback `packageManager` pnpm moves to 11.26.0.
+- 411fe28: Update the fallback `packageManager` pnpm version to `12.3.4`.
+  
+  The scope is narrower than the major suggests: purrfold prefers the pnpm it can actually probe, so this value is only written when `pnpm --version` cannot be read — in practice, dry runs. A developer on pnpm 11 still gets `pnpm@11.x` in their generated `package.json`. The E2E matrix runs pnpm 10 via `pnpm/action-setup` and therefore does not exercise pnpm 12 itself; what it verifies is that the generated `packageManager` field stays a valid exact version.
+- 4700653: Update the `pnpm/action-setup` pin that generated CI workflows reference.
+  
+  It lands in `.github/workflows/` of every app scaffolded with `--ci`, so apps generated from here on run the current action instead of keeping a stale one forever. The SHA moves together with its version comment, as `tests/workflow-pinning.test.ts` requires.
+- 79d8838: Update `prettier-plugin-astro` to its first stable major in generated Astro apps.
+  
+  It only changes how Prettier formats `.astro` files, so the blast radius is the generated project's `format` script and the `--check` inside its own quality gate. Every Astro E2E scenario passes on it, including the three that run the generated app's `npm run check`.
+- aaa6f58: Update `vitest` to v5 in generated apps with unit tests.
+  
+  Vitest 5 stopped shipping `vite` as a direct dependency, which is why this bump needed `vite` declared explicitly first: generated apps install with `--legacy-peer-deps`, and npm does not install peers under that flag.
+
 ## 0.7.5
 
 ### Patch Changes
