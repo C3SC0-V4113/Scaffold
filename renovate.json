@@ -94,6 +94,13 @@
       "enabled": false
     },
     {
+      "description": "vite is the unit-test toolchain of generated Next apps, and @vitejs/plugin-react 5.1.x (held below 5.2 by the rule above) peer-requires vite <= 7. Taking vite 8 here would install a Vite the pinned plugin does not claim to support. Unblock together with the plugin-react major.",
+      "matchFileNames": ["src/versions.json"],
+      "matchDepNames": ["vite"],
+      "matchUpdateTypes": ["major"],
+      "enabled": false
+    },
+    {
       "description": "Next/common generated apps require @vitejs/plugin-react below 5.2; Astro has its own override and may update independently.",
       "matchFileNames": ["src/versions.json"],
       "matchDepNames": ["@vitejs/plugin-react"],
