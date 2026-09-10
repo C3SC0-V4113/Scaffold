@@ -495,11 +495,23 @@ allowBuilds:
     expect(humanizeProjectName('app')).toBe('App');
   });
 
+  // Action refs are redacted before snapshotting. Which action runs, and where, is a
+  // template decision worth reviewing as a diff; which version it is pinned to is
+  // Renovate's to move, and it moves in src/versions.json, where no snapshot can
+  // follow it. Keeping the literal ref here made every pin bump fail `check` on a
+  // pull request no human wrote — pnpm/action-setup v6.0.10 -> v6.1.0 is the bump
+  // that surfaced it. The pins themselves stay asserted elsewhere: workflows.test.ts
+  // requires every referenced action to be registered in src/versions.json, and
+  // workflow-pinning.test.ts requires third-party actions to carry a SHA plus a
+  // version comment.
+  const redactActionRefs = (yaml: string) =>
+    yaml.replace(/(uses: [^@\s]+)@\S+(?: # .*)?/g, '$1@<pinned>');
+
   // Structural guarantees live in workflows.test.ts; these snapshots exist so a
   // template edit shows up as a reviewable YAML diff.
   it.each(['npm', 'pnpm', 'bun'])('snapshots the %s workflows', (packageManager) => {
-    expect(renderQualityWorkflow(packageManager)).toMatchSnapshot();
-    expect(renderPlaywrightWorkflow(packageManager)).toMatchSnapshot();
+    expect(redactActionRefs(renderQualityWorkflow(packageManager))).toMatchSnapshot();
+    expect(redactActionRefs(renderPlaywrightWorkflow(packageManager))).toMatchSnapshot();
   });
 
   it('snapshots Claude hooks', () => {
