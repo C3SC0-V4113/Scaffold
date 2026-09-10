@@ -251,12 +251,26 @@ jobs:
       contents: read
       issues: write
     steps:
-      - name: Open an issue for the failed nightly run
+      # One issue per outage, not one per night. What takes the nightly down is
+      # almost always upstream drift or a registry incident, and that persists for
+      # days; opening a fresh issue every morning buries the one somebody is
+      # already working in and makes the backlog lie about how many things are
+      # broken. Subsequent failures comment on the open issue instead, so the
+      # issue's age is the length of the outage.
+      - name: Report the failed nightly run
         if: contains(needs.*.result, 'failure')
         env:
           GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
-          gh issue create \
-            --repo "$GITHUB_REPOSITORY" \
-            --title "Nightly E2E failure ($(date -u +%F))" \
-            --body "The nightly CLI E2E run failed, likely due to upstream drift (create-next-app@latest, shadcn@latest, or a registry change) since no code changed. Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          set -euo pipefail
+
+          today="$(date -u +%F)"
+          cause="likely upstream drift (create-next-app@latest, shadcn@latest, or a registry change) since no code changed"
+          existing="$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --search 'in:title "Nightly E2E failure"' --json number --jq '.[0].number // empty')"
+
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --repo "$GITHUB_REPOSITORY" --body "Still failing on $today — $cause. Run: $RUN_URL"
+          else
+            gh issue create --repo "$GITHUB_REPOSITORY" --title "Nightly E2E failure ($today)" --body "The nightly CLI E2E run failed, $cause. Run: $RUN_URL"
+          fi
