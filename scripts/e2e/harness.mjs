@@ -510,8 +510,14 @@ export function assertGeneratedApp(projectRoot, expected) {
   const readme = readFileSync(path.join(projectRoot, 'README.md'), 'utf8');
   const agents = readFileSync(path.join(projectRoot, 'AGENTS.md'), 'utf8');
   const claude = readFileSync(path.join(projectRoot, 'CLAUDE.md'), 'utf8');
+  const globalStylesheet = framework === 'astro' ? 'src/styles/global.css' : 'app/globals.css';
 
   assertPath(projectRoot, 'DESIGN.md');
+  assertIncludes(
+    readFileSync(path.join(projectRoot, 'DESIGN.md'), 'utf8'),
+    `\`${globalStylesheet}\``,
+    'DESIGN.md'
+  );
   assertPath(projectRoot, '.claude/hooks/react-doctor.ps1');
   assertPath(projectRoot, '.claude/hooks/project-min-evaluation.ps1');
   assertPath(projectRoot, '.claude/settings.json');
@@ -593,7 +599,6 @@ export function assertGeneratedApp(projectRoot, expected) {
     assertIncludes(skillsScript, '--skill motion-framer', 'skills.sh');
     const motionComponent =
       framework === 'astro' ? 'src/components/common/motion-main.tsx' : 'components/common/motion-main.tsx';
-    const globalStylesheet = framework === 'astro' ? 'src/styles/global.css' : 'app/globals.css';
     assertPath(projectRoot, motionComponent);
     assertIncludes(
       readFileSync(path.join(projectRoot, globalStylesheet), 'utf8'),

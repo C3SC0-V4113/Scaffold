@@ -5,7 +5,6 @@ import versions from '../src/versions.json' with { type: 'json' };
 import { buildScripts } from '../src/installers/config-model.js';
 import { renderEslintConfig } from '../src/templates/eslint.js';
 import {
-  designDoc,
   gitAttributes,
   humanizeProjectName,
   mergePnpmBuildPolicy,
@@ -17,6 +16,7 @@ import {
   renderAstroHomeHero,
   renderAstroHomePage,
   renderAstroRootLayout,
+  renderDesignDoc,
   renderPrettierConfig,
   renderReactDoctorConfig,
   renderVitestConfig,
@@ -185,7 +185,7 @@ allowBuilds:
 
   it('snapshots generated docs', () => {
     expect(renderReadme(options)).toMatchSnapshot();
-    expect(designDoc).toMatchSnapshot();
+    expect(renderDesignDoc('next')).toMatchSnapshot();
     expect(renderAgents(options)).toMatchSnapshot();
   });
 
@@ -194,6 +194,13 @@ allowBuilds:
 
     expect(renderReadme(astroOptions)).toMatchSnapshot();
     expect(renderAgents(astroOptions)).toMatchSnapshot();
+    expect(renderDesignDoc('astro')).toMatchSnapshot();
+  });
+
+  it('points DESIGN.md at the stylesheet each framework actually generates', () => {
+    expect(renderDesignDoc('next')).toContain('`app/globals.css`');
+    expect(renderDesignDoc('astro')).toContain('`src/styles/global.css`');
+    expect(renderDesignDoc('astro')).not.toContain('app/globals.css');
   });
 
   it('snapshots ESLint and React Doctor config', () => {

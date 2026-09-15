@@ -936,7 +936,13 @@ npx purrfold@latest my-app --shadcn-args --preset b5eH0WVTX --yes
 `;
 }
 
-export const designDoc = `# Design Standard
+/** The Tailwind entry stylesheet each framework's scaffold generates, relative to the app root. */
+export function globalStylesheetPath(framework: CreateOptions['framework']) {
+  return framework === 'astro' ? 'src/styles/global.css' : 'app/globals.css';
+}
+
+export function renderDesignDoc(framework: CreateOptions['framework']) {
+  return `# Design Standard
 
 This file is the UI/UX source of truth for this app.
 
@@ -944,7 +950,7 @@ This file is the UI/UX source of truth for this app.
 
 - Build the actual product surface first; avoid marketing-only landing pages.
 - Prefer dense, calm, scannable layouts for operational tools.
-- Use semantic tokens from \`app/globals.css\`.
+- Use semantic tokens from \`${globalStylesheetPath(framework)}\`.
 - Keep loading, empty, error, and partial-data states explicit.
 - Make controls accessible, keyboard reachable, and clearly labeled.
 
@@ -960,6 +966,7 @@ This file is the UI/UX source of truth for this app.
 - Use subtle transitions only when they clarify state.
 - Respect reduced-motion preferences for non-trivial animation.
 `;
+}
 
 function renderMotionGuide(options: Pick<CreateOptions, 'framework' | 'motion'>) {
   if (!options.motion) {
