@@ -2,6 +2,7 @@ import versions from '../versions.json' with { type: 'json' };
 
 import type { CreateOptions, IconLibrary, PackageManager } from '../types.js';
 import { getCatRender } from './icons.js';
+import { testReportDirs } from './ignores.js';
 
 export const prettierConfig = `{
   "semi": true,
@@ -53,6 +54,17 @@ package-lock.json
 # already excluded from ESLint and React Doctor; ignore the whole tree so Prettier
 # never churns third-party skill content or drifts on per-skill folder names.
 .agents
+# Agent tooling state. Prettier reads neither .git/info/exclude nor nested
+# .gitignore files such as the one inside .codegraph, so list it here.
+.claude
+.codegraph
+.atl
+.react-scan
+# Test reports; Playwright's HTML report bundles minified trace-viewer scripts.
+${testReportDirs.join('\n')}
+# A CLAUDE.md symlink checks out on Windows as a text file without a trailing
+# newline, which Prettier would rewrite.
+CLAUDE.md
 `;
 
 export const gitAttributes = `* text=auto eol=lf
@@ -372,53 +384,36 @@ import '../styles/global.css';
 `;
 }
 
-export const reactDoctorConfig = `{
-  "ignore": {
-    "files": [".agents/**", ".claude/**", "components/ui/**"],
-    "overrides": [
-      {
-        "files": ["lib/utils.ts"],
-        "rules": ["deslop/unused-file", "knip/exports", "exports"]
-      }
-    ]
-  }
-}
-`;
-
 export function renderReactDoctorConfig(
   framework: CreateOptions['framework'],
   motion = false
 ) {
-  if (framework !== 'astro' && !motion) {
-    return reactDoctorConfig;
-  }
-
-  if (framework !== 'astro') {
-    // React Doctor 0.5.4 reports require-reduced-motion for Next App Router
-    // even when app/globals.css contains the media query and the Motion wrapper
-    // calls useReducedMotion(). Keep both real safeguards and suppress only
-    // that verified false positive until the detector recognizes them.
-    return `{
-  "ignore": {
-    "rules": ["react-doctor/require-reduced-motion"],
-    "files": [".agents/**", ".claude/**", "components/ui/**"],
-    "overrides": [
-      {
-        "files": ["lib/utils.ts"],
-        "rules": ["deslop/unused-file", "knip/exports", "exports"]
-      }
-    ]
-  }
-}
-`;
-  }
+  const sourceRoot = framework === 'astro' ? 'src/' : '';
+  // React Doctor already skips build output and most dot directories, but not
+  // test reports: Playwright's bundles minified trace-viewer scripts.
+  const ignoredFiles = [
+    '.agents/**',
+    '.claude/**',
+    `${sourceRoot}components/ui/**`,
+    ...testReportDirs.map((dir) => `${dir}/**`),
+  ];
+  // React Doctor 0.5.4 reports require-reduced-motion for Next App Router
+  // even when app/globals.css contains the media query and the Motion wrapper
+  // calls useReducedMotion(). Keep both real safeguards and suppress only
+  // that verified false positive until the detector recognizes them.
+  const ignoredRules =
+    framework !== 'astro' && motion
+      ? '    "rules": ["react-doctor/require-reduced-motion"],\n'
+      : '';
 
   return `{
   "ignore": {
-    "files": [".agents/**", ".claude/**", "src/components/ui/**"],
+${ignoredRules}    "files": [
+${ignoredFiles.map((file) => `      "${file}"`).join(',\n')}
+    ],
     "overrides": [
       {
-        "files": ["src/lib/utils.ts"],
+        "files": ["${sourceRoot}lib/utils.ts"],
         "rules": ["deslop/unused-file", "knip/exports", "exports"]
       }
     ]
@@ -426,6 +421,8 @@ export function renderReactDoctorConfig(
 }
 `;
 }
+
+export const reactDoctorConfig = renderReactDoctorConfig('next');
 
 // .mjs + ESM syntax on purpose: Astro apps set "type": "module", so a
 // commitlint.config.js with module.exports crashes there, while Next apps

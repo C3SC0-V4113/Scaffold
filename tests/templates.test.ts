@@ -11,6 +11,7 @@ import {
   mergePnpmHardening,
   motionMainComponent,
   motionMainUnitTest,
+  prettierIgnore,
   reactDoctorConfig,
   renderAgents,
   renderAstroHomeHero,
@@ -67,17 +68,77 @@ describe('template snapshots', () => {
       ignore: { files: string[] };
     };
 
+    const nextMotionConfig = JSON.parse(renderReactDoctorConfig('next', true)) as {
+      ignore: { files: string[] };
+    };
+    const testReports = ['playwright-report/**', 'test-results/**', 'blob-report/**'];
+
     expect(gitAttributes).not.toMatch(/linguist-(?:vendored|generated)/);
     expect(nextConfig.ignore.files).toEqual([
       '.agents/**',
       '.claude/**',
       'components/ui/**',
+      ...testReports,
     ]);
+    expect(nextMotionConfig.ignore.files).toEqual(nextConfig.ignore.files);
     expect(astroConfig.ignore.files).toEqual([
       '.agents/**',
       '.claude/**',
       'src/components/ui/**',
+      ...testReports,
     ]);
+  });
+
+  it('keeps agent state, test reports, and the CLAUDE.md pointer out of Prettier', () => {
+    const entries = prettierIgnore.split('\n');
+
+    for (const entry of [
+      '.agents',
+      '.claude',
+      '.codegraph',
+      '.atl',
+      '.react-scan',
+      'playwright-report',
+      'test-results',
+      'blob-report',
+      'CLAUDE.md',
+    ]) {
+      expect(entries).toContain(entry);
+    }
+  });
+
+  it('keeps agent state and test reports out of ESLint', () => {
+    for (const framework of ['next', 'astro'] as const) {
+      const config = renderEslintConfig({ framework, unit: true, e2e: true });
+
+      for (const entry of [
+        '.codegraph/**',
+        '.atl/**',
+        '.react-scan/**',
+        'playwright-report/**',
+        'test-results/**',
+        'blob-report/**',
+      ]) {
+        expect(config).toContain(`    '${entry}',`);
+      }
+      expect(config).not.toContain('worker-configuration.d.ts');
+    }
+  });
+
+  it('ignores the wrangler-generated worker types only for the Astro Cloudflare adapter', () => {
+    const astro = { framework: 'astro' as const, unit: false, e2e: false };
+
+    expect(renderEslintConfig({ ...astro, ssr: true, astroAdapter: 'cloudflare' })).toContain(
+      "    'worker-configuration.d.ts',"
+    );
+    for (const astroAdapter of ['node', 'vercel', 'netlify'] as const) {
+      expect(renderEslintConfig({ ...astro, ssr: true, astroAdapter })).not.toContain(
+        'worker-configuration.d.ts'
+      );
+    }
+    expect(renderEslintConfig({ ...astro, ssr: false, astroAdapter: 'cloudflare' })).not.toContain(
+      'worker-configuration.d.ts'
+    );
   });
 
   it('suppresses only React Doctor 0.5.4 reduced-motion false positives for Motion projects', () => {

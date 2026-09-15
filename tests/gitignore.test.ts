@@ -60,7 +60,17 @@ async function renderGitIgnore(
   return (executor.files.get(gitIgnorePath) ?? '').split('\n');
 }
 
-const baseEntries = ['.claude/skills/', '.react-scan/', 'playwright-report/', 'test-results/'];
+const baseEntries = [
+  '.claude/skills/',
+  '.claude/worktrees/',
+  '.claude/settings.local.json',
+  '.codegraph/',
+  '.atl/',
+  '.react-scan/',
+  'playwright-report/',
+  'test-results/',
+  'blob-report/',
+];
 const cloudflareEntries = ['.wrangler/', '.dev.vars', 'worker-configuration.d.ts'];
 
 describe('generated .gitignore', () => {

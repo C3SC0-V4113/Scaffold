@@ -451,10 +451,14 @@ const eslintConfig = defineConfig([
     'next-env.d.ts',
     '.agents/**',
     '.claude/**',
+    '.codegraph/**',
+    '.atl/**',
+    '.react-scan/**',
     'components/ui/**',
     'coverage/**',
     'playwright-report/**',
     'test-results/**',
+    'blob-report/**',
   ]),
 ]);
 export default eslintConfig;
@@ -464,7 +468,14 @@ export default eslintConfig;
 exports[`template snapshots > snapshots ESLint and React Doctor config 2`] = `
 "{
   "ignore": {
-    "files": [".agents/**", ".claude/**", "components/ui/**"],
+    "files": [
+      ".agents/**",
+      ".claude/**",
+      "components/ui/**",
+      "playwright-report/**",
+      "test-results/**",
+      "blob-report/**"
+    ],
     "overrides": [
       {
         "files": ["lib/utils.ts"],
@@ -968,10 +979,14 @@ const eslintConfig = defineConfig([
     'next-env.d.ts',
     '.agents/**',
     '.claude/**',
+    '.codegraph/**',
+    '.atl/**',
+    '.react-scan/**',
     'components/ui/**',
     'coverage/**',
     'playwright-report/**',
     'test-results/**',
+    'blob-report/**',
   ]),
 ]);
 export default eslintConfig;

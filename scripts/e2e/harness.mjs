@@ -548,7 +548,17 @@ export function assertGeneratedApp(projectRoot, expected) {
   const gitIgnoreEntries = readFileSync(path.join(projectRoot, '.gitignore'), 'utf8')
     .split(/\r?\n/)
     .map((line) => line.trim());
-  for (const entry of ['.claude/skills/', '.react-scan/', 'playwright-report/', 'test-results/']) {
+  for (const entry of [
+    '.claude/skills/',
+    '.claude/worktrees/',
+    '.claude/settings.local.json',
+    '.codegraph/',
+    '.atl/',
+    '.react-scan/',
+    'playwright-report/',
+    'test-results/',
+    'blob-report/',
+  ]) {
     if (!gitIgnoreEntries.includes(entry)) {
       throw new Error(`.gitignore should ignore ${entry}`);
     }
@@ -562,12 +572,35 @@ export function assertGeneratedApp(projectRoot, expected) {
       throw new Error(`.gitignore should not ignore ${entry} without the Cloudflare adapter`);
     }
   }
+  // ESLint lints the wrangler-generated worker types unless told otherwise, and
+  // the generated lint script runs with --max-warnings 0.
+  const eslintIgnoresWorkerTypes = eslintConfig.includes("'worker-configuration.d.ts'");
+  if (expected.ssrAdapter === 'cloudflare' && !eslintIgnoresWorkerTypes) {
+    throw new Error('eslint.config.mjs should ignore worker-configuration.d.ts for the Cloudflare adapter');
+  }
+  if (expected.ssrAdapter !== 'cloudflare' && eslintIgnoresWorkerTypes) {
+    throw new Error('eslint.config.mjs should not ignore worker-configuration.d.ts without the Cloudflare adapter');
+  }
+
+  // Prettier reads only the root .gitignore and .prettierignore, so agent state
+  // and test reports need their own entries here.
+  const prettierIgnoreEntries = readFileSync(path.join(projectRoot, '.prettierignore'), 'utf8')
+    .split(/\r?\n/)
+    .map((line) => line.trim());
+  for (const entry of ['.claude', '.codegraph', '.atl', 'playwright-report', 'test-results', 'CLAUDE.md']) {
+    if (!prettierIgnoreEntries.includes(entry)) {
+      throw new Error(`.prettierignore should ignore ${entry}`);
+    }
+  }
 
   const doctorIgnoredFiles = doctorConfig.ignore?.files ?? [];
   for (const ignoredPath of [
     '.agents/**',
     '.claude/**',
     framework === 'astro' ? 'src/components/ui/**' : 'components/ui/**',
+    'playwright-report/**',
+    'test-results/**',
+    'blob-report/**',
   ]) {
     if (!doctorIgnoredFiles.includes(ignoredPath)) {
       throw new Error(`doctor.config.json should ignore ${ignoredPath}`);
