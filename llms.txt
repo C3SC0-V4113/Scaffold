@@ -1,7 +1,8 @@
 # purrfold
 
 > purrfold is a CLI that scaffolds a production-ready frontend app with shadcn,
-> strict quality tooling (ESLint, Prettier, React Doctor, React Scan), agent
+> strict quality tooling (ESLint with `@shadcn/lint` design system rules,
+> Prettier, React Doctor, React Scan), agent
 > docs, Claude hooks, and optional unit (Vitest) / e2e (Playwright) / commitlint /
 > GitHub Actions CI.
 > It starts from `create-next-app@latest` or `create-astro@latest`. No install needed — run it with `npx`.

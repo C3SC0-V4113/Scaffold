@@ -11,7 +11,7 @@ import {
   PURRFOLD_MANAGED_BEGIN,
   PURRFOLD_MANAGED_END,
 } from '../src/installers/docs.js';
-import { designDoc, renderAgents, renderReadme } from '../src/templates/files.js';
+import { renderAgents, renderDesignDoc, renderReadme } from '../src/templates/files.js';
 import type { CreateOptions } from '../src/types.js';
 
 const roots: string[] = [];
@@ -61,7 +61,7 @@ describe('generated documentation installer', () => {
     expect(await readFile(path.join(root, 'README.md'), 'utf8')).toBe(renderReadme(createOptions));
     expect(await readFile(path.join(root, 'AGENTS.md'), 'utf8')).toBe(renderAgents(createOptions));
     expect(await readFile(path.join(root, 'CLAUDE.md'), 'utf8')).toBe('@AGENTS.md\n');
-    expect(await readFile(path.join(root, 'DESIGN.md'), 'utf8')).toBe(designDoc);
+    expect(await readFile(path.join(root, 'DESIGN.md'), 'utf8')).toBe(renderDesignDoc('next'));
     await expect(
       readFile(path.join(root, '.claude', 'hooks', 'react-doctor.ps1'))
     ).resolves.toBeTruthy();
@@ -130,6 +130,7 @@ describe('generated documentation installer', () => {
     );
     expect(firstAgents).toMatch(/^<!-- BEGIN:purrfold-managed -->/);
     expect(firstAgents).toContain('# This is an Astro scaffold');
+    expect(await readFile(path.join(root, 'DESIGN.md'), 'utf8')).toBe(renderDesignDoc('astro'));
     expect(firstAgents).toContain('## Quality Gates');
     expect(occurrences(firstAgents, PURRFOLD_MANAGED_BEGIN)).toBe(1);
     expect(occurrences(firstAgents, PURRFOLD_MANAGED_END)).toBe(1);

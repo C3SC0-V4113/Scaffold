@@ -19,6 +19,7 @@ describe('quality config model', () => {
         [
           'react-doctor',
           'react-scan',
+          '@shadcn/lint',
           'vitest',
           'vite',
           '@vitejs/plugin-react',
@@ -52,9 +53,13 @@ describe('quality config model', () => {
 
     expect(deps).toEqual(
       expect.arrayContaining(
-        ['eslint-plugin-astro', 'typescript-eslint', 'prettier-plugin-astro', '@astrojs/check'].map(
-          (name) => pinnedSpecifier(name)
-        )
+        [
+          'eslint-plugin-astro',
+          'typescript-eslint',
+          'prettier-plugin-astro',
+          '@astrojs/check',
+          '@shadcn/lint',
+        ].map((name) => pinnedSpecifier(name))
       )
     );
     expect(deps).not.toContain(pinnedSpecifier('eslint-config-next'));

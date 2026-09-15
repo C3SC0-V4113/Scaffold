@@ -2,6 +2,7 @@ import versions from '../versions.json' with { type: 'json' };
 
 import type { CreateOptions, IconLibrary, PackageManager } from '../types.js';
 import { getCatRender } from './icons.js';
+import { testReportDirs } from './ignores.js';
 
 export const prettierConfig = `{
   "semi": true,
@@ -53,6 +54,17 @@ package-lock.json
 # already excluded from ESLint and React Doctor; ignore the whole tree so Prettier
 # never churns third-party skill content or drifts on per-skill folder names.
 .agents
+# Agent tooling state. Prettier reads neither .git/info/exclude nor nested
+# .gitignore files such as the one inside .codegraph, so list it here.
+.claude
+.codegraph
+.atl
+.react-scan
+# Test reports; Playwright's HTML report bundles minified trace-viewer scripts.
+${testReportDirs.join('\n')}
+# A CLAUDE.md symlink checks out on Windows as a text file without a trailing
+# newline, which Prettier would rewrite.
+CLAUDE.md
 `;
 
 export const gitAttributes = `* text=auto eol=lf
@@ -372,53 +384,36 @@ import '../styles/global.css';
 `;
 }
 
-export const reactDoctorConfig = `{
-  "ignore": {
-    "files": [".agents/**", ".claude/**", "components/ui/**"],
-    "overrides": [
-      {
-        "files": ["lib/utils.ts"],
-        "rules": ["deslop/unused-file", "knip/exports", "exports"]
-      }
-    ]
-  }
-}
-`;
-
 export function renderReactDoctorConfig(
   framework: CreateOptions['framework'],
   motion = false
 ) {
-  if (framework !== 'astro' && !motion) {
-    return reactDoctorConfig;
-  }
-
-  if (framework !== 'astro') {
-    // React Doctor 0.5.4 reports require-reduced-motion for Next App Router
-    // even when app/globals.css contains the media query and the Motion wrapper
-    // calls useReducedMotion(). Keep both real safeguards and suppress only
-    // that verified false positive until the detector recognizes them.
-    return `{
-  "ignore": {
-    "rules": ["react-doctor/require-reduced-motion"],
-    "files": [".agents/**", ".claude/**", "components/ui/**"],
-    "overrides": [
-      {
-        "files": ["lib/utils.ts"],
-        "rules": ["deslop/unused-file", "knip/exports", "exports"]
-      }
-    ]
-  }
-}
-`;
-  }
+  const sourceRoot = framework === 'astro' ? 'src/' : '';
+  // React Doctor already skips build output and most dot directories, but not
+  // test reports: Playwright's bundles minified trace-viewer scripts.
+  const ignoredFiles = [
+    '.agents/**',
+    '.claude/**',
+    `${sourceRoot}components/ui/**`,
+    ...testReportDirs.map((dir) => `${dir}/**`),
+  ];
+  // React Doctor 0.5.4 reports require-reduced-motion for Next App Router
+  // even when app/globals.css contains the media query and the Motion wrapper
+  // calls useReducedMotion(). Keep both real safeguards and suppress only
+  // that verified false positive until the detector recognizes them.
+  const ignoredRules =
+    framework !== 'astro' && motion
+      ? '    "rules": ["react-doctor/require-reduced-motion"],\n'
+      : '';
 
   return `{
   "ignore": {
-    "files": [".agents/**", ".claude/**", "src/components/ui/**"],
+${ignoredRules}    "files": [
+${ignoredFiles.map((file) => `      "${file}"`).join(',\n')}
+    ],
     "overrides": [
       {
-        "files": ["src/lib/utils.ts"],
+        "files": ["${sourceRoot}lib/utils.ts"],
         "rules": ["deslop/unused-file", "knip/exports", "exports"]
       }
     ]
@@ -426,6 +421,8 @@ export function renderReactDoctorConfig(
 }
 `;
 }
+
+export const reactDoctorConfig = renderReactDoctorConfig('next');
 
 // .mjs + ESM syntax on purpose: Astro apps set "type": "module", so a
 // commitlint.config.js with module.exports crashes there, while Next apps
@@ -882,12 +879,14 @@ export function renderReadme(
           '- Astro project with TypeScript, Tailwind, and React islands.',
           '- shadcn UI initialized through the shadcn CLI.',
           '- ESLint flat config with strict Astro, React, import ordering, and Prettier integration.',
+          '- `@shadcn/lint` enforcing the design system rules in `DESIGN.md`.',
           '- React Doctor and React Scan.',
         ]
       : [
           '- Next.js App Router with TypeScript and Tailwind.',
           '- shadcn UI initialized through the shadcn CLI.',
           '- ESLint flat config with strict Next.js, React, import ordering, and Prettier integration.',
+          '- `@shadcn/lint` enforcing the design system rules in `DESIGN.md`.',
           '- React Doctor and React Scan.',
         ];
 
@@ -936,7 +935,13 @@ npx purrfold@latest my-app --shadcn-args --preset b5eH0WVTX --yes
 `;
 }
 
-export const designDoc = `# Design Standard
+/** The Tailwind entry stylesheet each framework's scaffold generates, relative to the app root. */
+export function globalStylesheetPath(framework: CreateOptions['framework']) {
+  return framework === 'astro' ? 'src/styles/global.css' : 'app/globals.css';
+}
+
+export function renderDesignDoc(framework: CreateOptions['framework']) {
+  return `# Design Standard
 
 This file is the UI/UX source of truth for this app.
 
@@ -944,7 +949,7 @@ This file is the UI/UX source of truth for this app.
 
 - Build the actual product surface first; avoid marketing-only landing pages.
 - Prefer dense, calm, scannable layouts for operational tools.
-- Use semantic tokens from \`app/globals.css\`.
+- Use semantic tokens from \`${globalStylesheetPath(framework)}\`.
 - Keep loading, empty, error, and partial-data states explicit.
 - Make controls accessible, keyboard reachable, and clearly labeled.
 
@@ -955,11 +960,25 @@ This file is the UI/UX source of truth for this app.
 - Use tables for detailed records, cards for repeated metrics, and charts only when they answer a clear comparison question.
 - Do not nest cards inside cards.
 
+## Lint Enforcement
+
+The \`lint\` script enforces these rules with \`@shadcn/lint\`, and each error points back to this file:
+
+- \`shadcn/no-restyle\`: do not restyle a component through \`className\`. Layout classes such as \`mt-4\` and \`w-full\` are allowed; use a variant or size for anything else.
+- \`shadcn/no-raw-colors\`: use semantic tokens instead of raw palette colors such as \`bg-pink-500\`.
+- \`shadcn/no-arbitrary-values\`: stay on the theme scale instead of arbitrary values such as \`p-[13px]\`; arbitrary layout values are allowed.
+- \`shadcn/no-inline-styles\`: do not use inline styles or \`<style>\` elements in components.
+- \`shadcn/require-static-classes\`: keep component classes readable by the linter; do not interpolate them, as in \`bg-\${color}\`.
+- \`shadcn/no-unknown-classes\`: only use classes Tailwind can generate.
+
+Fix a violation with a token, variant, or size from the design system, and add one to the component only when the design calls for it. Do not disable the rules.
+
 ## Motion
 
 - Use subtle transitions only when they clarify state.
 - Respect reduced-motion preferences for non-trivial animation.
 `;
+}
 
 function renderMotionGuide(options: Pick<CreateOptions, 'framework' | 'motion'>) {
   if (!options.motion) {
@@ -1007,6 +1026,8 @@ Run these before claiming implementation complete:
 3. \`${run} format:check\`
 ${options.unit ? `4. \`${run} test\`\n` : ''}${options.e2e ? `- Run \`${run} test:e2e\` when E2E behavior changed.\n` : ''}- \`${run} doctor\`
 - \`${run} check\`
+
+\`${run} lint\` runs \`@shadcn/lint\`. Fix its design system errors with the tokens, variants, and sizes described in \`DESIGN.md\`; do not disable its rules.
 
 ## References
 
@@ -1058,6 +1079,8 @@ Run these before claiming implementation complete:
 3. \`${run} format:check\`
 ${options.unit ? `4. \`${run} test\`\n` : ''}${options.e2e ? `- Run \`${run} test:e2e\` when E2E behavior changed.\n` : ''}- \`${run} doctor\`
 - \`${run} check\`
+
+\`${run} lint\` runs \`@shadcn/lint\`. Fix its design system errors with the tokens, variants, and sizes described in \`DESIGN.md\`; do not disable its rules.
 
 Do not use \`next lint\`; use the ESLint CLI.
 

@@ -510,8 +510,14 @@ export function assertGeneratedApp(projectRoot, expected) {
   const readme = readFileSync(path.join(projectRoot, 'README.md'), 'utf8');
   const agents = readFileSync(path.join(projectRoot, 'AGENTS.md'), 'utf8');
   const claude = readFileSync(path.join(projectRoot, 'CLAUDE.md'), 'utf8');
+  const globalStylesheet = framework === 'astro' ? 'src/styles/global.css' : 'app/globals.css';
 
   assertPath(projectRoot, 'DESIGN.md');
+  assertIncludes(
+    readFileSync(path.join(projectRoot, 'DESIGN.md'), 'utf8'),
+    `\`${globalStylesheet}\``,
+    'DESIGN.md'
+  );
   assertPath(projectRoot, '.claude/hooks/react-doctor.ps1');
   assertPath(projectRoot, '.claude/hooks/project-min-evaluation.ps1');
   assertPath(projectRoot, '.claude/settings.json');
@@ -533,6 +539,8 @@ export function assertGeneratedApp(projectRoot, expected) {
   assertNotIncludes(packageJson.scripts?.check ?? '', 'doctor:design', 'package.json check script');
   assertNotIncludes(packageJson.scripts?.['doctor:ci'] ?? '', '--design', 'package.json doctor:ci script');
   assertNotIncludes(eslintConfig, 'reactDoctor.configs.all', 'eslint.config.mjs');
+  assertIncludes(eslintConfig, "import { plugin as shadcn } from '@shadcn/lint';", 'eslint.config.mjs');
+  assertIncludes(eslintConfig, 'plugins: { shadcn }', 'eslint.config.mjs');
 
   // purrfold only ignores what purrfold creates, so the wrangler entries must
   // follow the adapter it actually installed. Every non-cloudflare scenario is
@@ -540,7 +548,17 @@ export function assertGeneratedApp(projectRoot, expected) {
   const gitIgnoreEntries = readFileSync(path.join(projectRoot, '.gitignore'), 'utf8')
     .split(/\r?\n/)
     .map((line) => line.trim());
-  for (const entry of ['.claude/skills/', '.react-scan/', 'playwright-report/', 'test-results/']) {
+  for (const entry of [
+    '.claude/skills/',
+    '.claude/worktrees/',
+    '.claude/settings.local.json',
+    '.codegraph/',
+    '.atl/',
+    '.react-scan/',
+    'playwright-report/',
+    'test-results/',
+    'blob-report/',
+  ]) {
     if (!gitIgnoreEntries.includes(entry)) {
       throw new Error(`.gitignore should ignore ${entry}`);
     }
@@ -554,12 +572,35 @@ export function assertGeneratedApp(projectRoot, expected) {
       throw new Error(`.gitignore should not ignore ${entry} without the Cloudflare adapter`);
     }
   }
+  // ESLint lints the wrangler-generated worker types unless told otherwise, and
+  // the generated lint script runs with --max-warnings 0.
+  const eslintIgnoresWorkerTypes = eslintConfig.includes("'worker-configuration.d.ts'");
+  if (expected.ssrAdapter === 'cloudflare' && !eslintIgnoresWorkerTypes) {
+    throw new Error('eslint.config.mjs should ignore worker-configuration.d.ts for the Cloudflare adapter');
+  }
+  if (expected.ssrAdapter !== 'cloudflare' && eslintIgnoresWorkerTypes) {
+    throw new Error('eslint.config.mjs should not ignore worker-configuration.d.ts without the Cloudflare adapter');
+  }
+
+  // Prettier reads only the root .gitignore and .prettierignore, so agent state
+  // and test reports need their own entries here.
+  const prettierIgnoreEntries = readFileSync(path.join(projectRoot, '.prettierignore'), 'utf8')
+    .split(/\r?\n/)
+    .map((line) => line.trim());
+  for (const entry of ['.claude', '.codegraph', '.atl', 'playwright-report', 'test-results', 'CLAUDE.md']) {
+    if (!prettierIgnoreEntries.includes(entry)) {
+      throw new Error(`.prettierignore should ignore ${entry}`);
+    }
+  }
 
   const doctorIgnoredFiles = doctorConfig.ignore?.files ?? [];
   for (const ignoredPath of [
     '.agents/**',
     '.claude/**',
     framework === 'astro' ? 'src/components/ui/**' : 'components/ui/**',
+    'playwright-report/**',
+    'test-results/**',
+    'blob-report/**',
   ]) {
     if (!doctorIgnoredFiles.includes(ignoredPath)) {
       throw new Error(`doctor.config.json should ignore ${ignoredPath}`);
@@ -575,7 +616,7 @@ export function assertGeneratedApp(projectRoot, expected) {
     throw new Error('Astro doctor.config.json should analyze unused development dependencies');
   }
 
-  for (const dependency of ['react-doctor', 'eslint-plugin-react-doctor']) {
+  for (const dependency of ['react-doctor', 'eslint-plugin-react-doctor', '@shadcn/lint']) {
     const installed = packageJson.devDependencies?.[dependency];
     if (expected.skipInstall) {
       if (installed) throw new Error(`${dependency} should not be installed with --skip-install`);
@@ -593,7 +634,6 @@ export function assertGeneratedApp(projectRoot, expected) {
     assertIncludes(skillsScript, '--skill motion-framer', 'skills.sh');
     const motionComponent =
       framework === 'astro' ? 'src/components/common/motion-main.tsx' : 'components/common/motion-main.tsx';
-    const globalStylesheet = framework === 'astro' ? 'src/styles/global.css' : 'app/globals.css';
     assertPath(projectRoot, motionComponent);
     assertIncludes(
       readFileSync(path.join(projectRoot, globalStylesheet), 'utf8'),

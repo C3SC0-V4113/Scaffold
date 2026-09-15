@@ -5,7 +5,7 @@ import {
   claudeSettings,
   renderClaudeProjectMinEvaluationHook,
 } from '../templates/hooks.js';
-import { designDoc, renderAgents, renderReadme } from '../templates/files.js';
+import { renderAgents, renderDesignDoc, renderReadme } from '../templates/files.js';
 import type { CreateOptions, Executor } from '../types.js';
 
 export const PURRFOLD_MANAGED_BEGIN = '<!-- BEGIN:purrfold-managed -->';
@@ -120,7 +120,7 @@ export async function installDocsAndClaude(
     await executor.writeFile(agentsPath, renderAgents(options));
   }
 
-  await executor.writeFile(path.join(projectRoot, 'DESIGN.md'), designDoc);
+  await executor.writeFile(path.join(projectRoot, 'DESIGN.md'), renderDesignDoc(options.framework));
   if (options.framework !== 'astro' || !(await executor.pathExists(claudePath))) {
     await executor.writeFile(claudePath, '@AGENTS.md\n');
   }

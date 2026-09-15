@@ -27,6 +27,7 @@ npm run check
 - Next.js App Router with TypeScript and Tailwind.
 - shadcn UI initialized through the shadcn CLI.
 - ESLint flat config with strict Next.js, React, import ordering, and Prettier integration.
+- \`@shadcn/lint\` enforcing the design system rules in \`DESIGN.md\`.
 - React Doctor and React Scan.
 - Vitest and React Testing Library.
 - Playwright E2E testing.
@@ -103,6 +104,8 @@ Run these before claiming implementation complete:
 - Run \`npm run test:e2e\` when E2E behavior changed.
 - \`npm run doctor\`
 - \`npm run check\`
+
+\`npm run lint\` runs \`@shadcn/lint\`. Fix its design system errors with the tokens, variants, and sizes described in \`DESIGN.md\`; do not disable its rules.
 
 Do not use \`next lint\`; use the ESLint CLI.
 
@@ -182,6 +185,7 @@ npm run check
 - Astro project with TypeScript, Tailwind, and React islands.
 - shadcn UI initialized through the shadcn CLI.
 - ESLint flat config with strict Astro, React, import ordering, and Prettier integration.
+- \`@shadcn/lint\` enforcing the design system rules in \`DESIGN.md\`.
 - React Doctor and React Scan.
 - Vitest and React Testing Library.
 - Playwright E2E testing.
@@ -315,7 +319,8 @@ exports[`template snapshots > snapshots Claude hooks 3`] = `
 `;
 
 exports[`template snapshots > snapshots ESLint and React Doctor config 1`] = `
-"import vitest from '@vitest/eslint-plugin';
+"import { plugin as shadcn } from '@shadcn/lint';
+import vitest from '@vitest/eslint-plugin';
 import { defineConfig, globalIgnores } from 'eslint/config';
 import nextVitals from 'eslint-config-next/core-web-vitals';
 import nextTs from 'eslint-config-next/typescript';
@@ -425,6 +430,19 @@ const eslintConfig = defineConfig([
     ],
     ...playwrightPlugin.configs['flat/recommended'],
   },
+  {
+    files: ['**/*.{js,jsx,ts,tsx}'],
+    plugins: { shadcn },
+    settings: { shadcn: { note: 'See DESIGN.md for the design system rules.' } },
+    rules: {
+      'shadcn/no-restyle': ['error', { allow: ['layout'] }],
+      'shadcn/no-raw-colors': 'error',
+      'shadcn/no-arbitrary-values': ['error', { allow: ['layout'] }],
+      'shadcn/no-inline-styles': 'error',
+      'shadcn/require-static-classes': 'error',
+      'shadcn/no-unknown-classes': 'error',
+    },
+  },
   eslintConfigPrettier,
   globalIgnores([
     '.next/**',
@@ -433,10 +451,14 @@ const eslintConfig = defineConfig([
     'next-env.d.ts',
     '.agents/**',
     '.claude/**',
+    '.codegraph/**',
+    '.atl/**',
+    '.react-scan/**',
     'components/ui/**',
     'coverage/**',
     'playwright-report/**',
     'test-results/**',
+    'blob-report/**',
   ]),
 ]);
 export default eslintConfig;
@@ -446,7 +468,14 @@ export default eslintConfig;
 exports[`template snapshots > snapshots ESLint and React Doctor config 2`] = `
 "{
   "ignore": {
-    "files": [".agents/**", ".claude/**", "components/ui/**"],
+    "files": [
+      ".agents/**",
+      ".claude/**",
+      "components/ui/**",
+      "playwright-report/**",
+      "test-results/**",
+      "blob-report/**"
+    ],
     "overrides": [
       {
         "files": ["lib/utils.ts"],
@@ -485,6 +514,7 @@ npm run check
 - Astro project with TypeScript, Tailwind, and React islands.
 - shadcn UI initialized through the shadcn CLI.
 - ESLint flat config with strict Astro, React, import ordering, and Prettier integration.
+- \`@shadcn/lint\` enforcing the design system rules in \`DESIGN.md\`.
 - React Doctor and React Scan.
 - Vitest and React Testing Library.
 - Playwright E2E testing.
@@ -551,6 +581,8 @@ Run these before claiming implementation complete:
 - \`npm run doctor\`
 - \`npm run check\`
 
+\`npm run lint\` runs \`@shadcn/lint\`. Fix its design system errors with the tokens, variants, and sizes described in \`DESIGN.md\`; do not disable its rules.
+
 ## References
 
 - Architecture and scripts: \`README.md\`
@@ -589,6 +621,46 @@ shadcn presets are supported through \`--shadcn-args --preset <id>\`.
 "
 `;
 
+exports[`template snapshots > snapshots astro docs 3`] = `
+"# Design Standard
+
+This file is the UI/UX source of truth for this app.
+
+## Principles
+
+- Build the actual product surface first; avoid marketing-only landing pages.
+- Prefer dense, calm, scannable layouts for operational tools.
+- Use semantic tokens from \`src/styles/global.css\`.
+- Keep loading, empty, error, and partial-data states explicit.
+- Make controls accessible, keyboard reachable, and clearly labeled.
+
+## Components
+
+- Use shadcn primitives before custom markup.
+- Use lucide icons for icon buttons and provide accessible labels.
+- Use tables for detailed records, cards for repeated metrics, and charts only when they answer a clear comparison question.
+- Do not nest cards inside cards.
+
+## Lint Enforcement
+
+The \`lint\` script enforces these rules with \`@shadcn/lint\`, and each error points back to this file:
+
+- \`shadcn/no-restyle\`: do not restyle a component through \`className\`. Layout classes such as \`mt-4\` and \`w-full\` are allowed; use a variant or size for anything else.
+- \`shadcn/no-raw-colors\`: use semantic tokens instead of raw palette colors such as \`bg-pink-500\`.
+- \`shadcn/no-arbitrary-values\`: stay on the theme scale instead of arbitrary values such as \`p-[13px]\`; arbitrary layout values are allowed.
+- \`shadcn/no-inline-styles\`: do not use inline styles or \`<style>\` elements in components.
+- \`shadcn/require-static-classes\`: keep component classes readable by the linter; do not interpolate them, as in \`bg-\${color}\`.
+- \`shadcn/no-unknown-classes\`: only use classes Tailwind can generate.
+
+Fix a violation with a token, variant, or size from the design system, and add one to the component only when the design calls for it. Do not disable the rules.
+
+## Motion
+
+- Use subtle transitions only when they clarify state.
+- Respect reduced-motion preferences for non-trivial animation.
+"
+`;
+
 exports[`template snapshots > snapshots generated docs 1`] = `
 "# Next Quality App
 
@@ -616,6 +688,7 @@ npm run check
 - Next.js App Router with TypeScript and Tailwind.
 - shadcn UI initialized through the shadcn CLI.
 - ESLint flat config with strict Next.js, React, import ordering, and Prettier integration.
+- \`@shadcn/lint\` enforcing the design system rules in \`DESIGN.md\`.
 - React Doctor and React Scan.
 - Vitest and React Testing Library.
 - Playwright E2E testing.
@@ -681,6 +754,19 @@ This file is the UI/UX source of truth for this app.
 - Use tables for detailed records, cards for repeated metrics, and charts only when they answer a clear comparison question.
 - Do not nest cards inside cards.
 
+## Lint Enforcement
+
+The \`lint\` script enforces these rules with \`@shadcn/lint\`, and each error points back to this file:
+
+- \`shadcn/no-restyle\`: do not restyle a component through \`className\`. Layout classes such as \`mt-4\` and \`w-full\` are allowed; use a variant or size for anything else.
+- \`shadcn/no-raw-colors\`: use semantic tokens instead of raw palette colors such as \`bg-pink-500\`.
+- \`shadcn/no-arbitrary-values\`: stay on the theme scale instead of arbitrary values such as \`p-[13px]\`; arbitrary layout values are allowed.
+- \`shadcn/no-inline-styles\`: do not use inline styles or \`<style>\` elements in components.
+- \`shadcn/require-static-classes\`: keep component classes readable by the linter; do not interpolate them, as in \`bg-\${color}\`.
+- \`shadcn/no-unknown-classes\`: only use classes Tailwind can generate.
+
+Fix a violation with a token, variant, or size from the design system, and add one to the component only when the design calls for it. Do not disable the rules.
+
 ## Motion
 
 - Use subtle transitions only when they clarify state.
@@ -708,6 +794,8 @@ Run these before claiming implementation complete:
 - Run \`npm run test:e2e\` when E2E behavior changed.
 - \`npm run doctor\`
 - \`npm run check\`
+
+\`npm run lint\` runs \`@shadcn/lint\`. Fix its design system errors with the tokens, variants, and sizes described in \`DESIGN.md\`; do not disable its rules.
 
 Do not use \`next lint\`; use the ESLint CLI.
 
@@ -753,7 +841,8 @@ shadcn presets are supported through \`--shadcn-args --preset <id>\`.
 `;
 
 exports[`template snapshots > snapshots the Next ESLint config when Motion is enabled 1`] = `
-"import vitest from '@vitest/eslint-plugin';
+"import { plugin as shadcn } from '@shadcn/lint';
+import vitest from '@vitest/eslint-plugin';
 import { defineConfig, globalIgnores } from 'eslint/config';
 import nextVitals from 'eslint-config-next/core-web-vitals';
 import nextTs from 'eslint-config-next/typescript';
@@ -869,6 +958,19 @@ const eslintConfig = defineConfig([
     ],
     ...playwrightPlugin.configs['flat/recommended'],
   },
+  {
+    files: ['**/*.{js,jsx,ts,tsx}'],
+    plugins: { shadcn },
+    settings: { shadcn: { note: 'See DESIGN.md for the design system rules.' } },
+    rules: {
+      'shadcn/no-restyle': ['error', { allow: ['layout'] }],
+      'shadcn/no-raw-colors': 'error',
+      'shadcn/no-arbitrary-values': ['error', { allow: ['layout'] }],
+      'shadcn/no-inline-styles': 'error',
+      'shadcn/require-static-classes': 'error',
+      'shadcn/no-unknown-classes': 'error',
+    },
+  },
   eslintConfigPrettier,
   globalIgnores([
     '.next/**',
@@ -877,10 +979,14 @@ const eslintConfig = defineConfig([
     'next-env.d.ts',
     '.agents/**',
     '.claude/**',
+    '.codegraph/**',
+    '.atl/**',
+    '.react-scan/**',
     'components/ui/**',
     'coverage/**',
     'playwright-report/**',
     'test-results/**',
+    'blob-report/**',
   ]),
 ]);
 export default eslintConfig;
