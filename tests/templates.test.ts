@@ -293,6 +293,44 @@ allowBuilds:
     expect(motionMainComponent).toContain("| 'whileHover'");
   });
 
+  it('enforces the shadcn design system with @shadcn/lint in Next and Astro', () => {
+    for (const framework of ['next', 'astro'] as const) {
+      const config = renderEslintConfig({ framework, unit: true, e2e: true });
+
+      // The generated config is itself linted with alphabetized import/order,
+      // and `@shadcn` sorts ahead of every other import it can carry.
+      expect(config.split('\n')[0]).toBe("import { plugin as shadcn } from '@shadcn/lint';");
+      expect(config).toContain(`  {
+    files: ['**/*.{js,jsx,ts,tsx}'],
+    plugins: { shadcn },
+    settings: { shadcn: { note: 'See DESIGN.md for the design system rules.' } },
+    rules: {
+      'shadcn/no-restyle': ['error', { allow: ['layout'] }],
+      'shadcn/no-raw-colors': 'error',
+      'shadcn/no-arbitrary-values': ['error', { allow: ['layout'] }],
+      'shadcn/no-inline-styles': 'error',
+      'shadcn/require-static-classes': 'error',
+      'shadcn/no-unknown-classes': 'error',
+    },
+  },`);
+      // Prettier's flat config only turns rules off, so it has to stay last.
+      expect(config.indexOf('plugins: { shadcn }')).toBeLessThan(
+        config.indexOf('  eslintConfigPrettier,')
+      );
+    }
+  });
+
+  it('documents @shadcn/lint enforcement in the generated docs', () => {
+    for (const framework of ['next', 'astro'] as const) {
+      const frameworkOptions = { ...options, framework };
+
+      expect(renderDesignDoc(framework)).toContain('## Lint Enforcement');
+      expect(renderDesignDoc(framework)).toContain('`shadcn/no-restyle`');
+      expect(renderReadme(frameworkOptions)).toContain('`@shadcn/lint`');
+      expect(renderAgents(frameworkOptions)).toContain('`@shadcn/lint`');
+    }
+  });
+
   it('renders an Astro ESLint config with Astro and TypeScript support', () => {
     const config = renderEslintConfig({ framework: 'astro', unit: true, e2e: true });
 

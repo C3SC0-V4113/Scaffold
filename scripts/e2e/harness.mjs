@@ -539,6 +539,8 @@ export function assertGeneratedApp(projectRoot, expected) {
   assertNotIncludes(packageJson.scripts?.check ?? '', 'doctor:design', 'package.json check script');
   assertNotIncludes(packageJson.scripts?.['doctor:ci'] ?? '', '--design', 'package.json doctor:ci script');
   assertNotIncludes(eslintConfig, 'reactDoctor.configs.all', 'eslint.config.mjs');
+  assertIncludes(eslintConfig, "import { plugin as shadcn } from '@shadcn/lint';", 'eslint.config.mjs');
+  assertIncludes(eslintConfig, 'plugins: { shadcn }', 'eslint.config.mjs');
 
   // purrfold only ignores what purrfold creates, so the wrangler entries must
   // follow the adapter it actually installed. Every non-cloudflare scenario is
@@ -581,7 +583,7 @@ export function assertGeneratedApp(projectRoot, expected) {
     throw new Error('Astro doctor.config.json should analyze unused development dependencies');
   }
 
-  for (const dependency of ['react-doctor', 'eslint-plugin-react-doctor']) {
+  for (const dependency of ['react-doctor', 'eslint-plugin-react-doctor', '@shadcn/lint']) {
     const installed = packageJson.devDependencies?.[dependency];
     if (expected.skipInstall) {
       if (installed) throw new Error(`${dependency} should not be installed with --skip-install`);

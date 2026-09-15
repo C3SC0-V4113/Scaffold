@@ -5,8 +5,31 @@ interface EslintConfigOptions extends Pick<CreateOptions, 'framework' | 'unit' |
   motion?: boolean;
 }
 
+// `@shadcn` sorts ahead of every other import, so it stays first under the
+// generated config's own alphabetized import/order.
+const shadcnLintImport = "import { plugin as shadcn } from '@shadcn/lint';";
+
+// @shadcn/lint reads components.json on its own and only supports JS/TS
+// sources. The shadcn-owned `ui` directory is already in globalIgnores.
+const shadcnLintBlock = [
+  '  {',
+  "    files: ['**/*.{js,jsx,ts,tsx}'],",
+  '    plugins: { shadcn },',
+  "    settings: { shadcn: { note: 'See DESIGN.md for the design system rules.' } },",
+  '    rules: {',
+  "      'shadcn/no-restyle': ['error', { allow: ['layout'] }],",
+  "      'shadcn/no-raw-colors': 'error',",
+  "      'shadcn/no-arbitrary-values': ['error', { allow: ['layout'] }],",
+  "      'shadcn/no-inline-styles': 'error',",
+  "      'shadcn/require-static-classes': 'error',",
+  "      'shadcn/no-unknown-classes': 'error',",
+  '    },',
+  '  },',
+];
+
 function renderNextEslintConfig(options: EslintConfigOptions) {
   const lines = [
+    shadcnLintImport,
     options.unit ? "import vitest from '@vitest/eslint-plugin';" : '',
     "import { defineConfig, globalIgnores } from 'eslint/config';",
     "import nextVitals from 'eslint-config-next/core-web-vitals';",
@@ -140,6 +163,7 @@ function renderNextEslintConfig(options: EslintConfigOptions) {
           '  },',
         ]
       : []),
+    ...shadcnLintBlock,
     '  eslintConfigPrettier,',
     '  globalIgnores([',
     "    '.next/**',",
@@ -163,6 +187,7 @@ function renderNextEslintConfig(options: EslintConfigOptions) {
 
 function renderAstroEslintConfig(options: EslintConfigOptions) {
   const lines = [
+    shadcnLintImport,
     options.unit ? "import vitest from '@vitest/eslint-plugin';" : '',
     "import { defineConfig, globalIgnores } from 'eslint/config';",
     "import eslintConfigPrettier from 'eslint-config-prettier/flat';",
@@ -282,6 +307,7 @@ function renderAstroEslintConfig(options: EslintConfigOptions) {
           '  },',
         ]
       : []),
+    ...shadcnLintBlock,
     '  eslintConfigPrettier,',
     '  globalIgnores([',
     "    'dist/**',",

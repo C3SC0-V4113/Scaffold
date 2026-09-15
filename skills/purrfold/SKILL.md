@@ -1,13 +1,13 @@
 ---
 name: purrfold
-description: Scaffold a new production-ready frontend app (Next.js + shadcn + strict quality tooling) using the purrfold CLI. Use when the user wants to create/bootstrap/scaffold a new web app or project, or asks to "install/run purrfold" with or without testing, e2e, commitlint, or a specific package manager.
+description: Scaffold a new production-ready frontend app (Next.js + shadcn + strict quality tooling, including @shadcn/lint design system rules) using the purrfold CLI. Use when the user wants to create/bootstrap/scaffold a new web app or project, or asks to "install/run purrfold" with or without testing, e2e, commitlint, or a specific package manager.
 ---
 
 # purrfold — scaffold a frontend app
 
 `purrfold` is a CLI that creates a new app from `create-next-app@latest` or
 `create-astro@latest` and applies a production-oriented quality baseline: shadcn,
-strict ESLint, Prettier, Husky, React Doctor, React Scan, agent docs, Claude
+strict ESLint with `@shadcn/lint` design system rules, Prettier, Husky, React Doctor, React Scan, agent docs, Claude
 hooks, and optional unit (Vitest), e2e (Playwright), commitlint, and GitHub
 Actions CI. The
 generated app self-tests and is green out-of-the-box.

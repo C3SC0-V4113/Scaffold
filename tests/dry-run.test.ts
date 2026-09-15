@@ -78,6 +78,7 @@ describe('dry-run integration', () => {
     expect(output).toContain('--disable-git');
     expect(output).toContain('run npx shadcn@latest init --defaults');
     expect(output).toContain(pinnedSpecifier('@vitejs/plugin-react'));
+    expect(output).toContain(pinnedSpecifier('@shadcn/lint'));
     expect(output).not.toContain('@vitejs/plugin-react@6.0.2');
     expect(output).not.toContain('mcp init --client');
     expect(output.replaceAll('\\', '/')).toContain('my-app/skills.sh');
@@ -151,6 +152,7 @@ describe('dry-run integration', () => {
     expect(output).not.toContain(' --git');
     expect(output).toContain('run pnpm dlx shadcn@latest init -t astro --defaults');
     expect(output).toContain(pinnedSpecifier('@astrojs/check'));
+    expect(output).toContain(pinnedSpecifier('@shadcn/lint', 'astro'));
     expect(output).toContain(pinnedSpecifier('@vitejs/plugin-react', 'astro'));
     expect(output).not.toContain(pinnedSpecifier('@vitejs/plugin-react'));
     expect(output.replaceAll('\\', '/')).toContain('my-app/src/components/Button.astro');

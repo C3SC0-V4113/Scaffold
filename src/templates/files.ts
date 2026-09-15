@@ -882,12 +882,14 @@ export function renderReadme(
           '- Astro project with TypeScript, Tailwind, and React islands.',
           '- shadcn UI initialized through the shadcn CLI.',
           '- ESLint flat config with strict Astro, React, import ordering, and Prettier integration.',
+          '- `@shadcn/lint` enforcing the design system rules in `DESIGN.md`.',
           '- React Doctor and React Scan.',
         ]
       : [
           '- Next.js App Router with TypeScript and Tailwind.',
           '- shadcn UI initialized through the shadcn CLI.',
           '- ESLint flat config with strict Next.js, React, import ordering, and Prettier integration.',
+          '- `@shadcn/lint` enforcing the design system rules in `DESIGN.md`.',
           '- React Doctor and React Scan.',
         ];
 
@@ -961,6 +963,19 @@ This file is the UI/UX source of truth for this app.
 - Use tables for detailed records, cards for repeated metrics, and charts only when they answer a clear comparison question.
 - Do not nest cards inside cards.
 
+## Lint Enforcement
+
+The \`lint\` script enforces these rules with \`@shadcn/lint\`, and each error points back to this file:
+
+- \`shadcn/no-restyle\`: do not restyle a component through \`className\`. Layout classes such as \`mt-4\` and \`w-full\` are allowed; use a variant or size for anything else.
+- \`shadcn/no-raw-colors\`: use semantic tokens instead of raw palette colors such as \`bg-pink-500\`.
+- \`shadcn/no-arbitrary-values\`: stay on the theme scale instead of arbitrary values such as \`p-[13px]\`; arbitrary layout values are allowed.
+- \`shadcn/no-inline-styles\`: do not use inline styles or \`<style>\` elements in components.
+- \`shadcn/require-static-classes\`: keep component classes readable by the linter; do not interpolate them, as in \`bg-\${color}\`.
+- \`shadcn/no-unknown-classes\`: only use classes Tailwind can generate.
+
+Fix a violation with a token, variant, or size from the design system, and add one to the component only when the design calls for it. Do not disable the rules.
+
 ## Motion
 
 - Use subtle transitions only when they clarify state.
@@ -1015,6 +1030,8 @@ Run these before claiming implementation complete:
 ${options.unit ? `4. \`${run} test\`\n` : ''}${options.e2e ? `- Run \`${run} test:e2e\` when E2E behavior changed.\n` : ''}- \`${run} doctor\`
 - \`${run} check\`
 
+\`${run} lint\` runs \`@shadcn/lint\`. Fix its design system errors with the tokens, variants, and sizes described in \`DESIGN.md\`; do not disable its rules.
+
 ## References
 
 - Architecture and scripts: \`README.md\`
@@ -1065,6 +1082,8 @@ Run these before claiming implementation complete:
 3. \`${run} format:check\`
 ${options.unit ? `4. \`${run} test\`\n` : ''}${options.e2e ? `- Run \`${run} test:e2e\` when E2E behavior changed.\n` : ''}- \`${run} doctor\`
 - \`${run} check\`
+
+\`${run} lint\` runs \`@shadcn/lint\`. Fix its design system errors with the tokens, variants, and sizes described in \`DESIGN.md\`; do not disable its rules.
 
 Do not use \`next lint\`; use the ESLint CLI.
 

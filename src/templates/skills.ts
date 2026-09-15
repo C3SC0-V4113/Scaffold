@@ -34,6 +34,7 @@ Use this skill when creating, moving, wrapping, or reviewing UI components.
 6. Prefer composition: wrap a registry primitive from \`common/\` or a feature folder instead of adding product behavior to the primitive.
 7. Keep dependency direction one-way: feature → common → ui. The \`ui\` directory must not import from \`common\` or feature folders.
 8. Use semantic tokens from the global stylesheet. Treat token variables as quarks and registry primitives as foundational atoms; do not force molecule or organism names into directory paths.
+9. \`shadcn/no-restyle\` from \`@shadcn/lint\` enforces the \`ui\` boundary in ESLint: call sites may pass layout classes through \`className\`, but a component's look comes from its variants and sizes. When the design needs a new look, add a variant to the registry primitive instead of overriding it at the call site.
 
 ## Decision Gates
 

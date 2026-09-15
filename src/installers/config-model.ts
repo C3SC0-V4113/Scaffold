@@ -67,6 +67,7 @@ export const coreDevDependencies = [
   'lint-staged',
   'react-doctor',
   'react-scan',
+  '@shadcn/lint',
 ];
 
 export const astroCoreDevDependencies = [
@@ -85,6 +86,7 @@ export const astroCoreDevDependencies = [
   'lint-staged',
   'react-doctor',
   '@astrojs/check',
+  '@shadcn/lint',
 ];
 
 export const unitDevDependencies = [
