@@ -25,6 +25,7 @@ import {
   knownIconPackages,
   resolveIconLibrary,
 } from '../templates/icons.js';
+import { agentStateDirs, testReportDirs, usesCloudflareAdapter } from '../templates/ignores.js';
 import type { CreateOptions, Executor, IconLibrary } from '../types.js';
 import { buildDevDependencies, pinnedSpecifier } from './config-model.js';
 import {
@@ -93,10 +94,6 @@ function renderCommitMsgHook(packageManager: string) {
  */
 const cloudflareGitIgnoreEntries = ['.wrangler/', '.dev.vars', 'worker-configuration.d.ts'];
 
-function usesCloudflareAdapter(options: CreateOptions) {
-  return options.ssr && options.astroAdapter === 'cloudflare';
-}
-
 export async function appendGitIgnore(
   projectRoot: string,
   options: CreateOptions,
@@ -105,9 +102,11 @@ export async function appendGitIgnore(
   const gitIgnorePath = path.join(projectRoot, '.gitignore');
   const additions = [
     '.claude/skills/',
+    // Per-developer Claude Code permissions; the shared settings.json stays tracked.
+    '.claude/settings.local.json',
+    ...agentStateDirs.map((dir) => `${dir}/`),
     '.react-scan/',
-    'playwright-report/',
-    'test-results/',
+    ...testReportDirs.map((dir) => `${dir}/`),
     ...(usesCloudflareAdapter(options) ? cloudflareGitIgnoreEntries : []),
   ];
   const current = (await executor.pathExists(gitIgnorePath))

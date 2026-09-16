@@ -40,7 +40,29 @@ describe('Astro tsconfig rewrite', () => {
           '@/*': ['./src/*'],
         },
       },
+      exclude: ['playwright-report', 'test-results', 'blob-report'],
     });
+  });
+
+  // create-astro includes "**/*", so without these excludes `astro check`
+  // type-checks the bundled Playwright report scripts.
+  it("keeps test reports out of astro check while preserving Astro's own excludes", () => {
+    const current = JSON.stringify({
+      extends: 'astro/tsconfigs/strict',
+      include: ['.astro/types.d.ts', '**/*'],
+      exclude: ['dist', 'test-results'],
+    });
+
+    const next = JSON.parse(rewriteAstroTsconfigForShadcn(current)) as {
+      include: string[];
+      exclude: string[];
+    };
+
+    expect(next.include).toEqual(['.astro/types.d.ts', '**/*']);
+    expect(next.exclude).toEqual(['dist', 'test-results', 'playwright-report', 'blob-report']);
+    expect(rewriteAstroTsconfigForShadcn(rewriteAstroTsconfigForShadcn(current))).toBe(
+      rewriteAstroTsconfigForShadcn(current)
+    );
   });
 
   it('preserves existing path aliases', () => {

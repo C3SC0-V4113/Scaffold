@@ -5,7 +5,7 @@
 [![npm](https://img.shields.io/npm/v/purrfold)](https://www.npmjs.com/package/purrfold)
 [![license](https://img.shields.io/npm/l/purrfold)](LICENSE)
 
-`purrfold` creates a new latest Next.js or Astro app and applies a production-oriented quality baseline: shadcn setup, strict ESLint, Prettier, Husky, React Doctor, React Scan, agent docs, Claude compatibility, and optional testing/commit tooling.
+`purrfold` creates a new latest Next.js or Astro app and applies a production-oriented quality baseline: shadcn setup, strict ESLint with `@shadcn/lint` design system rules, Prettier, Husky, React Doctor, React Scan, agent docs, Claude compatibility, and optional testing/commit tooling.
 
 ```bash
 npx purrfold@latest my-app
@@ -17,6 +17,7 @@ V1 supports new projects created with `create-next-app@latest` or `create-astro@
 
 - Next.js App Router project with TypeScript, Tailwind, ESLint, and `@/*` alias.
 - shadcn initialized through the official `shadcn init` flow.
+- `@shadcn/lint` in the ESLint config, blocking restyled components, raw colors, arbitrary values, inline styles, dynamic and unknown classes; the generated `DESIGN.md` explains each rule.
 - Quality scripts for linting, formatting, typechecking, React Doctor, React Scan, and final checks.
 - Optional Vitest + React Testing Library.
 - Optional Playwright E2E testing.

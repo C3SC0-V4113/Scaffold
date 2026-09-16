@@ -5,18 +5,19 @@ import versions from '../src/versions.json' with { type: 'json' };
 import { buildScripts } from '../src/installers/config-model.js';
 import { renderEslintConfig } from '../src/templates/eslint.js';
 import {
-  designDoc,
   gitAttributes,
   humanizeProjectName,
   mergePnpmBuildPolicy,
   mergePnpmHardening,
   motionMainComponent,
   motionMainUnitTest,
+  prettierIgnore,
   reactDoctorConfig,
   renderAgents,
   renderAstroHomeHero,
   renderAstroHomePage,
   renderAstroRootLayout,
+  renderDesignDoc,
   renderPrettierConfig,
   renderReactDoctorConfig,
   renderVitestConfig,
@@ -67,17 +68,77 @@ describe('template snapshots', () => {
       ignore: { files: string[] };
     };
 
+    const nextMotionConfig = JSON.parse(renderReactDoctorConfig('next', true)) as {
+      ignore: { files: string[] };
+    };
+    const testReports = ['playwright-report/**', 'test-results/**', 'blob-report/**'];
+
     expect(gitAttributes).not.toMatch(/linguist-(?:vendored|generated)/);
     expect(nextConfig.ignore.files).toEqual([
       '.agents/**',
       '.claude/**',
       'components/ui/**',
+      ...testReports,
     ]);
+    expect(nextMotionConfig.ignore.files).toEqual(nextConfig.ignore.files);
     expect(astroConfig.ignore.files).toEqual([
       '.agents/**',
       '.claude/**',
       'src/components/ui/**',
+      ...testReports,
     ]);
+  });
+
+  it('keeps agent state, test reports, and the CLAUDE.md pointer out of Prettier', () => {
+    const entries = prettierIgnore.split('\n');
+
+    for (const entry of [
+      '.agents',
+      '.claude',
+      '.codegraph',
+      '.atl',
+      '.react-scan',
+      'playwright-report',
+      'test-results',
+      'blob-report',
+      'CLAUDE.md',
+    ]) {
+      expect(entries).toContain(entry);
+    }
+  });
+
+  it('keeps agent state and test reports out of ESLint', () => {
+    for (const framework of ['next', 'astro'] as const) {
+      const config = renderEslintConfig({ framework, unit: true, e2e: true });
+
+      for (const entry of [
+        '.codegraph/**',
+        '.atl/**',
+        '.react-scan/**',
+        'playwright-report/**',
+        'test-results/**',
+        'blob-report/**',
+      ]) {
+        expect(config).toContain(`    '${entry}',`);
+      }
+      expect(config).not.toContain('worker-configuration.d.ts');
+    }
+  });
+
+  it('ignores the wrangler-generated worker types only for the Astro Cloudflare adapter', () => {
+    const astro = { framework: 'astro' as const, unit: false, e2e: false };
+
+    expect(renderEslintConfig({ ...astro, ssr: true, astroAdapter: 'cloudflare' })).toContain(
+      "    'worker-configuration.d.ts',"
+    );
+    for (const astroAdapter of ['node', 'vercel', 'netlify'] as const) {
+      expect(renderEslintConfig({ ...astro, ssr: true, astroAdapter })).not.toContain(
+        'worker-configuration.d.ts'
+      );
+    }
+    expect(renderEslintConfig({ ...astro, ssr: false, astroAdapter: 'cloudflare' })).not.toContain(
+      'worker-configuration.d.ts'
+    );
   });
 
   it('suppresses only React Doctor 0.5.4 reduced-motion false positives for Motion projects', () => {
@@ -185,7 +246,7 @@ allowBuilds:
 
   it('snapshots generated docs', () => {
     expect(renderReadme(options)).toMatchSnapshot();
-    expect(designDoc).toMatchSnapshot();
+    expect(renderDesignDoc('next')).toMatchSnapshot();
     expect(renderAgents(options)).toMatchSnapshot();
   });
 
@@ -194,6 +255,13 @@ allowBuilds:
 
     expect(renderReadme(astroOptions)).toMatchSnapshot();
     expect(renderAgents(astroOptions)).toMatchSnapshot();
+    expect(renderDesignDoc('astro')).toMatchSnapshot();
+  });
+
+  it('points DESIGN.md at the stylesheet each framework actually generates', () => {
+    expect(renderDesignDoc('next')).toContain('`app/globals.css`');
+    expect(renderDesignDoc('astro')).toContain('`src/styles/global.css`');
+    expect(renderDesignDoc('astro')).not.toContain('app/globals.css');
   });
 
   it('snapshots ESLint and React Doctor config', () => {
@@ -284,6 +352,44 @@ allowBuilds:
     );
     expect(motionMainComponent).toContain("Omit<\n  HTMLMotionProps<'main'>");
     expect(motionMainComponent).toContain("| 'whileHover'");
+  });
+
+  it('enforces the shadcn design system with @shadcn/lint in Next and Astro', () => {
+    for (const framework of ['next', 'astro'] as const) {
+      const config = renderEslintConfig({ framework, unit: true, e2e: true });
+
+      // The generated config is itself linted with alphabetized import/order,
+      // and `@shadcn` sorts ahead of every other import it can carry.
+      expect(config.split('\n')[0]).toBe("import { plugin as shadcn } from '@shadcn/lint';");
+      expect(config).toContain(`  {
+    files: ['**/*.{js,jsx,ts,tsx}'],
+    plugins: { shadcn },
+    settings: { shadcn: { note: 'See DESIGN.md for the design system rules.' } },
+    rules: {
+      'shadcn/no-restyle': ['error', { allow: ['layout'] }],
+      'shadcn/no-raw-colors': 'error',
+      'shadcn/no-arbitrary-values': ['error', { allow: ['layout'] }],
+      'shadcn/no-inline-styles': 'error',
+      'shadcn/require-static-classes': 'error',
+      'shadcn/no-unknown-classes': 'error',
+    },
+  },`);
+      // Prettier's flat config only turns rules off, so it has to stay last.
+      expect(config.indexOf('plugins: { shadcn }')).toBeLessThan(
+        config.indexOf('  eslintConfigPrettier,')
+      );
+    }
+  });
+
+  it('documents @shadcn/lint enforcement in the generated docs', () => {
+    for (const framework of ['next', 'astro'] as const) {
+      const frameworkOptions = { ...options, framework };
+
+      expect(renderDesignDoc(framework)).toContain('## Lint Enforcement');
+      expect(renderDesignDoc(framework)).toContain('`shadcn/no-restyle`');
+      expect(renderReadme(frameworkOptions)).toContain('`@shadcn/lint`');
+      expect(renderAgents(frameworkOptions)).toContain('`@shadcn/lint`');
+    }
   });
 
   it('renders an Astro ESLint config with Astro and TypeScript support', () => {

@@ -297,5 +297,6 @@ describe('local skill templates', () => {
     expect(skill).toContain('`components/common/`');
     expect(skill).toContain('feature → common → ui');
     expect(skill).toContain('token variables as quarks');
+    expect(skill).toContain('`shadcn/no-restyle`');
   });
 });

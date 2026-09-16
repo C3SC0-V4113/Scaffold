@@ -1,6 +1,7 @@
 import path from 'node:path';
 
 import { getPackageManagerCommands } from '../package-manager.js';
+import { globalStylesheetPath } from '../templates/files.js';
 import type { CreateOptions, Executor } from '../types.js';
 import { pinnedSpecifier } from './config-model.js';
 
@@ -32,10 +33,7 @@ export async function installMotion(
     return;
   }
 
-  const stylesheetPath =
-    options.framework === 'astro'
-      ? path.join(projectRoot, 'src', 'styles', 'global.css')
-      : path.join(projectRoot, 'app', 'globals.css');
+  const stylesheetPath = path.join(projectRoot, globalStylesheetPath(options.framework));
   const stylesheet = (await executor.pathExists(stylesheetPath))
     ? await executor.readFile(stylesheetPath)
     : '';

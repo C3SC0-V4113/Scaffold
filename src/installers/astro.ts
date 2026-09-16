@@ -3,6 +3,7 @@ import path from 'node:path';
 import { DryRunExecutor } from '../executor.js';
 import { getPackageManagerCommands } from '../package-manager.js';
 import { mergePnpmBuildPolicy } from '../templates/files.js';
+import { testReportDirs } from '../templates/ignores.js';
 import type { AstroServerAdapter, CreateOptions, Executor } from '../types.js';
 import { pinnedSpecifier } from './config-model.js';
 import { validateTargetDir } from './next.js';
@@ -55,6 +56,7 @@ export function rewriteAstroTsconfigForShadcn(current: string) {
 
   const compilerOptions = isJsonObject(parsed.compilerOptions) ? parsed.compilerOptions : {};
   const paths = isJsonObject(compilerOptions.paths) ? compilerOptions.paths : {};
+  const exclude: unknown[] = Array.isArray(parsed.exclude) ? parsed.exclude : [];
 
   return `${JSON.stringify(
     {
@@ -67,6 +69,9 @@ export function rewriteAstroTsconfigForShadcn(current: string) {
           '@/*': ['./src/*'],
         },
       },
+      // create-astro includes "**/*", so without these `astro check` would
+      // type-check the scripts Playwright bundles into its reports.
+      exclude: [...new Set([...exclude, ...testReportDirs])],
     },
     null,
     2
