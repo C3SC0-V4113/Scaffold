@@ -1,5 +1,26 @@
 # purrfold
 
+## 0.8.0
+
+### Minor Changes
+
+- a7ee218: Add `@shadcn/lint` to generated Next.js and Astro apps, with all six rules enabled as errors.
+  
+  `DESIGN.md` asked for semantic tokens and shadcn variants, but nothing checked it: an agent could restyle a `Button` through `className`, reach for `bg-pink-500` or `p-[13px]`, and still pass `check`. The plugin turns those guardrails into lint errors whose messages explain the fix using the app's own components, variants, and theme, and point back to `DESIGN.md`. `no-restyle` and `no-arbitrary-values` allow layout classes, so pages can still place components. Every rule is an error rather than a warning because generated apps lint with `--max-warnings 0`, where the two are equivalent.
+  
+  The registry-managed `ui` directory stays out of lint as before, and `.astro` files are not covered because the plugin supports JavaScript and TypeScript sources only.
+
+### Patch Changes
+
+- 5545cf9: Point the generated `DESIGN.md` at the stylesheet each framework actually creates.
+  
+  Astro apps were told to use semantic tokens from `app/globals.css`, a Next.js path that does not exist in an Astro project; their Tailwind entry is `src/styles/global.css`. `DESIGN.md` is now rendered per framework, and the stylesheet mapping lives in one helper shared with the Motion installer instead of being repeated in each.
+- 6533c69: Keep agent tooling state and test reports out of lint, format, React Doctor, and `astro check` in generated apps.
+  
+  Each tool reads its own ignore file, and none of them follows git's full rules. Prettier 3 reads only the root `.gitignore` and `.prettierignore`, so it walked Claude Code worktrees, the `.codegraph` index, and `.atl` scratch files and failed `format:check`. React Doctor scanned the minified trace viewer inside `playwright-report`, and `astro check`, whose tsconfig includes `**/*`, type-checked the same report. ESLint flagged the wrangler-generated `worker-configuration.d.ts` in Astro apps on the Cloudflare adapter.
+  
+  Generated apps now list these paths in `.gitignore`, `.prettierignore`, the ESLint global ignores, `doctor.config.json`, and the Astro tsconfig `exclude`, from one shared list. `.gitignore` also covers the per-developer `.claude/settings.local.json`, and `.prettierignore` covers `CLAUDE.md`, which Windows checks out as a text file without a trailing newline when it is a symlink.
+
 ## 0.7.7
 
 ### Patch Changes
