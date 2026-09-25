@@ -930,7 +930,7 @@ npx purrfold@latest my-app --shadcn-args --preset b5eH0WVTX --yes
 
 - \`AGENTS.md\`: agent workflow and quality gates.
 - \`DESIGN.md\`: generic UI/UX guardrails.
-- \`.agents/skills\`: local and installed skills.
+- \`.agents/skills\`: agent skills downloaded by \`skills.sh\` from their published sources. If any are missing, rerun \`sh skills.sh\`.
 - \`CLAUDE.md\`: Claude Code pointer to \`AGENTS.md\`.
 `;
 }
@@ -1035,6 +1035,7 @@ ${options.unit ? `4. \`${run} test\`\n` : ''}${options.e2e ? `- Run \`${run} tes
 - Design rules: \`DESIGN.md\`
 - Astro reference docs: current Astro documentation
 - Astro agent rules: generated \`AGENTS.md\` / \`CLAUDE.md\`
+- If any agent skill is missing, rerun \`sh skills.sh\`.
 - Component placement rules: \`.agents/skills/shadcn-component-boundaries/SKILL.md\`
 - Minimum evaluation: \`.agents/skills/project-min-evaluation/SKILL.md\`
 ${options.unit ? '- Vitest guidance: `.agents/skills/vitest/SKILL.md`\n' : ''}${options.e2e ? '- Playwright guidance: `.agents/skills/playwright-best-practices/SKILL.md`\n' : ''}${options.commitlint ? '- Commit messages are checked with commitlint.\n' : ''}
@@ -1092,7 +1093,7 @@ Do not use \`next lint\`; use the ESLint CLI.
 - Next.js agent rules: generated \`AGENTS.md\` / \`CLAUDE.md\`
 - Purrfold-installed supported Next.js workflow skills from \`vercel/next.js\`: \`.agents/skills/next-cache-components-adoption/SKILL.md\`, \`.agents/skills/next-cache-components-optimizer/SKILL.md\`, and \`.agents/skills/next-dev-loop/SKILL.md\`
 - If bundled Next.js docs are missing, run \`npx @next/codemod@canary agents-md\`.
-- If Purrfold-installed supported workflow skills are missing, rerun \`sh skills.sh\`.
+- If any agent skill is missing, rerun \`sh skills.sh\`.
 - Component placement rules: \`.agents/skills/shadcn-component-boundaries/SKILL.md\`
 - Minimum evaluation: \`.agents/skills/project-min-evaluation/SKILL.md\`
 ${options.unit ? '- Vitest guidance: `.agents/skills/vitest/SKILL.md`\n' : ''}${options.e2e ? '- Playwright guidance: `.agents/skills/playwright-best-practices/SKILL.md`\n' : ''}${options.commitlint ? '- Commit messages are checked with commitlint.\n' : ''}

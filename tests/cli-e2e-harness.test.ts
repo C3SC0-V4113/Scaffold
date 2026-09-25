@@ -26,6 +26,7 @@ type RunContext = {
 };
 
 type HarnessModule = {
+  assertExternalSkillsFetched: (projectRoot: string) => void;
   cleanupContext: (context: RunContext) => void;
   createRunContext: (argv: string[], prefix?: string) => RunContext;
   prepareScenarioContext: (
@@ -348,6 +349,39 @@ describe('CLI E2E harness', () => {
     expect(existsSync(context.workDir)).toBe(false);
     expect(existsSync(path.join(override, 'npm'))).toBe(true);
     rmSync(override, { recursive: true, force: true });
+  });
+
+  it('requires every fetched purrfold-owned skill, React Doctor, and shadcn', async () => {
+    const { assertExternalSkillsFetched } = await loadHarness();
+    const projectRoot = mkdtempSync(path.join(tmpdir(), 'purrfold-harness-skills-'));
+    const required = [
+      'shadcn',
+      'project-architecture',
+      'shadcn-component-boundaries',
+      'project-min-evaluation',
+      'decision-doc-sync',
+      'react-doctor',
+    ];
+    const writeSkill = (name: string) => {
+      const skillDir = path.join(projectRoot, '.agents', 'skills', name);
+      mkdirSync(skillDir, { recursive: true });
+      writeFileSync(path.join(skillDir, 'SKILL.md'), `---\nname: ${name}\n---\n`);
+    };
+
+    try {
+      writeSkill('shadcn');
+      expect(() => assertExternalSkillsFetched(projectRoot)).toThrow(/project-architecture/);
+
+      for (const name of required) {
+        writeSkill(name);
+      }
+      expect(() => assertExternalSkillsFetched(projectRoot)).not.toThrow();
+
+      rmSync(path.join(projectRoot, '.agents', 'skills', 'react-doctor'), { recursive: true, force: true });
+      expect(() => assertExternalSkillsFetched(projectRoot)).toThrow(/react-doctor/);
+    } finally {
+      rmSync(projectRoot, { recursive: true, force: true });
+    }
   });
 
   it('preserves a temporary work dir only when --keep is explicit', async () => {

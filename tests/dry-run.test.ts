@@ -156,10 +156,19 @@ describe('dry-run integration', () => {
     expect(output).toContain(pinnedSpecifier('@vitejs/plugin-react', 'astro'));
     expect(output).not.toContain(pinnedSpecifier('@vitejs/plugin-react'));
     expect(output.replaceAll('\\', '/')).toContain('my-app/src/components/Button.astro');
-    expect(output.replaceAll('\\', '/')).toContain(
-      'my-app/.agents/skills/shadcn-component-boundaries/SKILL.md'
+    expect(output).not.toContain('SKILL.md');
+    expect(output).toContain(
+      'run npx --yes skills@latest add C3SC0-V4113/Scaffold --skill project-architecture --skill shadcn-component-boundaries --skill project-min-evaluation --skill decision-doc-sync --agent codex --copy --yes'
+    );
+    expect(output).toContain(
+      'run npx --yes skills@latest add millionco/react-doctor --skill react-doctor --agent codex --copy --yes'
     );
     expect(output.replaceAll('\\', '/')).toContain('my-app/skills.sh');
+    const lines = output.replaceAll('\\', '/').split('\n');
+    const skillsDir = lines.findIndex((line) => /mkdir \S*my-app\/\.agents\/skills$/.test(line));
+    const skillsLink = lines.findIndex((line) => line.includes('my-app/.claude/skills ->'));
+    expect(skillsDir).toBeGreaterThanOrEqual(0);
+    expect(skillsDir).toBeLessThan(skillsLink);
     expect(output.replaceAll('\\', '/')).toContain(
       'my-app/.claude/skills ->'
     );

@@ -25,7 +25,7 @@ V1 supports new projects created with `create-next-app@latest` or `create-astro@
 - Optional GitHub Actions workflows: `.github/workflows/quality.yml`, plus `playwright.yml` when E2E is enabled.
 - Optional Motion for React plus the `motion-framer` agent skill.
 - Generic `README.md`, `DESIGN.md`, `AGENTS.md`, `CLAUDE.md`, `.agents/skills`, and Claude hooks in generated apps.
-- A local component-boundary skill that reserves the shadcn `ui` path for registry primitives and routes product-owned components to `common` or feature folders.
+- Agent skills downloaded with `npx skills add` into `.agents/skills`, including purrfold's own skills (published from [`skills/`](./skills), such as the component-boundary skill that reserves the shadcn `ui` path for registry primitives) and React Doctor's official skill. A generated `skills.sh` retries any download that failed.
 
 ## Usage
 
