@@ -1,5 +1,22 @@
 # purrfold
 
+## 0.8.1
+
+### Patch Changes
+
+- ee220dd: Update the dependency versions pinned into generated apps.
+  
+  - Next.js apps: `eslint-config-next` 16.3.6.
+  - Astro apps: `astro` 7.3.5, `@astrojs/node` 11.1.6, `@astrojs/vercel` 11.0.11, `@astrojs/netlify` 8.2.6, `@astrojs/cloudflare` 14.3.3, and `prettier-plugin-astro` 1.1.0.
+  - Shared tooling: `@shadcn/lint` 0.2.0, `typescript-eslint` 8.70.1, `prettier` 3.9.9, `vitest` 5.0.1, `jsdom` 30.1.1, `@types/node` 26.6.2, and `@commitlint/cli` / `@commitlint/config-conventional` 21.2.3. `@shadcn/lint` 0.2.0 adds Vue and Svelte support; the rules purrfold configures are unchanged.
+  - UI libraries: `lucide-react` 1.48.0, `@tabler/icons-react` 3.48.0, and `motion` 13.4.3.
+  - The `packageManager` fallback for pnpm apps is now `pnpm@12.6.0`.
+- b892e41: Install purrfold's own agent skills and React Doctor's official skill from their published sources instead of writing them from templates.
+  
+  Generated apps previously received `project-architecture`, `shadcn-component-boundaries`, `project-min-evaluation`, `decision-doc-sync`, and `react-doctor` as `SKILL.md` files rendered by purrfold. They are now fetched with `npx skills add` alongside the other agent skills: the four purrfold-owned skills from `C3SC0-V4113/Scaffold` in one command, and React Doctor's skill from `millionco/react-doctor`. Both commands are listed in the generated `skills.sh`, so a failed download can be retried with `sh skills.sh`; as before, a download failure is reported but never fails the scaffold.
+  
+  purrfold now creates `.agents/skills` explicitly before linking `.claude/skills` to it, so the link has a target even when every download fails. React Doctor's dependencies, configuration, `doctor` script, hooks, and quality gates are unchanged.
+
 ## 0.8.0
 
 ### Minor Changes
