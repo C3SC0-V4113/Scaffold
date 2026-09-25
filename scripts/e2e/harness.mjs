@@ -514,6 +514,35 @@ export function assertExternalSkillsFetched(projectRoot) {
         `The scaffold succeeded, so the skills CLI failed and installSkills degraded silently.`
     );
   }
+
+  for (const name of ownedFetchedSkills) {
+    assertSkillReferencesFetched(path.join(projectRoot, '.agents', 'skills', name), name);
+  }
+}
+
+// Skills published from this repository link their own references/ files. A
+// SKILL.md that arrives without them means the download was partial.
+const ownedFetchedSkills = [
+  'project-architecture',
+  'shadcn-component-boundaries',
+  'project-min-evaluation',
+  'decision-doc-sync',
+];
+
+function assertSkillReferencesFetched(skillDir, name) {
+  const skill = readFileSync(path.join(skillDir, 'SKILL.md'), 'utf8');
+  const links = [...skill.matchAll(/\]\(([^)\s#]+)(?:#[^)]*)?\)/g)]
+    .map((match) => match[1])
+    .filter((target) => !/^[a-z]+:/i.test(target));
+
+  if (links.length === 0) {
+    throw new Error(`${name}: SKILL.md has no local references, so the fetched skill is not the published one.`);
+  }
+
+  const missing = links.filter((link) => !existsSync(path.join(skillDir, link)));
+  if (missing.length > 0) {
+    throw new Error(`${name}: fetched SKILL.md links missing files ${missing.join(', ')}.`);
+  }
 }
 
 export function assertGeneratedApp(projectRoot, expected) {

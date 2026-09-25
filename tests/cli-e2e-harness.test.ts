@@ -362,10 +362,13 @@ describe('CLI E2E harness', () => {
       'decision-doc-sync',
       'react-doctor',
     ];
+    const owned = required.slice(1, 5);
     const writeSkill = (name: string) => {
       const skillDir = path.join(projectRoot, '.agents', 'skills', name);
-      mkdirSync(skillDir, { recursive: true });
-      writeFileSync(path.join(skillDir, 'SKILL.md'), `---\nname: ${name}\n---\n`);
+      mkdirSync(path.join(skillDir, 'references'), { recursive: true });
+      const link = owned.includes(name) ? '\n- [guide](references/guide.md)\n' : '';
+      writeFileSync(path.join(skillDir, 'SKILL.md'), `---\nname: ${name}\n---\n${link}`);
+      writeFileSync(path.join(skillDir, 'references', 'guide.md'), '# Guide\n');
     };
 
     try {
@@ -379,6 +382,38 @@ describe('CLI E2E harness', () => {
 
       rmSync(path.join(projectRoot, '.agents', 'skills', 'react-doctor'), { recursive: true, force: true });
       expect(() => assertExternalSkillsFetched(projectRoot)).toThrow(/react-doctor/);
+    } finally {
+      rmSync(projectRoot, { recursive: true, force: true });
+    }
+  });
+
+  it('requires the local references every fetched purrfold-owned skill links to', async () => {
+    const { assertExternalSkillsFetched } = await loadHarness();
+    const projectRoot = mkdtempSync(path.join(tmpdir(), 'purrfold-harness-refs-'));
+    const skillsDir = path.join(projectRoot, '.agents', 'skills');
+    const owned = ['project-architecture', 'shadcn-component-boundaries', 'project-min-evaluation', 'decision-doc-sync'];
+    const writeSkill = (name: string, body = '') => {
+      mkdirSync(path.join(skillsDir, name), { recursive: true });
+      writeFileSync(path.join(skillsDir, name, 'SKILL.md'), `---\nname: ${name}\n---\n${body}`);
+    };
+
+    try {
+      writeSkill('shadcn');
+      writeSkill('react-doctor');
+      for (const name of owned) {
+        writeSkill(name, '- [guide](references/guide.md)\n');
+        mkdirSync(path.join(skillsDir, name, 'references'), { recursive: true });
+        writeFileSync(path.join(skillsDir, name, 'references', 'guide.md'), '# Guide\n');
+      }
+      expect(() => assertExternalSkillsFetched(projectRoot)).not.toThrow();
+
+      // A download that delivers SKILL.md but drops its references.
+      rmSync(path.join(skillsDir, 'decision-doc-sync', 'references'), { recursive: true, force: true });
+      expect(() => assertExternalSkillsFetched(projectRoot)).toThrow(/decision-doc-sync.*references\/guide\.md/);
+
+      // An owned skill that links nothing is a truncated or wrong download.
+      writeSkill('decision-doc-sync');
+      expect(() => assertExternalSkillsFetched(projectRoot)).toThrow(/decision-doc-sync.*no local references/);
     } finally {
       rmSync(projectRoot, { recursive: true, force: true });
     }
