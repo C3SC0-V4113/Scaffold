@@ -536,6 +536,18 @@ allowBuilds:
     expect(agents).toContain('.agents/skills/shadcn-component-boundaries/SKILL.md');
   });
 
+  it.each(['next', 'astro'] as const)(
+    'describes %s agent skills as downloaded, with skills.sh as the retry path',
+    (framework) => {
+      const readme = renderReadme({ ...options, framework });
+      const agents = renderAgents({ ...options, framework });
+
+      expect(readme).toContain('`.agents/skills`: agent skills downloaded by `skills.sh`');
+      expect(readme).not.toContain('local and installed skills');
+      expect(agents).toContain('If any agent skill is missing, rerun `sh skills.sh`.');
+    }
+  );
+
   it('adds authoritative Motion guidance only when Motion is selected', () => {
     const readme = renderReadme({ ...options, motion: true });
     const agents = renderAgents({ ...options, motion: true });

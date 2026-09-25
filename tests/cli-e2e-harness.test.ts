@@ -26,6 +26,7 @@ type RunContext = {
 };
 
 type HarnessModule = {
+  assertExternalSkillsFetched: (projectRoot: string) => void;
   cleanupContext: (context: RunContext) => void;
   createRunContext: (argv: string[], prefix?: string) => RunContext;
   prepareScenarioContext: (
@@ -348,6 +349,74 @@ describe('CLI E2E harness', () => {
     expect(existsSync(context.workDir)).toBe(false);
     expect(existsSync(path.join(override, 'npm'))).toBe(true);
     rmSync(override, { recursive: true, force: true });
+  });
+
+  it('requires every fetched purrfold-owned skill, React Doctor, and shadcn', async () => {
+    const { assertExternalSkillsFetched } = await loadHarness();
+    const projectRoot = mkdtempSync(path.join(tmpdir(), 'purrfold-harness-skills-'));
+    const required = [
+      'shadcn',
+      'project-architecture',
+      'shadcn-component-boundaries',
+      'project-min-evaluation',
+      'decision-doc-sync',
+      'react-doctor',
+    ];
+    const owned = required.slice(1, 5);
+    const writeSkill = (name: string) => {
+      const skillDir = path.join(projectRoot, '.agents', 'skills', name);
+      mkdirSync(path.join(skillDir, 'references'), { recursive: true });
+      const link = owned.includes(name) ? '\n- [guide](references/guide.md)\n' : '';
+      writeFileSync(path.join(skillDir, 'SKILL.md'), `---\nname: ${name}\n---\n${link}`);
+      writeFileSync(path.join(skillDir, 'references', 'guide.md'), '# Guide\n');
+    };
+
+    try {
+      writeSkill('shadcn');
+      expect(() => assertExternalSkillsFetched(projectRoot)).toThrow(/project-architecture/);
+
+      for (const name of required) {
+        writeSkill(name);
+      }
+      expect(() => assertExternalSkillsFetched(projectRoot)).not.toThrow();
+
+      rmSync(path.join(projectRoot, '.agents', 'skills', 'react-doctor'), { recursive: true, force: true });
+      expect(() => assertExternalSkillsFetched(projectRoot)).toThrow(/react-doctor/);
+    } finally {
+      rmSync(projectRoot, { recursive: true, force: true });
+    }
+  });
+
+  it('requires the local references every fetched purrfold-owned skill links to', async () => {
+    const { assertExternalSkillsFetched } = await loadHarness();
+    const projectRoot = mkdtempSync(path.join(tmpdir(), 'purrfold-harness-refs-'));
+    const skillsDir = path.join(projectRoot, '.agents', 'skills');
+    const owned = ['project-architecture', 'shadcn-component-boundaries', 'project-min-evaluation', 'decision-doc-sync'];
+    const writeSkill = (name: string, body = '') => {
+      mkdirSync(path.join(skillsDir, name), { recursive: true });
+      writeFileSync(path.join(skillsDir, name, 'SKILL.md'), `---\nname: ${name}\n---\n${body}`);
+    };
+
+    try {
+      writeSkill('shadcn');
+      writeSkill('react-doctor');
+      for (const name of owned) {
+        writeSkill(name, '- [guide](references/guide.md)\n');
+        mkdirSync(path.join(skillsDir, name, 'references'), { recursive: true });
+        writeFileSync(path.join(skillsDir, name, 'references', 'guide.md'), '# Guide\n');
+      }
+      expect(() => assertExternalSkillsFetched(projectRoot)).not.toThrow();
+
+      // A download that delivers SKILL.md but drops its references.
+      rmSync(path.join(skillsDir, 'decision-doc-sync', 'references'), { recursive: true, force: true });
+      expect(() => assertExternalSkillsFetched(projectRoot)).toThrow(/decision-doc-sync.*references\/guide\.md/);
+
+      // An owned skill that links nothing is a truncated or wrong download.
+      writeSkill('decision-doc-sync');
+      expect(() => assertExternalSkillsFetched(projectRoot)).toThrow(/decision-doc-sync.*no local references/);
+    } finally {
+      rmSync(projectRoot, { recursive: true, force: true });
+    }
   });
 
   it('preserves a temporary work dir only when --keep is explicit', async () => {

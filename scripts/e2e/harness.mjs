@@ -486,18 +486,62 @@ function runMotionImportCheck(projectRoot, env, nodeExecutable) {
  * every other assertion here passes either way. A real Windows CI failure went
  * undiagnosed for that reason.
  *
- * One representative skill is deliberate. Asserting all of them would tie every
- * run to the availability of eight third-party repositories and turn their
- * outages into our red builds; one is enough to make total failure loud.
+ * The list is deliberately short. Asserting every skill would tie each run to
+ * the availability of many third-party repositories and turn their outages into
+ * our red builds. shadcn stands in for the third-party sources; the purrfold-owned
+ * skills and React Doctor are required individually because purrfold no longer
+ * writes them itself — a missing one means the project ships without it.
  */
-function assertExternalSkillsFetched(projectRoot) {
+const requiredFetchedSkills = [
   // Shipped by shadcn/ui, requested for every framework and flag combination.
-  const skillDir = path.join(projectRoot, '.agents', 'skills', 'shadcn');
-  if (!existsSync(path.join(skillDir, 'SKILL.md'))) {
+  'shadcn',
+  // Published from this repository's skills/ directory.
+  'project-architecture',
+  'shadcn-component-boundaries',
+  'project-min-evaluation',
+  'decision-doc-sync',
+  // React Doctor's official skill.
+  'react-doctor',
+];
+
+export function assertExternalSkillsFetched(projectRoot) {
+  const missing = requiredFetchedSkills.filter(
+    (name) => !existsSync(path.join(projectRoot, '.agents', 'skills', name, 'SKILL.md'))
+  );
+  if (missing.length > 0) {
     throw new Error(
-      `No external skill content in ${skillDir}. The scaffold succeeded, so the ` +
-        `skills CLI failed and installSkills degraded silently.`
+      `No skill content for ${missing.join(', ')} in ${path.join(projectRoot, '.agents', 'skills')}. ` +
+        `The scaffold succeeded, so the skills CLI failed and installSkills degraded silently.`
     );
+  }
+
+  for (const name of ownedFetchedSkills) {
+    assertSkillReferencesFetched(path.join(projectRoot, '.agents', 'skills', name), name);
+  }
+}
+
+// Skills published from this repository link their own references/ files. A
+// SKILL.md that arrives without them means the download was partial.
+const ownedFetchedSkills = [
+  'project-architecture',
+  'shadcn-component-boundaries',
+  'project-min-evaluation',
+  'decision-doc-sync',
+];
+
+function assertSkillReferencesFetched(skillDir, name) {
+  const skill = readFileSync(path.join(skillDir, 'SKILL.md'), 'utf8');
+  const links = [...skill.matchAll(/\]\(([^)\s#]+)(?:#[^)]*)?\)/g)]
+    .map((match) => match[1])
+    .filter((target) => !/^[a-z]+:/i.test(target));
+
+  if (links.length === 0) {
+    throw new Error(`${name}: SKILL.md has no local references, so the fetched skill is not the published one.`);
+  }
+
+  const missing = links.filter((link) => !existsSync(path.join(skillDir, link)));
+  if (missing.length > 0) {
+    throw new Error(`${name}: fetched SKILL.md links missing files ${missing.join(', ')}.`);
   }
 }
 

@@ -1,13 +1,6 @@
 import path from 'node:path';
 
 import { externalSkillManifest } from '../skills/manifest.js';
-import {
-  renderDecisionDocSyncSkill,
-  renderProjectArchitectureSkill,
-  renderProjectMinEvaluationSkill,
-  renderReactDoctorSkill,
-  renderShadcnComponentBoundariesSkill,
-} from '../templates/skills.js';
 import type { CreateOptions, Executor, SkillInstallEntry } from '../types.js';
 
 const frameworkAgnosticExternalSkills = [
@@ -28,14 +21,6 @@ const frameworkSpecificExternalSkills = {
   astro: ['astro'],
 } as const;
 
-const localSkillRenderers = {
-  'project-architecture': renderProjectArchitectureSkill,
-  'shadcn-component-boundaries': renderShadcnComponentBoundariesSkill,
-  'project-min-evaluation': renderProjectMinEvaluationSkill,
-  'decision-doc-sync': renderDecisionDocSyncSkill,
-  'react-doctor': renderReactDoctorSkill,
-} as const;
-
 type SkillSelectionOptions = Pick<CreateOptions, 'framework' | 'unit' | 'e2e' | 'motion'>;
 
 export function selectSkillNames(options: SkillSelectionOptions) {
@@ -52,33 +37,6 @@ export function selectSkillNames(options: SkillSelectionOptions) {
     ...(options.e2e ? ['playwright-best-practices', 'playwright-cli'] : []),
     ...(options.motion ? ['motion-framer'] : []),
   ];
-}
-
-async function installLocalSkills(
-  projectRoot: string,
-  options: CreateOptions,
-  executor: Executor
-) {
-  await executor.writeFile(
-    path.join(projectRoot, '.agents', 'skills', 'project-architecture', 'SKILL.md'),
-    localSkillRenderers['project-architecture']({ framework: options.framework })
-  );
-  await executor.writeFile(
-    path.join(projectRoot, '.agents', 'skills', 'shadcn-component-boundaries', 'SKILL.md'),
-    localSkillRenderers['shadcn-component-boundaries']()
-  );
-  await executor.writeFile(
-    path.join(projectRoot, '.agents', 'skills', 'project-min-evaluation', 'SKILL.md'),
-    localSkillRenderers['project-min-evaluation'](options)
-  );
-  await executor.writeFile(
-    path.join(projectRoot, '.agents', 'skills', 'decision-doc-sync', 'SKILL.md'),
-    localSkillRenderers['decision-doc-sync']()
-  );
-  await executor.writeFile(
-    path.join(projectRoot, '.agents', 'skills', 'react-doctor', 'SKILL.md'),
-    localSkillRenderers['react-doctor'](options)
-  );
 }
 
 interface SkillInstallCommand {
@@ -133,11 +91,13 @@ ${commands.join('\n')}
 }
 
 export async function installSkills(projectRoot: string, options: CreateOptions, executor: Executor) {
-  await installLocalSkills(projectRoot, options, executor);
-  await executor.symlinkOrJunction(
-    path.join(projectRoot, '.agents', 'skills'),
-    path.join(projectRoot, '.claude', 'skills')
-  );
+  const skillsDir = path.join(projectRoot, '.agents', 'skills');
+
+  // Every skill is downloaded, and a download may fail, so nothing else is
+  // guaranteed to create this directory. The Windows junction fallback needs
+  // its target to exist, so create it before linking .claude/skills to it.
+  await executor.ensureDir(skillsDir);
+  await executor.symlinkOrJunction(skillsDir, path.join(projectRoot, '.claude', 'skills'));
   await executor.writeFile(path.join(projectRoot, 'skills.sh'), renderSkillsScript(options));
 
   const failures: string[] = [];

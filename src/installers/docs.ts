@@ -135,8 +135,9 @@ export async function installDocsAndClaude(
   );
   await executor.writeFile(path.join(projectRoot, '.claude', 'settings.json'), claudeSettings);
 
-  await executor.symlinkOrJunction(
-    path.join(projectRoot, '.agents', 'skills'),
-    path.join(projectRoot, '.claude', 'skills')
-  );
+  // The link target must exist first: the Windows junction fallback cannot
+  // point at a missing directory.
+  const skillsDir = path.join(projectRoot, '.agents', 'skills');
+  await executor.ensureDir(skillsDir);
+  await executor.symlinkOrJunction(skillsDir, path.join(projectRoot, '.claude', 'skills'));
 }

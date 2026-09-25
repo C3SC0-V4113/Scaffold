@@ -6,6 +6,27 @@ export const externalSkillManifest: SkillInstallManifest = {
       source: 'wshobson/agents',
       skill: 'architecture-decision-records',
     },
+    // purrfold-owned skills, published from this repository's skills/ directory.
+    'project-architecture': {
+      source: 'C3SC0-V4113/Scaffold',
+      skill: 'project-architecture',
+    },
+    'shadcn-component-boundaries': {
+      source: 'C3SC0-V4113/Scaffold',
+      skill: 'shadcn-component-boundaries',
+    },
+    'project-min-evaluation': {
+      source: 'C3SC0-V4113/Scaffold',
+      skill: 'project-min-evaluation',
+    },
+    'decision-doc-sync': {
+      source: 'C3SC0-V4113/Scaffold',
+      skill: 'decision-doc-sync',
+    },
+    'react-doctor': {
+      source: 'millionco/react-doctor',
+      skill: 'react-doctor',
+    },
     'next-cache-components-adoption': {
       source: 'vercel/next.js',
       skill: 'next-cache-components-adoption',

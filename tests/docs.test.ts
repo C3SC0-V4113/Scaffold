@@ -72,6 +72,16 @@ describe('generated documentation installer', () => {
     await expect(lstat(path.join(root, '.claude', 'skills'))).resolves.toBeTruthy();
   });
 
+  it('creates .agents/skills before linking .claude/skills to it', async () => {
+    const root = await project();
+    await rm(path.join(root, '.agents'), { recursive: true, force: true });
+
+    await installDocsAndClaude(root, options('next'), new RealExecutor());
+
+    expect((await lstat(path.join(root, '.agents', 'skills'))).isDirectory()).toBe(true);
+    await expect(lstat(path.join(root, '.claude', 'skills'))).resolves.toBeTruthy();
+  });
+
   it('keeps Astro starter content and updates one idempotent managed block', async () => {
     const root = await project();
     const readmeStarter = '# Astro Starter\n\nRun the starter locally.\n';
