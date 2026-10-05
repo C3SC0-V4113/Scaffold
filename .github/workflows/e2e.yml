@@ -255,10 +255,34 @@ jobs:
       # almost always upstream drift or a registry incident, and that persists for
       # days; opening a fresh issue every morning buries the one somebody is
       # already working in and makes the backlog lie about how many things are
-      # broken. Subsequent failures comment on the open issue instead, so the
-      # issue's age is the length of the outage.
+      # broken. Subsequent failures comment on the open issue instead. The first
+      # green nightly closes it, so its lifetime is the length of the outage.
+      # The conditions complement each other: skipped scenarios report, never recover.
       - name: Report the failed nightly run
-        if: contains(needs.*.result, 'failure')
+        if: ${{ needs.scenario.result != 'success' || needs.heavy.result == 'failure' || needs.heavy.result == 'cancelled' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          SCENARIO_RESULT: ${{ needs.scenario.result }}
+        run: |
+          set -euo pipefail
+
+          today="$(date -u +%F)"
+          if [ "$SCENARIO_RESULT" = "skipped" ]; then
+            cause="the scenario jobs did not run (change detection or matrix generation failed)"
+          else
+            cause="likely upstream drift (create-next-app@latest, shadcn@latest, or a registry change) since no code changed"
+          fi
+          existing="$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --search 'in:title "Nightly E2E failure"' --json number --jq '.[0].number // empty')"
+
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --repo "$GITHUB_REPOSITORY" --body "Still failing on $today — $cause. Run: $RUN_URL"
+          else
+            gh issue create --repo "$GITHUB_REPOSITORY" --title "Nightly E2E failure ($today)" --body "The nightly CLI E2E run failed, $cause. Run: $RUN_URL"
+          fi
+
+      - name: Close the nightly issue once the run recovers
+        if: ${{ needs.scenario.result == 'success' && needs.heavy.result != 'failure' && needs.heavy.result != 'cancelled' }}
         env:
           GH_TOKEN: ${{ github.token }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
@@ -266,11 +290,9 @@ jobs:
           set -euo pipefail
 
           today="$(date -u +%F)"
-          cause="likely upstream drift (create-next-app@latest, shadcn@latest, or a registry change) since no code changed"
           existing="$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --search 'in:title "Nightly E2E failure"' --json number --jq '.[0].number // empty')"
 
           if [ -n "$existing" ]; then
-            gh issue comment "$existing" --repo "$GITHUB_REPOSITORY" --body "Still failing on $today — $cause. Run: $RUN_URL"
-          else
-            gh issue create --repo "$GITHUB_REPOSITORY" --title "Nightly E2E failure ($today)" --body "The nightly CLI E2E run failed, $cause. Run: $RUN_URL"
+            gh issue comment "$existing" --repo "$GITHUB_REPOSITORY" --body "Recovered on $today. Run: $RUN_URL"
+            gh issue close "$existing" --repo "$GITHUB_REPOSITORY"
           fi
