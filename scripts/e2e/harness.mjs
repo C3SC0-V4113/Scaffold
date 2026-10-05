@@ -6,6 +6,7 @@ import {
   linkSync,
   lstatSync,
   mkdirSync,
+  mkdtempSync,
   readFileSync,
   readlinkSync,
   realpathSync,
@@ -100,6 +101,13 @@ export function resolveCacheRoot(env = process.env) {
   return env.PURRFOLD_E2E_CACHE_DIR ?? path.join(homedir(), '.cache', 'purrfold-e2e');
 }
 
+export function resolvePnpmCacheDir({ workDir, env, platform }) {
+  if (platform === 'win32') {
+    return env.RUNNER_TEMP ?? path.win32.parse(workDir).root;
+  }
+  return path.join(workDir, '_purrfold-e2e', 'pnpm-cache');
+}
+
 function quotePosix(value) {
   return `'${value.replaceAll("'", "'\\''")}'`;
 }
@@ -168,21 +176,29 @@ export function createRunContext(argv, prefix = 'purrfold-e2e-') {
   // the same directory and nothing reconciles them. Real users never have this,
   // so the harness must not manufacture it.
   const workDir = realpathSync.native(requestedWorkDir);
+  const stamp = new Date()
+    .toISOString()
+    .replace(/[-:TZ.]/g, '')
+    .slice(0, 14);
   const stateDir = path.join(workDir, '_purrfold-e2e');
   const homeDir = path.join(stateDir, 'home');
   const tempDir = path.join(stateDir, 'tmp');
   const pnpmHome = path.join(stateDir, 'pnpm-home');
-  // Per-run on purpose. pnpm's cacheDir holds `dlx/`, and a dlx entry is not a
-  // download — it is a materialized node_modules tree whose packages are links
-  // into the store. Archiving that into the shared cache and restoring it
-  // elsewhere produces a tree whose links no longer resolve, which surfaced as
-  // `Cannot find package 'zod'` from a cached `pnpm dlx shadcn@latest` on a
-  // Windows runner. pnpm keys dlx entries on the spec string, so `shadcn@latest`
-  // reuses a poisoned entry for dlxCacheMaxAge (24h by default) across runs.
-  // There is no separate dlx-dir setting, so the whole cacheDir moves; that also
-  // gives up pnpm's registry-metadata cache, which is cheap to refetch. The
-  // expensive part, the content-addressed store, stays shared below.
-  const pnpmCache = path.join(stateDir, 'pnpm-cache');
+  // Keep pnpm's cacheDir per-run: `dlx/` contains a linked node_modules tree,
+  // not downloads. Restoring it from the shared cache leaves dead links; a
+  // poisoned `shadcn@latest` entry then persists for dlxCacheMaxAge (24h by
+  // default), as seen with `Cannot find package 'zod'` on Windows. There is no
+  // separate dlx-dir setting, so registry metadata is refetched while the
+  // expensive content-addressed store stays shared below. On Windows, pnpm's
+  // deep dlx path can exceed MAX_PATH (260): Node cannot read a package.json,
+  // classifies the empty dist/chunk-BJ4WI4GW.js in @shadcn/registry 0.1.0/0.1.1
+  // as CJS, and require(esm) cycles.
+  // Use a short cache root to leave room for pnpm's appended path.
+  // https://github.com/shadcn-ui/ui/issues/12147
+  // https://github.com/shadcn-ui/ui/pull/12148
+  const pnpmCacheParent = resolvePnpmCacheDir({ workDir, env: process.env, platform: process.platform });
+  const pnpmCacheDir =
+    process.platform === 'win32' ? mkdtempSync(path.join(pnpmCacheParent, 'pe-')) : pnpmCacheParent;
   const appDataDir = path.join(homeDir, 'AppData', 'Roaming');
   const localAppDataDir = path.join(homeDir, 'AppData', 'Local');
   // Shared across runs (never cleaned up by cleanupContext).
@@ -196,7 +212,7 @@ export function createRunContext(argv, prefix = 'purrfold-e2e-') {
     homeDir,
     tempDir,
     pnpmHome,
-    pnpmCache,
+    pnpmCacheDir,
     appDataDir,
     localAppDataDir,
     npmCache,
@@ -210,12 +226,10 @@ export function createRunContext(argv, prefix = 'purrfold-e2e-') {
     keep,
     workDir,
     cacheRoot,
+    pnpmCacheDir,
     nodeExecutable: process.execPath,
     scenarioAdapters: new Map(),
-    stamp: new Date()
-      .toISOString()
-      .replace(/[-:TZ.]/g, '')
-      .slice(0, 14),
+    stamp,
     env: {
       HOME: homeDir,
       USERPROFILE: homeDir,
@@ -229,10 +243,10 @@ export function createRunContext(argv, prefix = 'purrfold-e2e-') {
       npm_config_store_dir: pnpmStore,
       pnpm_config_store_dir: pnpmStore,
       PNPM_CONFIG_STORE_DIR: pnpmStore,
-      // Keeps `dlx/` out of the shared cache; see pnpmCache above.
-      npm_config_cache_dir: pnpmCache,
-      pnpm_config_cache_dir: pnpmCache,
-      PNPM_CONFIG_CACHE_DIR: pnpmCache,
+      // Keeps `dlx/` out of the shared cache; see pnpmCacheDir above.
+      npm_config_cache_dir: pnpmCacheDir,
+      pnpm_config_cache_dir: pnpmCacheDir,
+      PNPM_CONFIG_CACHE_DIR: pnpmCacheDir,
       PNPM_HOME: pnpmHome,
       BUN_INSTALL_CACHE_DIR: bunCache,
       TMP: tempDir,
@@ -1173,7 +1187,14 @@ export async function runScenario(scenario, context, cliPath, options = {}) {
 }
 
 export function cleanupContext(context) {
-  if (!context.keep && context.workDir.includes(tmpdir())) {
+  if (context.keep) {
+    return;
+  }
+  const relativePnpmCache = path.relative(context.workDir, context.pnpmCacheDir);
+  if (relativePnpmCache === '..' || relativePnpmCache.startsWith(`..${path.sep}`) || path.isAbsolute(relativePnpmCache)) {
+    rmSync(context.pnpmCacheDir, { recursive: true, force: true });
+  }
+  if (context.workDir.includes(tmpdir())) {
     rmSync(context.workDir, { recursive: true, force: true });
   }
 }
