@@ -101,9 +101,9 @@ export function resolveCacheRoot(env = process.env) {
   return env.PURRFOLD_E2E_CACHE_DIR ?? path.join(homedir(), '.cache', 'purrfold-e2e');
 }
 
-export function resolvePnpmCacheDir({ workDir, env, platform }) {
+export function resolvePnpmCacheDir({ workDir, env, platform, tmpDir }) {
   if (platform === 'win32') {
-    return env.RUNNER_TEMP ?? path.win32.parse(workDir).root;
+    return env.RUNNER_TEMP ?? tmpDir;
   }
   return path.join(workDir, '_purrfold-e2e', 'pnpm-cache');
 }
@@ -193,10 +193,11 @@ export function createRunContext(argv, prefix = 'purrfold-e2e-') {
   // deep dlx path can exceed MAX_PATH (260): Node cannot read a package.json,
   // classifies the empty dist/chunk-BJ4WI4GW.js in @shadcn/registry 0.1.0/0.1.1
   // as CJS, and require(esm) cycles.
-  // Use a short cache root to leave room for pnpm's appended path.
+  // Use RUNNER_TEMP in CI or the OS temp dir locally to leave room for pnpm's
+  // appended path without writing to the drive root.
   // https://github.com/shadcn-ui/ui/issues/12147
   // https://github.com/shadcn-ui/ui/pull/12148
-  const pnpmCacheParent = resolvePnpmCacheDir({ workDir, env: process.env, platform: process.platform });
+  const pnpmCacheParent = resolvePnpmCacheDir({ workDir, env: process.env, platform: process.platform, tmpDir: tmpdir() });
   const pnpmCacheDir =
     process.platform === 'win32' ? mkdtempSync(path.join(pnpmCacheParent, 'pe-')) : pnpmCacheParent;
   const appDataDir = path.join(homeDir, 'AppData', 'Roaming');
@@ -1186,12 +1187,16 @@ export async function runScenario(scenario, context, cliPath, options = {}) {
   return { name: targetName, output: result.output };
 }
 
+export function isPnpmCacheOutsideWorkDir(context) {
+  const relativePnpmCache = path.relative(context.workDir, context.pnpmCacheDir);
+  return relativePnpmCache === '..' || relativePnpmCache.startsWith(`..${path.sep}`) || path.isAbsolute(relativePnpmCache);
+}
+
 export function cleanupContext(context) {
   if (context.keep) {
     return;
   }
-  const relativePnpmCache = path.relative(context.workDir, context.pnpmCacheDir);
-  if (relativePnpmCache === '..' || relativePnpmCache.startsWith(`..${path.sep}`) || path.isAbsolute(relativePnpmCache)) {
+  if (isPnpmCacheOutsideWorkDir(context)) {
     rmSync(context.pnpmCacheDir, { recursive: true, force: true });
   }
   if (context.workDir.includes(tmpdir())) {

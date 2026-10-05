@@ -29,7 +29,8 @@ if (scenarios.length === 0) {
 
 // Runtime-only dependencies stay behind the catalog/list boundary so the CI
 // matrix can be generated immediately after checkout, before npm ci.
-const { buildCli, cleanupContext, createRunContext, runScenario } = await import('./e2e/harness.mjs');
+const { buildCli, cleanupContext, createRunContext, isPnpmCacheOutsideWorkDir, runScenario } =
+  await import('./e2e/harness.mjs');
 const prefix = quick ? 'purrfold-e2e-quick-' : heavy ? 'purrfold-e2e-heavy-' : 'purrfold-e2e-';
 const context = createRunContext(process.argv, prefix);
 const results = [];
@@ -66,6 +67,9 @@ try {
 } finally {
   if (context.keep) {
     console.log(`\nPreserved CLI E2E work directory by request: ${context.workDir}`);
+    if (isPnpmCacheOutsideWorkDir(context)) {
+      console.log(`Preserved pnpm cache directory: ${context.pnpmCacheDir}`);
+    }
   } else {
     cleanupContext(context);
   }

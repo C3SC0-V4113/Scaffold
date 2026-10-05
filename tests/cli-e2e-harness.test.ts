@@ -30,6 +30,7 @@ type HarnessModule = {
   assertExternalSkillsFetched: (projectRoot: string) => void;
   cleanupContext: (context: RunContext) => void;
   createRunContext: (argv: string[], prefix?: string) => RunContext;
+  isPnpmCacheOutsideWorkDir: (context: RunContext) => boolean;
   prepareScenarioContext: (
     scenario: Record<string, unknown>,
     context: RunContext,
@@ -42,6 +43,7 @@ type HarnessModule = {
     workDir: string;
     env: Record<string, string | undefined>;
     platform: string;
+    tmpDir: string;
   }) => string;
   resolveExecutable: (command: string, env?: Record<string, string | undefined>) => string;
   runScenario: (
@@ -76,19 +78,20 @@ describe('CLI E2E harness', () => {
     const { resolvePnpmCacheDir } = await loadHarness();
     const workDir = path.join(tmpdir(), 'purrfold-e2e-test');
 
-    expect(resolvePnpmCacheDir({ workDir, env: {}, platform: 'linux' })).toBe(
+    expect(resolvePnpmCacheDir({ workDir, env: {}, platform: 'linux', tmpDir: tmpdir() })).toBe(
       path.join(workDir, '_purrfold-e2e', 'pnpm-cache')
     );
   });
 
-  it('uses a short Windows pnpm cache parent with or without RUNNER_TEMP', async () => {
+  it('uses RUNNER_TEMP or the OS temp dir as the Windows pnpm cache parent', async () => {
     const { resolvePnpmCacheDir } = await loadHarness();
     const workDir = 'C:\\Users\\runneradmin\\AppData\\Local\\Temp\\purrfold-e2e-20261005123456';
-    const cacheParent = resolvePnpmCacheDir({ workDir, env: { RUNNER_TEMP: 'D:\\a\\_temp' }, platform: 'win32' });
-    const cacheDir = path.win32.join(cacheParent, 'pe-XXXXXX');
+    const tmpDir = 'C:\\Users\\runneradmin\\AppData\\Local\\Temp';
+    const runnerParent = resolvePnpmCacheDir({ workDir, env: { RUNNER_TEMP: 'D:\\a\\_temp' }, platform: 'win32', tmpDir });
+    const localParent = resolvePnpmCacheDir({ workDir, env: {}, platform: 'win32', tmpDir });
 
-    expect(cacheParent).toBe('D:\\a\\_temp');
-    expect(resolvePnpmCacheDir({ workDir, env: {}, platform: 'win32' })).toBe('C:\\');
+    expect(runnerParent).toBe('D:\\a\\_temp');
+    expect(localParent).toBe(tmpDir);
     const dlxTail = path.win32.join(
       'dlx',
       'a'.repeat(64),
@@ -102,8 +105,7 @@ describe('CLI E2E harness', () => {
       'dist',
       'chunk-BJ4WI4GW.js'
     );
-    expect(cacheDir.length).toBeLessThanOrEqual(40);
-    expect(path.win32.join(cacheDir, dlxTail).length).toBeLessThan(260);
+    expect(path.win32.join(localParent, 'pe-XXXXXX', dlxTail).length).toBeLessThan(260);
   });
 
   it('parses scalar and list flags', async () => {
@@ -342,7 +344,7 @@ describe('CLI E2E harness', () => {
   });
 
   it('shares package-manager caches across runs and honors PURRFOLD_E2E_CACHE_DIR', async () => {
-    const { cleanupContext, createRunContext, resolveCacheRoot } = await loadHarness();
+    const { cleanupContext, createRunContext, isPnpmCacheOutsideWorkDir, resolveCacheRoot } = await loadHarness();
     // Distinct prefixes: workDir is also created under tmpdir() with a
     // Date.now() suffix, and a same-millisecond collision would make the
     // "cache lives outside the work dir" assertion compare a path to itself.
@@ -381,6 +383,7 @@ describe('CLI E2E harness', () => {
       expect(context.env.PNPM_CONFIG_CACHE_DIR).toBe(pnpmCacheDir);
       expect(context.pnpmCacheDir).toBe(pnpmCacheDir);
       expect(path.relative(context.cacheRoot, pnpmCacheDir!).startsWith('..')).toBe(true);
+      expect(isPnpmCacheOutsideWorkDir(context)).toBe(process.platform === 'win32');
       expect(path.basename(pnpmCacheDir!)).toMatch(process.platform === 'win32' ? /^pe-[\w]{6}$/ : /^pnpm-cache$/);
       expect(existsSync(pnpmCacheDir!)).toBe(true);
     } finally {
@@ -476,7 +479,7 @@ describe('CLI E2E harness', () => {
   });
 
   it('cleans only the per-run pnpm cache when it lives outside the work dir', async () => {
-    const { cleanupContext, createRunContext } = await loadHarness();
+    const { cleanupContext, createRunContext, isPnpmCacheOutsideWorkDir } = await loadHarness();
     const context = createRunContext(['node', 'script'], 'purrfold-harness-external-cache-');
     const cacheParent = mkdtempSync(path.join(tmpdir(), 'purrfold-harness-cache-parent-'));
     const pnpmCacheDir = path.join(cacheParent, 'pe-ABCDEF');
@@ -485,6 +488,7 @@ describe('CLI E2E harness', () => {
     mkdirSync(sibling);
 
     try {
+      expect(isPnpmCacheOutsideWorkDir({ ...context, pnpmCacheDir })).toBe(true);
       cleanupContext({ ...context, keep: true, pnpmCacheDir });
       expect(existsSync(pnpmCacheDir)).toBe(true);
 

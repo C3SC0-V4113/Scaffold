@@ -10,7 +10,7 @@
 //   node scripts/smoke.mjs --work-dir E:\Repositorios\smoke
 //   node scripts/smoke.mjs --keep
 
-import { buildCli, cleanupContext, createRunContext, runScenario } from './e2e/harness.mjs';
+import { buildCli, cleanupContext, createRunContext, isPnpmCacheOutsideWorkDir, runScenario } from './e2e/harness.mjs';
 import { cliE2eScenarios } from './e2e/scenarios.mjs';
 
 const context = createRunContext(process.argv, 'purrfold-smoke-');
@@ -36,10 +36,14 @@ for (const { name, ok } of results) {
 }
 
 const hasFailures = results.some((result) => !result.ok);
-if (!hasFailures) {
+if (!hasFailures && !context.keep) {
   cleanupContext(context);
 } else {
-  console.error(`\nPreserved smoke work directory for debugging: ${context.workDir}`);
+  const log = hasFailures ? console.error : console.log;
+  log(`\nPreserved smoke work directory ${hasFailures ? 'for debugging' : 'by request'}: ${context.workDir}`);
+  if (isPnpmCacheOutsideWorkDir(context)) {
+    log(`Preserved pnpm cache directory: ${context.pnpmCacheDir}`);
+  }
 }
 
 process.exit(hasFailures ? 1 : 0);
