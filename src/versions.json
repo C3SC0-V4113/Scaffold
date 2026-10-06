@@ -40,7 +40,7 @@
     "eslint-plugin-astro": "1.7.0",
     "typescript-eslint": "8.71.1",
     "prettier-plugin-astro": "1.1.0",
-    "motion": "13.5.1"
+    "motion": "14.0.0"
   },
   "astroOverrides": {
     "@vitejs/plugin-react": "5.2.0"
