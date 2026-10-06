@@ -1,36 +1,36 @@
 {
   "dependencies": {
     "eslint": "9.39.5",
-    "eslint-config-next": "16.3.6",
+    "eslint-config-next": "16.3.8",
     "eslint-config-prettier": "10.1.8",
     "eslint-plugin-import": "2.32.0",
     "eslint-import-resolver-typescript": "4.4.5",
-    "eslint-plugin-react-doctor": "0.9.14",
+    "eslint-plugin-react-doctor": "0.9.17",
     "eslint-plugin-react-you-might-not-need-an-effect": "1.0.2",
     "prettier": "3.9.9",
     "prettier-plugin-tailwindcss": "0.8.1",
     "husky": "9.1.7",
-    "lint-staged": "17.5.1",
-    "react-doctor": "0.9.14",
+    "lint-staged": "17.6.0",
+    "react-doctor": "0.9.17",
     "react-scan": "0.5.7",
     "@shadcn/lint": "0.2.0",
-    "vitest": "5.0.1",
+    "vitest": "5.0.3",
     "vite": "7.3.6",
     "@vitejs/plugin-react": "5.1.4",
     "vite-tsconfig-paths": "6.1.1",
-    "jsdom": "30.1.1",
+    "jsdom": "30.1.2",
     "@testing-library/react": "16.3.3",
     "@testing-library/dom": "10.4.2",
     "eslint-plugin-testing-library": "7.16.2",
     "@vitest/eslint-plugin": "1.6.27",
     "@playwright/test": "1.63.0",
-    "@types/node": "26.6.2",
-    "eslint-plugin-playwright": "2.12.0",
+    "@types/node": "26.6.4",
+    "eslint-plugin-playwright": "2.12.1",
     "@commitlint/cli": "21.2.3",
     "@commitlint/config-conventional": "21.2.3",
-    "lucide-react": "1.48.0",
+    "lucide-react": "1.52.0",
     "@phosphor-icons/react": "2.1.10",
-    "@tabler/icons-react": "3.48.0",
+    "@tabler/icons-react": "3.49.0",
     "astro": "7.3.5",
     "@astrojs/check": "0.9.10",
     "@astrojs/node": "11.1.6",
@@ -38,9 +38,9 @@
     "@astrojs/netlify": "8.2.6",
     "@astrojs/cloudflare": "14.3.3",
     "eslint-plugin-astro": "1.7.0",
-    "typescript-eslint": "8.70.1",
+    "typescript-eslint": "8.71.1",
     "prettier-plugin-astro": "1.1.0",
-    "motion": "13.4.3"
+    "motion": "13.5.1"
   },
   "astroOverrides": {
     "@vitejs/plugin-react": "5.2.0"
@@ -63,6 +63,6 @@
   },
   "toolchain": {
     "node": "22",
-    "pnpm": "12.6.0"
+    "pnpm": "12.9.1"
   }
 }
