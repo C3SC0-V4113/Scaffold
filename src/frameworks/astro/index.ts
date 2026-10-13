@@ -3,7 +3,7 @@ import path from 'node:path';
 import { createAstroApp } from '../../installers/astro.js';
 import { ASTRO_DEPENDENCY_VERSION_OVERRIDES, buildScripts, FRAMEWORK_DEVELOPMENT_DEPENDENCIES, FRAMEWORK_PACKAGE_SCRIPT_CONFIG } from '../../installers/config-model.js';
 import { readProjectPackageJson, writeProjectPackageJson } from '../../installers/package-json.js';
-import { renderEslintConfig } from '../../templates/eslint.js';
+import { renderAstroEslintConfig } from '../../templates/eslint.js';
 import { renderAstroHomeHero, renderAstroHomePage, renderAstroRootLayout, renderAstroUnitSmokeTest, renderPrettierConfig, renderReactDoctorConfig, renderVitestConfig } from '../../templates/files.js';
 import { motionMainComponent } from '../../templates/files.js';
 import type { CreateOptions, Executor, IconLibrary } from '../../types.js';
@@ -36,11 +36,18 @@ export const astroAdapter: FrameworkAdapter = {
     await executor.writeFile(path.join(projectRoot, 'src/layouts/main.astro'), renderAstroRootLayout());
   },
   templates: {
-    eslint: (o) => renderEslintConfig(o), prettier: (o) => renderPrettierConfig(o.framework),
+    eslint: (o) => renderAstroEslintConfig({ ...o, registerImportPlugin: true }), prettier: (o) => renderPrettierConfig(o.framework),
     vitest: (o) => renderVitestConfig(o.framework), unitSmokeTest: () => renderAstroUnitSmokeTest(),
     appShell: (o) => ({ root: renderAstroRootLayout(), page: renderAstroHomePage(path.basename(o.targetDir), o.motion), rootPath: 'src/layouts/main.astro', pagePath: 'src/pages/index.astro' }),
-    doctorConfig: (o) => renderReactDoctorConfig(o.framework, o.motion),
+    doctorConfig: (o) => renderReactDoctorConfig(o.framework, o.motion, astroAdapter.layout, astroAdapter.docs.doctorIgnoreMotionRule),
   },
   packageScripts: (o) => buildScripts(o, astroAdapter.packageScriptConfig), skills: () => ['astro'],
-  docs: { mergeStrategy: 'merge' },
+  docs: {
+    mergeStrategy: 'merge', frameworkName: 'Astro', readmeTitle: 'Astro Quality App',
+    toolingLines: ['- Astro project with TypeScript, Tailwind, and React islands.', '- shadcn UI initialized through the shadcn CLI.', '- ESLint flat config with strict Astro, React, import ordering, and Prettier integration.', '- `@shadcn/lint` enforcing the design system rules in `DESIGN.md`.', '- React Doctor and React Scan.'],
+    motionGuidance: 'Astro/Vite requires no additional Motion configuration. Use Motion inside React islands.',
+    motionAgentGuidance: '- Astro/Vite requires no additional Motion configuration; animate within React islands.',
+    doctorIgnoreMotionRule: false,
+    agentsRules: `<!-- BEGIN:astro-agent-rules -->\n\n# This is an Astro scaffold\n\nThis project uses Astro. Read the current Astro docs before changing framework APIs or project structure.\n\n<!-- END:astro-agent-rules -->`,
+  },
 };

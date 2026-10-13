@@ -1,4 +1,5 @@
 import type { CreateOptions } from '../types.js';
+import type { FrameworkAdapter } from '../frameworks/types.js';
 import { agentStateDirs, testReportDirs, usesCloudflareAdapter } from './ignores.js';
 
 interface EslintConfigOptions
@@ -38,7 +39,7 @@ const shadcnLintBlock = [
   '  },',
 ];
 
-function renderNextEslintConfig(options: EslintConfigOptions) {
+export function renderNextEslintConfig(options: EslintConfigOptions) {
   const lines = [
     shadcnLintImport,
     options.unit ? "import vitest from '@vitest/eslint-plugin';" : '',
@@ -196,7 +197,7 @@ function renderNextEslintConfig(options: EslintConfigOptions) {
   return `${lines.filter(Boolean).join('\n')}\n`;
 }
 
-function renderAstroEslintConfig(options: EslintConfigOptions) {
+export function renderAstroEslintConfig(options: EslintConfigOptions) {
   const lines = [
     shadcnLintImport,
     options.unit ? "import vitest from '@vitest/eslint-plugin';" : '',
@@ -342,7 +343,9 @@ function renderAstroEslintConfig(options: EslintConfigOptions) {
 }
 
 export function renderEslintConfig(options: EslintConfigOptions) {
-  return options.framework === 'astro'
-    ? renderAstroEslintConfig({ ...options, registerImportPlugin: true })
-    : renderNextEslintConfig({ ...options, registerImportPlugin: options.registerImportPlugin ?? false });
+  const renderers: Record<FrameworkAdapter['id'], (value: EslintConfigOptions) => string> = {
+    next: (value) => renderNextEslintConfig({ ...value, registerImportPlugin: value.registerImportPlugin ?? false }),
+    astro: (value) => renderAstroEslintConfig({ ...value, registerImportPlugin: true }),
+  };
+  return renderers[options.framework](options);
 }

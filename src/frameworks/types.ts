@@ -34,5 +34,14 @@ export interface FrameworkAdapter {
   };
   packageScripts(options: Pick<CreateOptions, 'framework' | 'packageManager' | 'unit' | 'e2e'>): Record<string, string>;
   skills(options: Pick<CreateOptions, 'framework' | 'unit' | 'e2e' | 'motion'>): string[];
-  docs: { mergeStrategy: 'replace' | 'merge' };
+  docs: {
+    mergeStrategy: 'replace' | 'merge';
+    frameworkName: string;
+    readmeTitle: string;
+    toolingLines: readonly string[];
+    motionGuidance: string;
+    motionAgentGuidance: string;
+    doctorIgnoreMotionRule: boolean;
+    agentsRules: string;
+  };
 }

@@ -2,7 +2,7 @@ import path from 'node:path';
 
 import { createNextApp } from '../../installers/next.js';
 import { buildScripts, FRAMEWORK_DEVELOPMENT_DEPENDENCIES, FRAMEWORK_PACKAGE_SCRIPT_CONFIG } from '../../installers/config-model.js';
-import { renderEslintConfig } from '../../templates/eslint.js';
+import { renderNextEslintConfig } from '../../templates/eslint.js';
 import { renderPrettierConfig, renderReactDoctorConfig, renderRootLayout, renderHomePage, renderVitestConfig, unitSmokeTest } from '../../templates/files.js';
 import type { CreateOptions, Executor, IconLibrary } from '../../types.js';
 import { motionMainComponent } from '../../templates/files.js';
@@ -24,11 +24,18 @@ export const nextAdapter: FrameworkAdapter = {
     await executor.writeFile(path.join(projectRoot, 'app/page.tsx'), renderHomePage(name, iconLibrary, motion));
   },
   templates: {
-    eslint: (o) => renderEslintConfig(o), prettier: (o) => renderPrettierConfig(o.framework),
+    eslint: (o) => renderNextEslintConfig(o), prettier: (o) => renderPrettierConfig(o.framework),
     vitest: (o) => renderVitestConfig(o.framework), unitSmokeTest: () => unitSmokeTest,
     appShell: (o) => ({ root: renderRootLayout(path.basename(o.targetDir)), page: renderHomePage(path.basename(o.targetDir), o.icons, o.motion), rootPath: 'app/layout.tsx', pagePath: 'app/page.tsx' }),
-    doctorConfig: (o) => renderReactDoctorConfig(o.framework, o.motion),
+    doctorConfig: (o) => renderReactDoctorConfig(o.framework, o.motion, nextAdapter.layout, nextAdapter.docs.doctorIgnoreMotionRule),
   },
   packageScripts: (o) => buildScripts(o, nextAdapter.packageScriptConfig), skills: () => ['next-cache-components-adoption', 'next-cache-components-optimizer', 'next-dev-loop'],
-  docs: { mergeStrategy: 'replace' },
+  docs: {
+    mergeStrategy: 'replace', frameworkName: 'Next.js', readmeTitle: 'Next Quality App',
+    toolingLines: ['- Next.js App Router with TypeScript and Tailwind.', '- shadcn UI initialized through the shadcn CLI.', '- ESLint flat config with strict Next.js, React, import ordering, and Prettier integration.', '- `@shadcn/lint` enforcing the design system rules in `DESIGN.md`.', '- React Doctor and React Scan.'],
+    motionGuidance: 'In the Next.js App Router, use `motion/react` from a client component or import server-compatible components from `motion/react-client`.',
+    motionAgentGuidance: '- In the Next.js App Router, use `motion/react` in client components or `motion/react-client` for server-compatible components.',
+    doctorIgnoreMotionRule: true,
+    agentsRules: `<!-- BEGIN:nextjs-agent-rules -->\n\n# This is NOT the Next.js you know\n\nThis project uses Next.js 16 or newer. APIs and conventions may differ from model memory. Read relevant guides in \`node_modules/next/dist/docs/\` before changing Next.js code.\n\n<!-- END:nextjs-agent-rules -->`,
+  },
 };
