@@ -18,7 +18,7 @@ import { createRequire } from 'node:module';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
-import { generatedVersions, pinnedDependency, readFlag, readListFlag, rootDir } from './catalog.mjs';
+import { frameworkLayouts, generatedVersions, pinnedDependency, readFlag, readListFlag, rootDir } from './catalog.mjs';
 
 export { generatedVersions, pinnedDependency, readFlag, readListFlag, rootDir };
 
@@ -569,7 +569,8 @@ export function assertGeneratedApp(projectRoot, expected) {
   const readme = readFileSync(path.join(projectRoot, 'README.md'), 'utf8');
   const agents = readFileSync(path.join(projectRoot, 'AGENTS.md'), 'utf8');
   const claude = readFileSync(path.join(projectRoot, 'CLAUDE.md'), 'utf8');
-  const globalStylesheet = framework === 'astro' ? 'src/styles/global.css' : 'app/globals.css';
+  const layout = frameworkLayouts[framework];
+  const globalStylesheet = layout.globalStylesheet;
 
   assertPath(projectRoot, 'DESIGN.md');
   assertIncludes(
@@ -656,7 +657,7 @@ export function assertGeneratedApp(projectRoot, expected) {
   for (const ignoredPath of [
     '.agents/**',
     '.claude/**',
-    framework === 'astro' ? 'src/components/ui/**' : 'components/ui/**',
+    `${layout.uiDir}/**`,
     'playwright-report/**',
     'test-results/**',
     'blob-report/**',
@@ -666,7 +667,7 @@ export function assertGeneratedApp(projectRoot, expected) {
     }
   }
 
-  const expectedUtilsPath = framework === 'astro' ? 'src/lib/utils.ts' : 'lib/utils.ts';
+  const expectedUtilsPath = layout.utilsPath;
   if (!doctorConfig.ignore?.overrides?.some((override) => override.files?.includes(expectedUtilsPath))) {
     throw new Error(`doctor.config.json should preserve the ${expectedUtilsPath} override`);
   }
@@ -691,8 +692,7 @@ export function assertGeneratedApp(projectRoot, expected) {
     }
     assertIncludes(skillsScript, 'freshtechbro/claudedesignskills', 'skills.sh');
     assertIncludes(skillsScript, '--skill motion-framer', 'skills.sh');
-    const motionComponent =
-      framework === 'astro' ? 'src/components/common/motion-main.tsx' : 'components/common/motion-main.tsx';
+    const motionComponent = layout.motionMainPath;
     assertPath(projectRoot, motionComponent);
     assertIncludes(
       readFileSync(path.join(projectRoot, globalStylesheet), 'utf8'),
@@ -706,7 +706,7 @@ export function assertGeneratedApp(projectRoot, expected) {
     assertNotIncludes(skillsScript, 'motion-framer', 'skills.sh');
     assertPath(
       projectRoot,
-      framework === 'astro' ? 'src/components/common/motion-main.tsx' : 'components/common/motion-main.tsx',
+      layout.motionMainPath,
       false
     );
   }
