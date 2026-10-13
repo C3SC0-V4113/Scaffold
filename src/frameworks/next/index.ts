@@ -15,19 +15,20 @@ export const nextAdapter: FrameworkAdapter = {
   dependencyOverrides: {},
   developmentDependencies: FRAMEWORK_DEVELOPMENT_DEPENDENCIES.next,
   packageScriptConfig: FRAMEWORK_PACKAGE_SCRIPT_CONFIG.next,
+  prettierConfig: { tailwindStylesheet: 'app/globals.css', extraPlugins: [] },
+  vitestConfig: { tsconfigPaths: 'plugin' },
   scaffold: createNextApp,
   shadcnInitArgs: () => [],
   async writeAppShell(projectRoot: string, executor: Executor, iconLibrary: IconLibrary, motion: boolean) {
     const name = path.basename(projectRoot);
-    if (motion) await executor.writeFile(path.join(projectRoot, this.layout.motionMainPath), motionMainComponent);
+    if (motion) await executor.writeFile(path.join(projectRoot, nextAdapter.layout.motionMainPath), motionMainComponent);
     await executor.writeFile(path.join(projectRoot, 'app/layout.tsx'), renderRootLayout(name));
     await executor.writeFile(path.join(projectRoot, 'app/page.tsx'), renderHomePage(name, iconLibrary, motion));
   },
   templates: {
-    eslint: (o) => renderNextEslintConfig(o), prettier: (o) => renderPrettierConfig(o.framework),
-    vitest: (o) => renderVitestConfig(o.framework), unitSmokeTest: () => unitSmokeTest,
-    appShell: (o) => ({ root: renderRootLayout(path.basename(o.targetDir)), page: renderHomePage(path.basename(o.targetDir), o.icons, o.motion), rootPath: 'app/layout.tsx', pagePath: 'app/page.tsx' }),
-    doctorConfig: (o) => renderReactDoctorConfig(o.framework, o.motion, nextAdapter.layout, nextAdapter.docs.doctorIgnoreMotionRule),
+    eslint: (o) => renderNextEslintConfig(o), prettier: () => renderPrettierConfig(nextAdapter.prettierConfig),
+    vitest: () => renderVitestConfig(nextAdapter.vitestConfig), unitSmokeTest: () => unitSmokeTest,
+    doctorConfig: (o) => renderReactDoctorConfig(nextAdapter.layout, o.motion, nextAdapter.docs.doctorIgnoreMotionRule),
   },
   packageScripts: (o) => buildScripts(o, nextAdapter.packageScriptConfig), skills: () => ['next-cache-components-adoption', 'next-cache-components-optimizer', 'next-dev-loop'],
   docs: {

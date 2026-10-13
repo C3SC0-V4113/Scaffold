@@ -1,5 +1,4 @@
 import type { CreateOptions } from '../types.js';
-import type { FrameworkAdapter } from '../frameworks/types.js';
 import { agentStateDirs, testReportDirs, usesCloudflareAdapter } from './ignores.js';
 
 interface EslintConfigOptions
@@ -342,10 +341,3 @@ export function renderAstroEslintConfig(options: EslintConfigOptions) {
   return `${lines.filter(Boolean).join('\n')}\n`;
 }
 
-export function renderEslintConfig(options: EslintConfigOptions) {
-  const renderers: Record<FrameworkAdapter['id'], (value: EslintConfigOptions) => string> = {
-    next: (value) => renderNextEslintConfig({ ...value, registerImportPlugin: value.registerImportPlugin ?? false }),
-    astro: (value) => renderAstroEslintConfig({ ...value, registerImportPlugin: true }),
-  };
-  return renderers[options.framework](options);
-}

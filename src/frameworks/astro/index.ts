@@ -9,6 +9,10 @@ import { motionMainComponent } from '../../templates/files.js';
 import type { CreateOptions, Executor, IconLibrary } from '../../types.js';
 import type { FrameworkAdapter } from '../types.js';
 
+// The starter's confetti hero is replaced, so these dependencies have no
+// runtime package or usage left in the generated src/ tree.
+const astroStarterDependencies = ['@astrojs/mdx', 'canvas-confetti', '@types/canvas-confetti'];
+
 export const astroAdapter: FrameworkAdapter = {
   id: 'astro', label: 'Astro', description: 'React-enabled Astro scaffold for shadcn-compatible projects.',
   capabilities: { packageManagers: ['npm', 'pnpm'], rendering: { ssr: true, adapters: ['node', 'vercel', 'netlify', 'cloudflare'], defaultAdapter: 'cloudflare' }, routers: [] },
@@ -16,30 +20,37 @@ export const astroAdapter: FrameworkAdapter = {
   dependencyOverrides: ASTRO_DEPENDENCY_VERSION_OVERRIDES,
   developmentDependencies: FRAMEWORK_DEVELOPMENT_DEPENDENCIES.astro,
   packageScriptConfig: FRAMEWORK_PACKAGE_SCRIPT_CONFIG.astro,
+  prettierConfig: { tailwindStylesheet: 'src/styles/global.css', extraPlugins: ['prettier-plugin-astro'] },
+  vitestConfig: { tsconfigPaths: 'native' },
   scaffold: createAstroApp,
   shadcnInitArgs: () => ['-t', 'astro'],
   async cleanupStarter(projectRoot: string, _options: CreateOptions, executor: Executor) {
     const packageJson = await readProjectPackageJson(projectRoot, executor);
     const dependencies = { ...(packageJson.dependencies ?? {}) };
     let changed = false;
-    for (const dependency of ['@astrojs/mdx', 'canvas-confetti', '@types/canvas-confetti']) {
-      if (dependency in dependencies) { delete dependencies[dependency]; changed = true; }
+    for (const dependency of astroStarterDependencies) {
+      if (dependency in dependencies) {
+        delete dependencies[dependency];
+        changed = true;
+      }
     }
-    if (changed) { packageJson.dependencies = dependencies; await writeProjectPackageJson(projectRoot, executor, packageJson); }
+    if (changed) {
+      packageJson.dependencies = dependencies;
+      await writeProjectPackageJson(projectRoot, executor, packageJson);
+    }
   },
   async writeAppShell(projectRoot: string, executor: Executor, iconLibrary: IconLibrary, motion: boolean) {
     const name = path.basename(projectRoot);
-    if (motion) await executor.writeFile(path.join(projectRoot, this.layout.motionMainPath), motionMainComponent);
+    if (motion) await executor.writeFile(path.join(projectRoot, astroAdapter.layout.motionMainPath), motionMainComponent);
     await executor.remove(path.join(projectRoot, 'src/components/Button.astro'));
     await executor.writeFile(path.join(projectRoot, 'src/components/home-hero.tsx'), renderAstroHomeHero(name, iconLibrary, motion));
     await executor.writeFile(path.join(projectRoot, 'src/pages/index.astro'), renderAstroHomePage(name, motion));
     await executor.writeFile(path.join(projectRoot, 'src/layouts/main.astro'), renderAstroRootLayout());
   },
   templates: {
-    eslint: (o) => renderAstroEslintConfig({ ...o, registerImportPlugin: true }), prettier: (o) => renderPrettierConfig(o.framework),
-    vitest: (o) => renderVitestConfig(o.framework), unitSmokeTest: () => renderAstroUnitSmokeTest(),
-    appShell: (o) => ({ root: renderAstroRootLayout(), page: renderAstroHomePage(path.basename(o.targetDir), o.motion), rootPath: 'src/layouts/main.astro', pagePath: 'src/pages/index.astro' }),
-    doctorConfig: (o) => renderReactDoctorConfig(o.framework, o.motion, astroAdapter.layout, astroAdapter.docs.doctorIgnoreMotionRule),
+    eslint: (o) => renderAstroEslintConfig({ ...o, registerImportPlugin: true }), prettier: () => renderPrettierConfig(astroAdapter.prettierConfig),
+    vitest: () => renderVitestConfig(astroAdapter.vitestConfig), unitSmokeTest: () => renderAstroUnitSmokeTest(),
+    doctorConfig: (o) => renderReactDoctorConfig(astroAdapter.layout, o.motion, astroAdapter.docs.doctorIgnoreMotionRule),
   },
   packageScripts: (o) => buildScripts(o, astroAdapter.packageScriptConfig), skills: () => ['astro'],
   docs: {

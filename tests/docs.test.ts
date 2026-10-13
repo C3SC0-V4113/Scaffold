@@ -11,8 +11,14 @@ import {
   PURRFOLD_MANAGED_BEGIN,
   PURRFOLD_MANAGED_END,
 } from '../src/installers/docs.js';
-import { renderAgents, renderDesignDoc, renderReadme } from '../src/templates/files.js';
-import type { CreateOptions } from '../src/types.js';
+import { renderAgents as renderAgentsTemplate, renderDesignDoc as renderDesignDocTemplate, renderReadme as renderReadmeTemplate } from '../src/templates/files.js';
+import { getFrameworkAdapter } from '../src/frameworks/registry.js';
+import type { CreateOptions, Framework } from '../src/types.js';
+
+const adapterFor = (framework: Framework) => getFrameworkAdapter(framework);
+const renderAgents = (options: CreateOptions) => renderAgentsTemplate(options, adapterFor(options.framework).docs);
+const renderReadme = (options: CreateOptions) => renderReadmeTemplate(options, adapterFor(options.framework).docs);
+const renderDesignDoc = (framework: Framework) => renderDesignDocTemplate(adapterFor(framework).layout);
 
 const roots: string[] = [];
 

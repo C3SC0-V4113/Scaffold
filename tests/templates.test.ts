@@ -3,7 +3,8 @@ import { describe, expect, it } from 'vitest';
 import versions from '../src/versions.json' with { type: 'json' };
 
 import { buildScripts } from '../src/installers/config-model.js';
-import { renderEslintConfig } from '../src/templates/eslint.js';
+import { getFrameworkAdapter } from '../src/frameworks/registry.js';
+import type { CreateOptions, Framework } from '../src/types.js';
 import {
   gitAttributes,
   humanizeProjectName,
@@ -13,18 +14,16 @@ import {
   motionMainUnitTest,
   prettierIgnore,
   reactDoctorConfig,
-  renderAgents,
+  renderAgents as renderAgentsTemplate,
   renderAstroHomeHero,
   renderAstroHomePage,
   renderAstroRootLayout,
-  renderDesignDoc,
-  renderPrettierConfig,
-  renderReactDoctorConfig,
-  renderVitestConfig,
+  renderDesignDoc as renderDesignDocTemplate,
+  renderReactDoctorConfig as renderReactDoctorConfigTemplate,
   renderHomePage,
   renderPlaywrightWorkflow,
   renderQualityWorkflow,
-  renderReadme,
+  renderReadme as renderReadmeTemplate,
   renderRootLayout,
   vitestConfig,
 } from '../src/templates/files.js';
@@ -33,6 +32,19 @@ import {
   claudeSettings,
   renderClaudeProjectMinEvaluationHook,
 } from '../src/templates/hooks.js';
+
+const adapterFor = (framework: Framework) => getFrameworkAdapter(framework);
+const renderPrettierConfig = (framework: Framework) => adapterFor(framework).templates.prettier({ framework } as CreateOptions);
+const renderVitestConfig = (framework: Framework) => adapterFor(framework).templates.vitest({ framework } as CreateOptions);
+const renderReactDoctorConfig = (framework: Framework, motion = false) =>
+  renderReactDoctorConfigTemplate(adapterFor(framework).layout, motion, adapterFor(framework).docs.doctorIgnoreMotionRule);
+const renderDesignDoc = (framework: Framework) => renderDesignDocTemplate(adapterFor(framework).layout);
+const renderReadme = (options: Parameters<typeof renderReadmeTemplate>[0]) =>
+  renderReadmeTemplate(options, adapterFor(options.framework).docs);
+const renderAgents = (options: Parameters<typeof renderAgentsTemplate>[0]) =>
+  renderAgentsTemplate(options, adapterFor(options.framework).docs);
+const renderEslintConfig = (options: { framework: Framework; unit: boolean; e2e: boolean; motion?: boolean; ssr?: boolean; astroAdapter?: CreateOptions['astroAdapter']; registerImportPlugin?: boolean }) =>
+  adapterFor(options.framework).templates.eslint(options as CreateOptions);
 
 describe('template snapshots', () => {
   it('points Astro Prettier at its actual Tailwind stylesheet', () => {

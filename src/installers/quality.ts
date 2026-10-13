@@ -12,7 +12,6 @@ import {
   prePushHook,
   prettierIgnore,
 } from '../templates/files.js';
-import { renderEslintConfig } from '../templates/eslint.js';
 import {
   iconPackages,
   knownIconPackages,
