@@ -51,8 +51,16 @@ describe('template snapshots', () => {
     const config = renderPrettierConfig('astro');
 
     expect(config).toContain('"tailwindStylesheet": "./src/styles/global.css"');
-    expect(config).toContain('"prettier-plugin-astro"');
+    expect(config).toContain(
+      '"plugins": ["prettier-plugin-astro", "prettier-plugin-tailwindcss"]',
+    );
     expect(config).not.toContain('./app/globals.css');
+  });
+
+  it('keeps the Next Prettier plugin list byte-identical', () => {
+    expect(renderPrettierConfig('next')).toContain(
+      '"plugins": ["prettier-plugin-tailwindcss"]',
+    );
   });
 
   it('uses Vite 8 native tsconfig path resolution for Astro tests', () => {

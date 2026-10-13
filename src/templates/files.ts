@@ -31,7 +31,9 @@ export function renderPrettierConfig(config: FrameworkAdapter['prettierConfig'])
     .replace('"tailwindStylesheet": "./app/globals.css"', `"tailwindStylesheet": "./${config.tailwindStylesheet}"`)
     .replace(
       '"plugins": ["prettier-plugin-tailwindcss"]',
-      `"plugins": ${JSON.stringify([...config.extraPlugins, 'prettier-plugin-tailwindcss'])}`
+      `"plugins": [${[...config.extraPlugins, 'prettier-plugin-tailwindcss']
+        .map((plugin) => `"${plugin}"`)
+        .join(', ')}]`,
     );
 }
 
