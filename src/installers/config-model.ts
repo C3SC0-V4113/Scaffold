@@ -34,20 +34,35 @@ import type { CreateOptions, Framework } from '../types.js';
  * suite (`npm run test:e2e:cli`) so an incompatible upgrade is caught here, not
  * in a generated project. create-next-app and shadcn stay on @latest by design.
  */
-export const DEPENDENCY_VERSIONS: Record<string, string> = versions.dependencies;
+export const DEPENDENCY_VERSIONS: Record<string, string> =
+  versions.dependencies;
 
-export const ASTRO_DEPENDENCY_VERSION_OVERRIDES: Record<string, string> = versions.astroOverrides;
-export const FRAMEWORK_DEPENDENCY_OVERRIDES: Record<Framework, Readonly<Record<string, string>>> = { next: {}, astro: ASTRO_DEPENDENCY_VERSION_OVERRIDES };
+export const ASTRO_DEPENDENCY_VERSION_OVERRIDES: Record<string, string> =
+  versions.astroOverrides;
+export const FRAMEWORK_DEPENDENCY_OVERRIDES: Record<
+  Framework,
+  Readonly<Record<string, string>>
+> = {
+  next: {},
+  astro: ASTRO_DEPENDENCY_VERSION_OVERRIDES,
+};
 
 /**
  * Turn a bare package name into a pinned `name@version` install specifier,
  * honoring framework-specific overrides. Throws if the dependency has no
  * registered pin so an unpinned dependency can never silently ship.
  */
-export function pinnedSpecifier(name: string, framework: CreateOptions['framework'] = 'next'): string {
-  const version = FRAMEWORK_DEPENDENCY_OVERRIDES[framework][name] ?? DEPENDENCY_VERSIONS[name];
+export function pinnedSpecifier(
+  name: string,
+  framework: CreateOptions['framework'] = 'next',
+): string {
+  const version =
+    FRAMEWORK_DEPENDENCY_OVERRIDES[framework][name] ??
+    DEPENDENCY_VERSIONS[name];
   if (!version) {
-    throw new Error(`No pinned version registered for "${name}". Add it to src/versions.json.`);
+    throw new Error(
+      `No pinned version registered for "${name}". Add it to src/versions.json.`,
+    );
   }
   return `${name}@${version}`;
 }
@@ -106,30 +121,73 @@ export const unitDevDependencies = [
  * - `vite`: Astro depends on Vite directly, so declaring it again would pin a
  *   second, narrower range against the one Astro already resolved.
  * - `vite-tsconfig-paths`: the Vite 8 Astro installs resolves tsconfig paths
- *   natively, which renderVitestConfig('astro') uses instead.
+ *   natively, which the Astro adapter's Vitest config uses instead.
  */
-export const ASTRO_UNIT_DEPENDENCY_EXCLUSIONS = ['vite', 'vite-tsconfig-paths'] as const;
-export const FRAMEWORK_DEVELOPMENT_DEPENDENCIES: Record<Framework, { core: readonly string[]; unitExclusions: readonly string[] }> = {
-  next: { core: coreDevDependencies, unitExclusions: [] },
-  astro: { core: astroCoreDevDependencies, unitExclusions: ASTRO_UNIT_DEPENDENCY_EXCLUSIONS },
+export const ASTRO_UNIT_DEPENDENCY_EXCLUSIONS = [
+  'vite',
+  'vite-tsconfig-paths',
+] as const;
+export const FRAMEWORK_DEVELOPMENT_DEPENDENCIES: Record<
+  Framework,
+  { core: readonly string[]; unitExclusions: readonly string[] }
+> = {
+  next: {
+    core: coreDevDependencies,
+    unitExclusions: [],
+  },
+  astro: {
+    core: astroCoreDevDependencies,
+    unitExclusions: ASTRO_UNIT_DEPENDENCY_EXCLUSIONS,
+  },
 };
 
-export const e2eDevDependencies = ['@playwright/test', '@types/node', 'eslint-plugin-playwright'];
+export const e2eDevDependencies = [
+  '@playwright/test',
+  '@types/node',
+  'eslint-plugin-playwright',
+];
 
 export const commitlintDevDependencies = [
   '@commitlint/cli',
   '@commitlint/config-conventional',
 ];
-export const FRAMEWORK_PACKAGE_SCRIPT_CONFIG: Record<Framework, { doctor: string; doctorStaged: string; scanInit?: string; scan?: string; typecheck: string }> = {
-  next: { doctor: 'react-doctor . --yes --blocking warning', doctorStaged: 'react-doctor . --staged --blocking warning', scanInit: 'react-scan init -y --skip-install', scan: 'next dev', typecheck: 'tsc --noEmit' },
-  astro: { doctor: 'astro check && react-doctor . --yes --blocking warning', doctorStaged: 'astro check --noSync && react-doctor . --staged --blocking warning', scanInit: 'astro dev --background', scan: 'astro dev', typecheck: 'astro check' },
+export const FRAMEWORK_PACKAGE_SCRIPT_CONFIG: Record<
+  Framework,
+  {
+    doctor: string;
+    doctorStaged: string;
+    scanInit?: string;
+    scan?: string;
+    typecheck: string;
+  }
+> = {
+  next: {
+    doctor: 'react-doctor . --yes --blocking warning',
+    doctorStaged: 'react-doctor . --staged --blocking warning',
+    scanInit: 'react-scan init -y --skip-install',
+    scan: 'next dev',
+    typecheck: 'tsc --noEmit',
+  },
+  astro: {
+    doctor: 'astro check && react-doctor . --yes --blocking warning',
+    doctorStaged:
+      'astro check --noSync && react-doctor . --staged --blocking warning',
+    scanInit: 'astro dev --background',
+    scan: 'astro dev',
+    typecheck: 'astro check',
+  },
 };
 
 export function buildDevDependencies(
   options: Pick<CreateOptions, 'framework' | 'unit' | 'e2e' | 'commitlint'>,
-  config: { core: readonly string[]; unitExclusions: readonly string[] } = FRAMEWORK_DEVELOPMENT_DEPENDENCIES[options.framework]
+  config: {
+    core: readonly string[];
+    unitExclusions: readonly string[];
+  } = FRAMEWORK_DEVELOPMENT_DEPENDENCIES[options.framework],
 ) {
-  const frameworkUnitDependencies = unitDevDependencies.filter((name) => !config.unitExclusions.includes(name));
+  const frameworkUnitDependencies = unitDevDependencies.filter(
+    (name) => !config.unitExclusions.includes(name),
+  );
   return [
     ...config.core,
     ...(options.unit ? frameworkUnitDependencies : []),
@@ -140,45 +198,54 @@ export function buildDevDependencies(
 
 export function buildScripts(
   options: Pick<CreateOptions, 'framework' | 'packageManager' | 'unit' | 'e2e'>,
-  config: { doctor: string; doctorStaged: string; scanInit?: string; scan?: string; typecheck: string } = FRAMEWORK_PACKAGE_SCRIPT_CONFIG[options.framework]
+  config: {
+    doctor: string;
+    doctorStaged: string;
+    scanInit?: string;
+    scan?: string;
+    typecheck: string;
+  } = FRAMEWORK_PACKAGE_SCRIPT_CONFIG[options.framework],
 ) {
-  const run = options.packageManager === 'npm' ? 'npm run' : `${options.packageManager} run`;
+  const run =
+    options.packageManager === 'npm'
+      ? 'npm run'
+      : `${options.packageManager} run`;
   return {
-      ...(options.unit
-        ? {
-            test: 'vitest run',
-            'test:watch': 'vitest',
-          }
-        : {}),
-      ...(options.e2e
-        ? {
-            'test:e2e': 'playwright test',
-            'test:e2e:ui': 'playwright test --ui',
-          }
-        : {}),
-      ...(options.unit && options.e2e
-        ? {
-            'test:all': `${run} test && ${run} test:e2e`,
-          }
-        : {}),
-      lint: 'eslint . --no-warn-ignored --max-warnings 0',
-      'lint:fix': 'eslint . --fix --no-warn-ignored --max-warnings 0',
-      doctor: config.doctor,
-      'doctor:design': 'react-doctor design . --yes --blocking warning',
-      'doctor:staged': config.doctorStaged,
-      'doctor:ci': config.doctor,
-      ...(config.scanInit ? { 'scan:init': config.scanInit } : {}),
-      ...(config.scan ? { scan: config.scan } : {}),
-      format: 'prettier --write .',
-      'format:check': 'prettier --check .',
-      typecheck: config.typecheck,
-      check: [
-        `${run} lint`,
-        `${run} typecheck`,
-        `${run} format:check`,
-        ...(options.unit ? [`${run} test`] : []),
-        `${run} doctor:ci`,
-      ].join(' && '),
-      prepare: 'husky',
+    ...(options.unit
+      ? {
+          test: 'vitest run',
+          'test:watch': 'vitest',
+        }
+      : {}),
+    ...(options.e2e
+      ? {
+          'test:e2e': 'playwright test',
+          'test:e2e:ui': 'playwright test --ui',
+        }
+      : {}),
+    ...(options.unit && options.e2e
+      ? {
+          'test:all': `${run} test && ${run} test:e2e`,
+        }
+      : {}),
+    lint: 'eslint . --no-warn-ignored --max-warnings 0',
+    'lint:fix': 'eslint . --fix --no-warn-ignored --max-warnings 0',
+    doctor: config.doctor,
+    'doctor:design': 'react-doctor design . --yes --blocking warning',
+    'doctor:staged': config.doctorStaged,
+    'doctor:ci': config.doctor,
+    ...(config.scanInit ? { 'scan:init': config.scanInit } : {}),
+    ...(config.scan ? { scan: config.scan } : {}),
+    format: 'prettier --write .',
+    'format:check': 'prettier --check .',
+    typecheck: config.typecheck,
+    check: [
+      `${run} lint`,
+      `${run} typecheck`,
+      `${run} format:check`,
+      ...(options.unit ? [`${run} test`] : []),
+      `${run} doctor:ci`,
+    ].join(' && '),
+    prepare: 'husky',
   };
 }

@@ -1,4 +1,11 @@
-import type { CreateOptions, Executor, Framework, PackageManager, AstroServerAdapter, IconLibrary } from '../types.js';
+import type {
+  CreateOptions,
+  Executor,
+  Framework,
+  PackageManager,
+  AstroServerAdapter,
+  IconLibrary,
+} from '../types.js';
 
 /** FrameworkAdapter is the framework port; AstroServerAdapter is an Astro deploy adapter. */
 export interface FrameworkAdapter {
@@ -7,7 +14,11 @@ export interface FrameworkAdapter {
   description: string;
   capabilities: {
     packageManagers: readonly PackageManager[];
-    rendering?: { ssr: boolean; adapters?: readonly AstroServerAdapter[]; defaultAdapter?: AstroServerAdapter };
+    rendering?: {
+      ssr: boolean;
+      adapters?: readonly AstroServerAdapter[];
+      defaultAdapter?: AstroServerAdapter;
+    };
     routers: readonly string[];
   };
   layout: {
@@ -18,14 +29,40 @@ export interface FrameworkAdapter {
     motionMainPath: string;
   };
   dependencyOverrides: Readonly<Record<string, string>>;
-  developmentDependencies: { core: readonly string[]; unitExclusions: readonly string[] };
-  packageScriptConfig: { doctor: string; doctorStaged: string; scanInit?: string; scan?: string; typecheck: string };
-  prettierConfig: { tailwindStylesheet: string; extraPlugins: readonly string[] };
+  developmentDependencies: {
+    core: readonly string[];
+    unitExclusions: readonly string[];
+  };
+  packageScriptConfig: {
+    doctor: string;
+    doctorStaged: string;
+    scanInit?: string;
+    scan?: string;
+    typecheck: string;
+  };
+  prettierConfig: {
+    tailwindStylesheet: string;
+    extraPlugins: readonly string[];
+  };
   vitestConfig: { tsconfigPaths: 'plugin' | 'native' };
   scaffold(options: CreateOptions, executor: Executor): Promise<string>;
-  shadcnInitArgs(options: Pick<CreateOptions, 'framework' | 'packageManager' | 'yes' | 'shadcnArgs'>): string[];
-  cleanupStarter?(projectRoot: string, options: CreateOptions, executor: Executor): Promise<void>;
-  writeAppShell(projectRoot: string, executor: Executor, iconLibrary: IconLibrary, motion: boolean): Promise<void>;
+  shadcnInitArgs(
+    options: Pick<
+      CreateOptions,
+      'framework' | 'packageManager' | 'yes' | 'shadcnArgs'
+    >,
+  ): string[];
+  cleanupStarter?(
+    projectRoot: string,
+    options: CreateOptions,
+    executor: Executor,
+  ): Promise<void>;
+  writeAppShell(
+    projectRoot: string,
+    executor: Executor,
+    iconLibrary: IconLibrary,
+    motion: boolean,
+  ): Promise<void>;
   templates: {
     eslint(options: CreateOptions): string;
     prettier(options: CreateOptions): string;
@@ -33,8 +70,15 @@ export interface FrameworkAdapter {
     unitSmokeTest(options: Pick<CreateOptions, 'framework'>): string;
     doctorConfig(options: CreateOptions): string;
   };
-  packageScripts(options: Pick<CreateOptions, 'framework' | 'packageManager' | 'unit' | 'e2e'>): Record<string, string>;
-  skills(options: Pick<CreateOptions, 'framework' | 'unit' | 'e2e' | 'motion'>): string[];
+  packageScripts(
+    options: Pick<
+      CreateOptions,
+      'framework' | 'packageManager' | 'unit' | 'e2e'
+    >,
+  ): Record<string, string>;
+  skills(
+    options: Pick<CreateOptions, 'framework' | 'unit' | 'e2e' | 'motion'>,
+  ): string[];
   docs: {
     mergeStrategy: 'replace' | 'merge';
     frameworkName: string;

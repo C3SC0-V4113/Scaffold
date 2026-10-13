@@ -11,28 +11,36 @@ function formatChoices(values: readonly string[]) {
 export function validateFrameworkOptions(
   adapter: FrameworkAdapter,
   packageManager: PackageManager,
-  flags: { ssr?: boolean; adapter?: string }
+  flags: { ssr?: boolean; adapter?: string },
 ) {
-  if (!adapter.capabilities.rendering?.ssr && (flags.ssr !== undefined || flags.adapter !== undefined)) {
+  if (
+    !adapter.capabilities.rendering?.ssr &&
+    (flags.ssr !== undefined || flags.adapter !== undefined)
+  ) {
     const frameworks = frameworkRegistry
       .filter((item) => item.capabilities.rendering?.ssr)
       .map((item) => item.id);
     throw new Error(
-      `--ssr and --adapter are only available when --framework ${frameworks.join(', ')} is selected.`
+      `--ssr and --adapter are only available when --framework ${frameworks.join(', ')} is selected.`,
     );
   }
   if (!adapter.capabilities.packageManagers.includes(packageManager)) {
     throw new Error(
-      `${adapter.label} scaffolding is not available with ${packageManager} yet. Use ${formatChoices(adapter.capabilities.packageManagers)}.`
+      `${adapter.label} scaffolding is not available with ${packageManager} yet. Use ${formatChoices(adapter.capabilities.packageManagers)}.`,
     );
   }
 }
 
-export function resolveServerAdapter(adapter: FrameworkAdapter, value?: string) {
+export function resolveServerAdapter(
+  adapter: FrameworkAdapter,
+  value?: string,
+) {
   if (value === undefined) return undefined;
   const allowed = adapter.capabilities.rendering?.adapters ?? [];
   if (!allowed.includes(value as AstroServerAdapter)) {
-    throw new Error(`Unsupported ${adapter.label} adapter "${value}". Use ${allowed.join(', ')}.`);
+    throw new Error(
+      `Unsupported ${adapter.label} adapter "${value}". Use ${allowed.join(', ')}.`,
+    );
   }
   return value as AstroServerAdapter;
 }
