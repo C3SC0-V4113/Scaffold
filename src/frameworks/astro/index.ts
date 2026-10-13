@@ -1,24 +1,46 @@
 import path from 'node:path';
 
 import { createAstroApp } from '../../installers/astro.js';
-import { buildScripts } from '../../installers/config-model.js';
+import { ASTRO_DEPENDENCY_VERSION_OVERRIDES, buildScripts, FRAMEWORK_DEVELOPMENT_DEPENDENCIES, FRAMEWORK_PACKAGE_SCRIPT_CONFIG } from '../../installers/config-model.js';
+import { readProjectPackageJson, writeProjectPackageJson } from '../../installers/package-json.js';
 import { renderEslintConfig } from '../../templates/eslint.js';
 import { renderAstroHomeHero, renderAstroHomePage, renderAstroRootLayout, renderAstroUnitSmokeTest, renderPrettierConfig, renderReactDoctorConfig, renderVitestConfig } from '../../templates/files.js';
-import type { CreateOptions } from '../../types.js';
+import { motionMainComponent } from '../../templates/files.js';
+import type { CreateOptions, Executor, IconLibrary } from '../../types.js';
 import type { FrameworkAdapter } from '../types.js';
 
 export const astroAdapter: FrameworkAdapter = {
   id: 'astro', label: 'Astro', description: 'React-enabled Astro scaffold for shadcn-compatible projects.',
   capabilities: { packageManagers: ['npm', 'pnpm'], rendering: { ssr: true, adapters: ['node', 'vercel', 'netlify', 'cloudflare'], defaultAdapter: 'cloudflare' }, routers: [] },
   layout: { sourceRoot: 'src/', globalStylesheet: 'src/styles/global.css', utilsPath: 'src/lib/utils.ts', uiDir: 'src/components/ui', motionMainPath: 'src/components/common/motion-main.tsx' },
+  dependencyOverrides: ASTRO_DEPENDENCY_VERSION_OVERRIDES,
+  developmentDependencies: FRAMEWORK_DEVELOPMENT_DEPENDENCIES.astro,
+  packageScriptConfig: FRAMEWORK_PACKAGE_SCRIPT_CONFIG.astro,
   scaffold: createAstroApp,
   shadcnInitArgs: () => ['-t', 'astro'],
+  async cleanupStarter(projectRoot: string, _options: CreateOptions, executor: Executor) {
+    const packageJson = await readProjectPackageJson(projectRoot, executor);
+    const dependencies = { ...(packageJson.dependencies ?? {}) };
+    let changed = false;
+    for (const dependency of ['@astrojs/mdx', 'canvas-confetti', '@types/canvas-confetti']) {
+      if (dependency in dependencies) { delete dependencies[dependency]; changed = true; }
+    }
+    if (changed) { packageJson.dependencies = dependencies; await writeProjectPackageJson(projectRoot, executor, packageJson); }
+  },
+  async writeAppShell(projectRoot: string, executor: Executor, iconLibrary: IconLibrary, motion: boolean) {
+    const name = path.basename(projectRoot);
+    if (motion) await executor.writeFile(path.join(projectRoot, this.layout.motionMainPath), motionMainComponent);
+    await executor.remove(path.join(projectRoot, 'src/components/Button.astro'));
+    await executor.writeFile(path.join(projectRoot, 'src/components/home-hero.tsx'), renderAstroHomeHero(name, iconLibrary, motion));
+    await executor.writeFile(path.join(projectRoot, 'src/pages/index.astro'), renderAstroHomePage(name, motion));
+    await executor.writeFile(path.join(projectRoot, 'src/layouts/main.astro'), renderAstroRootLayout());
+  },
   templates: {
     eslint: (o) => renderEslintConfig(o), prettier: (o) => renderPrettierConfig(o.framework),
     vitest: (o) => renderVitestConfig(o.framework), unitSmokeTest: () => renderAstroUnitSmokeTest(),
     appShell: (o) => ({ root: renderAstroRootLayout(), page: renderAstroHomePage(path.basename(o.targetDir), o.motion), rootPath: 'src/layouts/main.astro', pagePath: 'src/pages/index.astro' }),
     doctorConfig: (o) => renderReactDoctorConfig(o.framework, o.motion),
   },
-  packageScripts: (o) => buildScripts(o), skills: () => ['astro'],
+  packageScripts: (o) => buildScripts(o, astroAdapter.packageScriptConfig), skills: () => ['astro'],
   docs: { mergeStrategy: 'merge' },
 };

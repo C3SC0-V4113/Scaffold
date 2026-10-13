@@ -1,5 +1,6 @@
 import path from 'node:path';
 
+import { getFrameworkAdapter } from '../frameworks/registry.js';
 import { externalSkillManifest } from '../skills/manifest.js';
 import type { CreateOptions, Executor, SkillInstallEntry } from '../types.js';
 
@@ -16,18 +17,13 @@ const reactExternalSkills = [
   'vercel-react-best-practices',
 ] as const;
 
-const frameworkSpecificExternalSkills = {
-  next: ['next-cache-components-adoption', 'next-cache-components-optimizer', 'next-dev-loop'],
-  astro: ['astro'],
-} as const;
-
 type SkillSelectionOptions = Pick<CreateOptions, 'framework' | 'unit' | 'e2e' | 'motion'>;
 
 export function selectSkillNames(options: SkillSelectionOptions) {
   return [
     ...frameworkAgnosticExternalSkills,
     ...reactExternalSkills,
-    ...frameworkSpecificExternalSkills[options.framework],
+    ...getFrameworkAdapter(options.framework).skills(options),
     'project-architecture',
     'shadcn-component-boundaries',
     'project-min-evaluation',

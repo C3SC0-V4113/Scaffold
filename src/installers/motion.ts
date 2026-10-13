@@ -1,7 +1,7 @@
 import path from 'node:path';
 
 import { getPackageManagerCommands } from '../package-manager.js';
-import { globalStylesheetPath } from '../templates/files.js';
+import { getFrameworkAdapter } from '../frameworks/registry.js';
 import type { CreateOptions, Executor } from '../types.js';
 import { pinnedSpecifier } from './config-model.js';
 
@@ -33,7 +33,7 @@ export async function installMotion(
     return;
   }
 
-  const stylesheetPath = path.join(projectRoot, globalStylesheetPath(options.framework));
+  const stylesheetPath = path.join(projectRoot, getFrameworkAdapter(options.framework).layout.globalStylesheet);
   const stylesheet = (await executor.pathExists(stylesheetPath))
     ? await executor.readFile(stylesheetPath)
     : '';

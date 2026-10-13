@@ -1,23 +1,16 @@
 import path from 'node:path';
 
 import { getPackageManagerCommands } from '../package-manager.js';
+import { getFrameworkAdapter } from '../frameworks/registry.js';
 import {
   commitMsgHook,
   commitlintConfig,
   gitAttributes,
   mergePnpmBuildPolicy,
   mergePnpmHardening,
-  motionMainComponent,
   preCommitHook,
   prePushHook,
   prettierIgnore,
-  renderAstroHomeHero,
-  renderAstroHomePage,
-  renderAstroRootLayout,
-  renderHomePage,
-  renderPrettierConfig,
-  renderReactDoctorConfig,
-  renderRootLayout,
 } from '../templates/files.js';
 import { renderEslintConfig } from '../templates/eslint.js';
 import {
@@ -37,26 +30,6 @@ import {
 // `@types/canvas-confetti` rides along with the starter's confetti hero. The
 // shadcn preset replaces that component, so leaving the types behind meant a
 // dependency with no runtime package and no usage anywhere in src/.
-const astroStarterDependencies = ['@astrojs/mdx', 'canvas-confetti', '@types/canvas-confetti'];
-
-async function removeAstroStarterDependencies(projectRoot: string, executor: Executor) {
-  const packageJson = await readProjectPackageJson(projectRoot, executor);
-  const dependencies = { ...(packageJson.dependencies ?? {}) };
-  let changed = false;
-
-  for (const dependency of astroStarterDependencies) {
-    if (dependency in dependencies) {
-      delete dependencies[dependency];
-      changed = true;
-    }
-  }
-
-  if (changed) {
-    packageJson.dependencies = dependencies;
-    await writeProjectPackageJson(projectRoot, executor, packageJson);
-  }
-}
-
 function runCommand(packageManager: string) {
   return packageManager === 'npm' ? 'npm run' : `${packageManager} run`;
 }
@@ -192,73 +165,25 @@ async function reconcileIconLibrary(
   return effective;
 }
 
-async function writeAppShell(
-  projectRoot: string,
-  executor: Executor,
-  iconLibrary: IconLibrary,
-  framework: CreateOptions['framework'],
-  motion: boolean
-) {
-  const projectName = path.basename(projectRoot);
-
-  if (motion) {
-    const componentsRoot =
-      framework === 'astro'
-        ? path.join(projectRoot, 'src', 'components')
-        : path.join(projectRoot, 'components');
-    await executor.writeFile(
-      path.join(componentsRoot, 'common', 'motion-main.tsx'),
-      motionMainComponent
-    );
-  }
-
-  if (framework === 'astro') {
-    await executor.remove(path.join(projectRoot, 'src', 'components', 'Button.astro'));
-    await executor.writeFile(
-      path.join(projectRoot, 'src', 'components', 'home-hero.tsx'),
-      renderAstroHomeHero(projectName, iconLibrary, motion)
-    );
-    await executor.writeFile(
-      path.join(projectRoot, 'src', 'pages', 'index.astro'),
-      renderAstroHomePage(projectName, motion)
-    );
-    await executor.writeFile(
-      path.join(projectRoot, 'src', 'layouts', 'main.astro'),
-      renderAstroRootLayout()
-    );
-    return;
-  }
-
-  await executor.writeFile(
-    path.join(projectRoot, 'app', 'layout.tsx'),
-    renderRootLayout(projectName)
-  );
-  await executor.writeFile(
-    path.join(projectRoot, 'app', 'page.tsx'),
-    renderHomePage(projectName, iconLibrary, motion)
-  );
-}
-
 export async function installQualityLayer(
   projectRoot: string,
   options: CreateOptions,
   executor: Executor
 ) {
+  const adapter = getFrameworkAdapter(options.framework);
   await applyPackageJsonQualityConfig(projectRoot, executor, options);
-  if (options.framework === 'astro' && !options.dryRun) {
-    await removeAstroStarterDependencies(projectRoot, executor);
-  }
+  if (adapter.cleanupStarter && !options.dryRun) await adapter.cleanupStarter(projectRoot, options, executor);
 
-  await executor.writeFile(path.join(projectRoot, 'eslint.config.mjs'), renderEslintConfig(options));
+  await executor.writeFile(path.join(projectRoot, 'eslint.config.mjs'), adapter.templates.eslint(options));
   await executor.writeFile(
     path.join(projectRoot, '.prettierrc'),
-    renderPrettierConfig(options.framework)
+    adapter.templates.prettier(options)
   );
   await executor.writeFile(path.join(projectRoot, '.prettierignore'), prettierIgnore);
   await executor.writeFile(path.join(projectRoot, '.gitattributes'), gitAttributes);
   await executor.writeFile(
     path.join(projectRoot, 'doctor.config.json'),
-    renderReactDoctorConfig(options.framework, options.motion)
+    adapter.templates.doctorConfig(options)
   );
   await appendGitIgnore(projectRoot, options, executor);
 
@@ -289,12 +214,12 @@ export async function installQualityLayer(
 
   if (!options.skipInstall) {
     const commands = getPackageManagerCommands(options.packageManager);
-    const install = commands.addDev(buildDevDependencies(options));
+    const install = commands.addDev(buildDevDependencies(options, adapter.developmentDependencies));
     await executor.run(install.command, install.args, { cwd: projectRoot });
   }
 
   const iconLibrary = await reconcileIconLibrary(projectRoot, options, executor);
-  await writeAppShell(projectRoot, executor, iconLibrary, options.framework, options.motion);
+  await adapter.writeAppShell(projectRoot, executor, iconLibrary, options.motion);
 }
 
 /**

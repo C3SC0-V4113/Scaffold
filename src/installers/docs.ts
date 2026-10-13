@@ -1,5 +1,6 @@
 import path from 'node:path';
 
+import { getFrameworkAdapter } from '../frameworks/registry.js';
 import {
   claudeReactDoctorHook,
   claudeSettings,
@@ -106,8 +107,9 @@ export async function installDocsAndClaude(
   const readmePath = path.join(projectRoot, 'README.md');
   const agentsPath = path.join(projectRoot, 'AGENTS.md');
   const claudePath = path.join(projectRoot, 'CLAUDE.md');
+  const adapter = getFrameworkAdapter(options.framework);
 
-  if (options.framework === 'astro') {
+  if (adapter.docs.mergeStrategy === 'merge') {
     await mergeAstroMarkdown(readmePath, astroReadmeContent(options), executor);
     await mergeAstroMarkdown(
       agentsPath,
@@ -121,7 +123,7 @@ export async function installDocsAndClaude(
   }
 
   await executor.writeFile(path.join(projectRoot, 'DESIGN.md'), renderDesignDoc(options.framework));
-  if (options.framework !== 'astro' || !(await executor.pathExists(claudePath))) {
+  if (adapter.docs.mergeStrategy === 'replace' || !(await executor.pathExists(claudePath))) {
     await executor.writeFile(claudePath, '@AGENTS.md\n');
   }
 

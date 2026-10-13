@@ -1,4 +1,4 @@
-import type { CreateOptions, Executor, Framework, PackageManager, AstroServerAdapter } from '../types.js';
+import type { CreateOptions, Executor, Framework, PackageManager, AstroServerAdapter, IconLibrary } from '../types.js';
 
 /** FrameworkAdapter is the framework port; AstroServerAdapter is an Astro deploy adapter. */
 export interface FrameworkAdapter {
@@ -17,18 +17,22 @@ export interface FrameworkAdapter {
     uiDir: string;
     motionMainPath: string;
   };
+  dependencyOverrides: Readonly<Record<string, string>>;
+  developmentDependencies: { core: readonly string[]; unitExclusions: readonly string[] };
+  packageScriptConfig: { doctor: string; doctorStaged: string; scanInit?: string; scan?: string; typecheck: string };
   scaffold(options: CreateOptions, executor: Executor): Promise<string>;
-  shadcnInitArgs(options: CreateOptions): string[];
+  shadcnInitArgs(options: Pick<CreateOptions, 'framework' | 'packageManager' | 'yes' | 'shadcnArgs'>): string[];
   cleanupStarter?(projectRoot: string, options: CreateOptions, executor: Executor): Promise<void>;
+  writeAppShell(projectRoot: string, executor: Executor, iconLibrary: IconLibrary, motion: boolean): Promise<void>;
   templates: {
     eslint(options: CreateOptions): string;
     prettier(options: CreateOptions): string;
-    vitest(options: CreateOptions): string;
-    unitSmokeTest(options: CreateOptions): string;
+    vitest(options: Pick<CreateOptions, 'framework'>): string;
+    unitSmokeTest(options: Pick<CreateOptions, 'framework'>): string;
     appShell(options: CreateOptions): { root: string; page: string; rootPath: string; pagePath: string };
     doctorConfig(options: CreateOptions): string;
   };
-  packageScripts(options: CreateOptions): Record<string, string>;
-  skills(options: CreateOptions): string[];
+  packageScripts(options: Pick<CreateOptions, 'framework' | 'packageManager' | 'unit' | 'e2e'>): Record<string, string>;
+  skills(options: Pick<CreateOptions, 'framework' | 'unit' | 'e2e' | 'motion'>): string[];
   docs: { mergeStrategy: 'replace' | 'merge' };
 }
