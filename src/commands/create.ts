@@ -1,12 +1,11 @@
 import { confirm, select } from '@inquirer/prompts';
 
 import { DryRunExecutor, RealExecutor } from '../executor.js';
-import { defaultFramework, frameworkRegistry, isFramework } from '../frameworks/registry.js';
+import { defaultFramework, frameworkRegistry, getFrameworkAdapter, isFramework } from '../frameworks/registry.js';
+import { resolveServerAdapter, validateFrameworkOptions } from '../frameworks/validate.js';
 import { getPackageManagerCommands } from '../package-manager.js';
-import { createAstroApp } from '../installers/astro.js';
 import { installCiWorkflows } from '../installers/ci.js';
 import { installDocsAndClaude } from '../installers/docs.js';
-import { createNextApp } from '../installers/next.js';
 import { installMotion } from '../installers/motion.js';
 import { installPnpmHardening, installQualityLayer } from '../installers/quality.js';
 import { installShadcnMcp } from '../installers/shadcn-mcp.js';
@@ -35,7 +34,6 @@ export interface RawCreateFlags {
 }
 
 const packageManagers = ['npm', 'pnpm', 'bun'] as const;
-const astroAdapters = ['node', 'vercel', 'netlify', 'cloudflare'] as const;
 
 export function detectPackageManager(): PackageManager {
   const userAgent = process.env.npm_config_user_agent ?? '';
@@ -64,24 +62,6 @@ function resolveIconOption(icons: string | undefined): IconLibrary | undefined {
   }
 
   return icons as IconLibrary;
-}
-
-function isAstroAdapter(value: string): value is AstroServerAdapter {
-  return astroAdapters.includes(value as AstroServerAdapter);
-}
-
-function resolveAstroAdapterOption(adapter: string | undefined): AstroServerAdapter | undefined {
-  if (adapter === undefined) {
-    return undefined;
-  }
-
-  if (!isAstroAdapter(adapter)) {
-    throw new Error(
-      `Unsupported Astro adapter "${adapter}". Use ${astroAdapters.join(', ')}.`
-    );
-  }
-
-  return adapter;
 }
 
 async function resolvePackageManager(flags: RawCreateFlags): Promise<PackageManager> {
@@ -127,7 +107,7 @@ async function resolveFramework(flags: RawCreateFlags): Promise<CreateOptions['f
   if (flags.framework) {
     if (!isFramework(flags.framework)) {
       throw new Error(
-        `Unsupported framework "${flags.framework}". Use ${frameworkRegistry.map((item) => item.value).join(', ')}.`
+        `Unsupported framework "${flags.framework}". Use ${frameworkRegistry.map((item) => item.id).join(', ')}.`
       );
     }
 
@@ -143,7 +123,7 @@ async function resolveFramework(flags: RawCreateFlags): Promise<CreateOptions['f
     default: defaultFramework,
     choices: frameworkRegistry.map((framework) => ({
       name: framework.label,
-      value: framework.value,
+      value: framework.id,
       description: framework.description,
     })),
   });
@@ -157,28 +137,22 @@ export async function resolveCreateOptions(
   const framework = await resolveFramework(flags);
   const packageManager = await resolvePackageManager(flags);
 
-  if (framework !== 'astro' && (flags.ssr !== undefined || flags.adapter !== undefined)) {
-    throw new Error('--ssr and --adapter are only available when --framework astro is selected.');
-  }
-
-  if (framework === 'astro' && packageManager === 'bun') {
-    throw new Error('Astro scaffolding is not available with bun yet. Use npm or pnpm.');
-  }
-
-  const ssrEnabled =
-    framework === 'astro' && (flags.adapter !== undefined || (await resolveBoolean(flags.ssr, yes, false, 'Enable Astro SSR?')));
-  const astroAdapter =
-    framework === 'astro' && ssrEnabled
-      ? resolveAstroAdapterOption(flags.adapter) ??
-        (yes ? 'cloudflare' : await select<AstroServerAdapter>({
-          message: 'Astro SSR adapter',
-          default: 'cloudflare',
-          choices: astroAdapters.map((adapter) => ({
-            name: adapter,
-            value: adapter,
-          })),
-        }))
-      : undefined;
+  const frameworkAdapter = getFrameworkAdapter(framework);
+  validateFrameworkOptions(frameworkAdapter, packageManager, flags);
+  const rendering = frameworkAdapter.capabilities.rendering;
+  const ssrEnabled = Boolean(
+    rendering?.ssr && (flags.adapter !== undefined || (await resolveBoolean(flags.ssr, yes, false, 'Enable Astro SSR?')))
+  );
+  const astroAdapter = ssrEnabled
+    ? resolveServerAdapter(frameworkAdapter, flags.adapter) ??
+      (yes
+        ? rendering?.defaultAdapter
+        : await select<AstroServerAdapter>({
+            message: 'Astro SSR adapter',
+            default: rendering?.defaultAdapter,
+            choices: (rendering?.adapters ?? []).map((adapter) => ({ name: adapter, value: adapter })),
+          }))
+    : undefined;
 
   return {
     targetDir,
@@ -211,10 +185,7 @@ export async function runCreate(targetDir: string, flags: RawCreateFlags) {
   const options = await resolveCreateOptions(targetDir, flags);
   const executor = options.dryRun ? new DryRunExecutor() : new RealExecutor();
 
-  const projectRoot =
-    options.framework === 'astro'
-      ? await createAstroApp(options, executor)
-      : await createNextApp(options, executor);
+  const projectRoot = await getFrameworkAdapter(options.framework).scaffold(options, executor);
   await initializeShadcn(projectRoot, options, executor);
   await installQualityLayer(projectRoot, options, executor);
   await installMotion(projectRoot, options, executor);

@@ -1,26 +1,14 @@
 import type { Framework } from '../types.js';
+import { astroAdapter } from './astro/index.js';
+import { nextAdapter } from './next/index.js';
+import type { FrameworkAdapter } from './types.js';
 
-export interface FrameworkDefinition {
-  value: Framework;
-  label: string;
-  description: string;
-}
-
-export const frameworkRegistry: FrameworkDefinition[] = [
-  {
-    value: 'next',
-    label: 'Next.js',
-    description: 'Default framework with the current purrfold workflow.',
-  },
-  {
-    value: 'astro',
-    label: 'Astro',
-    description: 'React-enabled Astro scaffold for shadcn-compatible projects.',
-  },
-];
+export const frameworkAdapters = { next: nextAdapter, astro: astroAdapter } satisfies Record<Framework, FrameworkAdapter>;
+export const getFrameworkAdapter = (id: Framework) => frameworkAdapters[id];
+export const frameworkRegistry = Object.values(frameworkAdapters);
 
 export function isFramework(value: string): value is Framework {
-  return frameworkRegistry.some((framework) => framework.value === value);
+  return value in frameworkAdapters;
 }
 
 export const defaultFramework: Framework = 'next';
