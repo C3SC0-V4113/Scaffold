@@ -1,5 +1,6 @@
 import path from 'node:path';
 
+import { getFrameworkAdapter } from '../frameworks/registry.js';
 import {
   claudeReactDoctorHook,
   claudeSettings,
@@ -61,29 +62,29 @@ export function mergePurrfoldMarkdown(existing: string, managedContent: string) 
   });
 }
 
-function astroReadmeContent(options: CreateOptions) {
-  const readme = renderReadme(options);
+function frameworkReadmeContent(options: CreateOptions, adapter: ReturnType<typeof getFrameworkAdapter>) {
+  const readme = renderReadme(options, adapter.docs);
   const qualityStart = readme.indexOf('## Quality');
 
   if (qualityStart === -1) {
-    throw new Error('Unable to locate the Purrfold quality guidance for Astro README.md.');
+    throw new Error(`Unable to locate the Purrfold quality guidance for ${adapter.label} README.md.`);
   }
 
   return readme.slice(qualityStart);
 }
 
-function astroAgentsContent(options: CreateOptions) {
-  const agents = renderAgents(options);
+function frameworkAgentsContent(options: CreateOptions, adapter: ReturnType<typeof getFrameworkAdapter>) {
+  const agents = renderAgents(options, adapter.docs);
   const qualityStart = agents.indexOf('## Quality Gates');
 
   if (qualityStart === -1) {
-    throw new Error('Unable to locate the Purrfold quality guidance for Astro AGENTS.md.');
+    throw new Error(`Unable to locate the Purrfold quality guidance for ${adapter.label} AGENTS.md.`);
   }
 
   return agents.slice(qualityStart);
 }
 
-async function mergeAstroMarkdown(
+async function mergeMarkdownSection(
   filePath: string,
   managedContent: string,
   executor: Executor,
@@ -106,22 +107,23 @@ export async function installDocsAndClaude(
   const readmePath = path.join(projectRoot, 'README.md');
   const agentsPath = path.join(projectRoot, 'AGENTS.md');
   const claudePath = path.join(projectRoot, 'CLAUDE.md');
+  const adapter = getFrameworkAdapter(options.framework);
 
-  if (options.framework === 'astro') {
-    await mergeAstroMarkdown(readmePath, astroReadmeContent(options), executor);
-    await mergeAstroMarkdown(
+  if (adapter.docs.mergeStrategy === 'merge') {
+    await mergeMarkdownSection(readmePath, frameworkReadmeContent(options, adapter), executor);
+    await mergeMarkdownSection(
       agentsPath,
-      astroAgentsContent(options),
+      frameworkAgentsContent(options, adapter),
       executor,
-      renderAgents(options)
+      renderAgents(options, adapter.docs)
     );
   } else {
-    await executor.writeFile(readmePath, renderReadme(options));
-    await executor.writeFile(agentsPath, renderAgents(options));
+    await executor.writeFile(readmePath, renderReadme(options, adapter.docs));
+    await executor.writeFile(agentsPath, renderAgents(options, adapter.docs));
   }
 
-  await executor.writeFile(path.join(projectRoot, 'DESIGN.md'), renderDesignDoc(options.framework));
-  if (options.framework !== 'astro' || !(await executor.pathExists(claudePath))) {
+  await executor.writeFile(path.join(projectRoot, 'DESIGN.md'), renderDesignDoc(adapter.layout));
+  if (adapter.docs.mergeStrategy === 'replace' || !(await executor.pathExists(claudePath))) {
     await executor.writeFile(claudePath, '@AGENTS.md\n');
   }
 

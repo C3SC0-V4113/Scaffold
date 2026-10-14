@@ -1,0 +1,53 @@
+import { describe, expect, it } from 'vitest';
+
+import { frameworkAdapters, frameworkRegistry, getFrameworkAdapter } from '../src/frameworks/registry.js';
+import { resolveServerAdapter, validateFrameworkOptions } from '../src/frameworks/validate.js';
+import type { Framework } from '../src/types.js';
+
+describe('framework adapter registry', () => {
+  it('registers an adapter for every framework', () => {
+    const frameworks: Framework[] = ['next', 'astro'];
+    expect(Object.keys(frameworkAdapters).sort()).toEqual([...frameworks].sort());
+    expect(frameworkRegistry.map((adapter) => adapter.id).sort()).toEqual([...frameworks].sort());
+  });
+
+  it('returns the registered adapter', () => {
+    expect(getFrameworkAdapter('next')).toBe(frameworkAdapters.next);
+    expect(getFrameworkAdapter('astro')).toBe(frameworkAdapters.astro);
+  });
+});
+
+describe('framework capability validation', () => {
+  it('preserves the SSR and adapter validation message', () => {
+    expect(() => validateFrameworkOptions(frameworkAdapters.next, 'npm', { ssr: true })).toThrowError(
+      new Error('--ssr and --adapter are only available when --framework astro is selected.')
+    );
+  });
+
+  it('preserves the Astro package manager validation message', () => {
+    expect(() => validateFrameworkOptions(frameworkAdapters.astro, 'bun', {})).toThrowError(
+      new Error('Astro scaffolding is not available with bun yet. Use npm or pnpm.')
+    );
+  });
+
+  it('uses adapter capabilities in package manager validation', () => {
+    const npmOnlyAdapter = {
+      ...frameworkAdapters.astro,
+      capabilities: { ...frameworkAdapters.astro.capabilities, packageManagers: ['npm'] as const },
+    };
+    expect(() => validateFrameworkOptions(npmOnlyAdapter, 'pnpm', {})).toThrowError(
+      new Error('Astro scaffolding is not available with pnpm yet. Use npm.')
+    );
+  });
+
+  it('uses the adapter label in server adapter validation', () => {
+    expect(() => resolveServerAdapter(frameworkAdapters.astro, 'invalid')).toThrowError(
+      new Error('Unsupported Astro adapter "invalid". Use node, vercel, netlify, cloudflare.')
+    );
+  });
+
+  it('accepts supported framework and package manager combinations', () => {
+    expect(() => validateFrameworkOptions(frameworkAdapters.next, 'bun', {})).not.toThrow();
+    expect(() => validateFrameworkOptions(frameworkAdapters.astro, 'pnpm', { ssr: true })).not.toThrow();
+  });
+});

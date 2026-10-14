@@ -2,8 +2,8 @@ import path from 'node:path';
 
 import versions from '../versions.json' with { type: 'json' };
 
+import { getFrameworkAdapter } from '../frameworks/registry.js';
 import type { CreateOptions, Executor } from '../types.js';
-import { buildScripts } from './config-model.js';
 
 /** `packageManager` requires an exact `x.y.z`; ranges and majors are rejected. */
 const EXACT_SEMVER = /^\d+\.\d+\.\d+/;
@@ -72,7 +72,7 @@ export async function applyPackageJsonQualityConfig(
 
   packageJson.scripts = {
     ...packageJson.scripts,
-    ...buildScripts(options),
+    ...getFrameworkAdapter(options.framework).packageScripts(options),
   };
 
   // pnpm only: npm ships with Node (already pinned by setup-node), and bun is

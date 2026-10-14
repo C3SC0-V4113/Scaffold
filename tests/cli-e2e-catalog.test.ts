@@ -15,6 +15,8 @@ import path from 'node:path';
 import { tmpdir } from 'node:os';
 
 import { describe, expect, it } from 'vitest';
+import { frameworkLayouts } from '../scripts/e2e/catalog.mjs';
+import { frameworkAdapters } from '../src/frameworks/registry.js';
 
 function resolveNpmCli(): string {
   if (process.env.npm_execpath && existsSync(process.env.npm_execpath)) {
@@ -50,6 +52,12 @@ function pathContainsPnpm(directory: string): boolean {
 }
 
 describe('CLI E2E catalog boundary', () => {
+  it('keeps the plain JavaScript harness layouts aligned with framework adapters', () => {
+    for (const [framework, adapter] of Object.entries(frameworkAdapters)) {
+      expect(frameworkLayouts[framework as keyof typeof frameworkLayouts]).toEqual(adapter.layout);
+    }
+  });
+
   it('lists valid non-empty scenario JSON without node_modules or the runtime harness', () => {
     const fixtureRoot = mkdtempSync(path.join(tmpdir(), 'purrfold dependency-free catalog '));
     const fixtureScripts = path.join(fixtureRoot, 'scripts');

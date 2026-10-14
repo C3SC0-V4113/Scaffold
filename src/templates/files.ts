@@ -1,6 +1,7 @@
 import versions from '../versions.json' with { type: 'json' };
 
 import type { CreateOptions, IconLibrary, PackageManager } from '../types.js';
+import type { FrameworkAdapter } from '../frameworks/types.js';
 import { getCatRender } from './icons.js';
 import { testReportDirs } from './ignores.js';
 
@@ -25,16 +26,14 @@ export const prettierConfig = `{
 }
 `;
 
-export function renderPrettierConfig(framework: CreateOptions['framework']) {
-  if (framework !== 'astro') {
-    return prettierConfig;
-  }
-
+export function renderPrettierConfig(config: FrameworkAdapter['prettierConfig']) {
   return prettierConfig
-    .replace('"tailwindStylesheet": "./app/globals.css"', '"tailwindStylesheet": "./src/styles/global.css"')
+    .replace('"tailwindStylesheet": "./app/globals.css"', `"tailwindStylesheet": "./${config.tailwindStylesheet}"`)
     .replace(
       '"plugins": ["prettier-plugin-tailwindcss"]',
-      '"plugins": ["prettier-plugin-astro", "prettier-plugin-tailwindcss"]'
+      `"plugins": [${[...config.extraPlugins, 'prettier-plugin-tailwindcss']
+        .map((plugin) => `"${plugin}"`)
+        .join(', ')}]`,
     );
 }
 
@@ -385,16 +384,16 @@ import '../styles/global.css';
 }
 
 export function renderReactDoctorConfig(
-  framework: CreateOptions['framework'],
-  motion = false
+  layout: FrameworkAdapter['layout'],
+  motion: boolean,
+  ignoreMotionRule: boolean
 ) {
-  const sourceRoot = framework === 'astro' ? 'src/' : '';
   // React Doctor already skips build output and most dot directories, but not
   // test reports: Playwright's bundles minified trace-viewer scripts.
   const ignoredFiles = [
     '.agents/**',
     '.claude/**',
-    `${sourceRoot}components/ui/**`,
+    `${layout.uiDir}/**`,
     ...testReportDirs.map((dir) => `${dir}/**`),
   ];
   // React Doctor 0.5.4 reports require-reduced-motion for Next App Router
@@ -402,7 +401,7 @@ export function renderReactDoctorConfig(
   // calls useReducedMotion(). Keep both real safeguards and suppress only
   // that verified false positive until the detector recognizes them.
   const ignoredRules =
-    framework !== 'astro' && motion
+    ignoreMotionRule && motion
       ? '    "rules": ["react-doctor/require-reduced-motion"],\n'
       : '';
 
@@ -413,7 +412,7 @@ ${ignoredFiles.map((file) => `      "${file}"`).join(',\n')}
     ],
     "overrides": [
       {
-        "files": ["${sourceRoot}lib/utils.ts"],
+        "files": ["${layout.utilsPath}"],
         "rules": ["deslop/unused-file", "knip/exports", "exports"]
       }
     ]
@@ -422,7 +421,11 @@ ${ignoredFiles.map((file) => `      "${file}"`).join(',\n')}
 `;
 }
 
-export const reactDoctorConfig = renderReactDoctorConfig('next');
+export const reactDoctorConfig = renderReactDoctorConfig(
+  { sourceRoot: '', globalStylesheet: 'app/globals.css', utilsPath: 'lib/utils.ts', uiDir: 'components/ui', motionMainPath: 'components/common/motion-main.tsx' },
+  false,
+  true
+);
 
 // .mjs + ESM syntax on purpose: Astro apps set "type": "module", so a
 // commitlint.config.js with module.exports crashes there, while Next apps
@@ -661,10 +664,8 @@ export default defineConfig({
 });
 `;
 
-export function renderVitestConfig(framework: CreateOptions['framework']) {
-  if (framework !== 'astro') {
-    return vitestConfig;
-  }
+export function renderVitestConfig(config: FrameworkAdapter['vitestConfig']) {
+  if (config.tsconfigPaths === 'plugin') return vitestConfig;
 
   return vitestConfig
     .replace("import tsconfigPaths from 'vite-tsconfig-paths';\n", '')
@@ -868,31 +869,14 @@ ${shadcnMcpToml(options.packageManager)}
 }
 
 export function renderReadme(
-  options: Pick<CreateOptions, 'framework' | 'packageManager' | 'unit' | 'e2e' | 'commitlint' | 'mcp' | 'motion'>
+  options: Pick<CreateOptions, 'framework' | 'packageManager' | 'unit' | 'e2e' | 'commitlint' | 'mcp' | 'motion'>,
+  docs: FrameworkAdapter['docs']
 ) {
   const run = options.packageManager === 'npm' ? 'npm run' : `${options.packageManager} run`;
-  const frameworkName = options.framework === 'astro' ? 'Astro' : 'Next.js';
-  const title = options.framework === 'astro' ? 'Astro Quality App' : 'Next Quality App';
-  const toolingLines =
-    options.framework === 'astro'
-      ? [
-          '- Astro project with TypeScript, Tailwind, and React islands.',
-          '- shadcn UI initialized through the shadcn CLI.',
-          '- ESLint flat config with strict Astro, React, import ordering, and Prettier integration.',
-          '- `@shadcn/lint` enforcing the design system rules in `DESIGN.md`.',
-          '- React Doctor and React Scan.',
-        ]
-      : [
-          '- Next.js App Router with TypeScript and Tailwind.',
-          '- shadcn UI initialized through the shadcn CLI.',
-          '- ESLint flat config with strict Next.js, React, import ordering, and Prettier integration.',
-          '- `@shadcn/lint` enforcing the design system rules in `DESIGN.md`.',
-          '- React Doctor and React Scan.',
-        ];
 
-  return `# ${title}
+  return `# ${docs.readmeTitle}
 
-${frameworkName} app scaffolded with strict quality tooling, shadcn, React Doctor, React Scan, agent docs, and Claude hooks.
+${docs.frameworkName} app scaffolded with strict quality tooling, shadcn, React Doctor, React Scan, agent docs, and Claude hooks.
 
 ## Development
 
@@ -912,9 +896,9 @@ ${run} check
 
 ## Tooling
 
-${toolingLines.join('\n')}
+${docs.toolingLines.join('\n')}
 ${options.unit ? '- Vitest and React Testing Library.\n' : ''}${options.e2e ? '- Playwright E2E testing.\n' : ''}${options.commitlint ? '- Conventional commit linting.\n' : ''}${options.motion ? '- Motion for React animations.\n' : ''}
-${renderMotionGuide(options)}${renderShadcnMcpGuide(options)}
+${renderMotionGuide(options, docs)}${renderShadcnMcpGuide(options)}
 ## shadcn Presets
 
 purrfold forwards additional shadcn CLI arguments, including official presets:
@@ -936,11 +920,11 @@ npx purrfold@latest my-app --shadcn-args --preset b5eH0WVTX --yes
 }
 
 /** The Tailwind entry stylesheet each framework's scaffold generates, relative to the app root. */
-export function globalStylesheetPath(framework: CreateOptions['framework']) {
-  return framework === 'astro' ? 'src/styles/global.css' : 'app/globals.css';
+export function globalStylesheetPath(layout: FrameworkAdapter['layout']) {
+  return layout.globalStylesheet;
 }
 
-export function renderDesignDoc(framework: CreateOptions['framework']) {
+export function renderDesignDoc(layout: FrameworkAdapter['layout']) {
   return `# Design Standard
 
 This file is the UI/UX source of truth for this app.
@@ -949,7 +933,7 @@ This file is the UI/UX source of truth for this app.
 
 - Build the actual product surface first; avoid marketing-only landing pages.
 - Prefer dense, calm, scannable layouts for operational tools.
-- Use semantic tokens from \`${globalStylesheetPath(framework)}\`.
+- Use semantic tokens from \`${globalStylesheetPath(layout)}\`.
 - Keep loading, empty, error, and partial-data states explicit.
 - Make controls accessible, keyboard reachable, and clearly labeled.
 
@@ -980,15 +964,12 @@ Fix a violation with a token, variant, or size from the design system, and add o
 `;
 }
 
-function renderMotionGuide(options: Pick<CreateOptions, 'framework' | 'motion'>) {
+function renderMotionGuide(options: Pick<CreateOptions, 'motion'>, docs: FrameworkAdapter['docs']) {
   if (!options.motion) {
     return '';
   }
 
-  const frameworkGuidance =
-    options.framework === 'astro'
-      ? 'Astro/Vite requires no additional Motion configuration. Use Motion inside React islands.'
-      : 'In the Next.js App Router, use `motion/react` from a client component or import server-compatible components from `motion/react-client`.';
+  const frameworkGuidance = docs.motionGuidance;
 
   return `## Motion
 
@@ -1004,11 +985,12 @@ Import React APIs from \`motion/react\`. ${frameworkGuidance}
 }
 
 export function renderAgents(
-  options: Pick<CreateOptions, 'framework' | 'packageManager' | 'unit' | 'e2e' | 'commitlint' | 'mcp' | 'motion'>
+  options: Pick<CreateOptions, 'framework' | 'packageManager' | 'unit' | 'e2e' | 'commitlint' | 'mcp' | 'motion'>,
+  docs: FrameworkAdapter['docs']
 ) {
   const run = options.packageManager === 'npm' ? 'npm run' : `${options.packageManager} run`;
 
-  if (options.framework === 'astro') {
+  if (docs.mergeStrategy === 'merge') {
     return `<!-- BEGIN:astro-agent-rules -->
 
 # This is an Astro scaffold
@@ -1039,7 +1021,7 @@ ${options.unit ? `4. \`${run} test\`\n` : ''}${options.e2e ? `- Run \`${run} tes
 - Component placement rules: \`.agents/skills/shadcn-component-boundaries/SKILL.md\`
 - Minimum evaluation: \`.agents/skills/project-min-evaluation/SKILL.md\`
 ${options.unit ? '- Vitest guidance: `.agents/skills/vitest/SKILL.md`\n' : ''}${options.e2e ? '- Playwright guidance: `.agents/skills/playwright-best-practices/SKILL.md`\n' : ''}${options.commitlint ? '- Commit messages are checked with commitlint.\n' : ''}
-${renderMotionAgentRules(options)}## shadcn MCP
+${renderMotionAgentRules(options, docs)}## shadcn MCP
 
 ${options.mcp ? 'shadcn MCP setup was requested during scaffold.' : 'shadcn MCP setup is optional and was not run by default.'}
 
@@ -1097,7 +1079,7 @@ Do not use \`next lint\`; use the ESLint CLI.
 - Component placement rules: \`.agents/skills/shadcn-component-boundaries/SKILL.md\`
 - Minimum evaluation: \`.agents/skills/project-min-evaluation/SKILL.md\`
 ${options.unit ? '- Vitest guidance: `.agents/skills/vitest/SKILL.md`\n' : ''}${options.e2e ? '- Playwright guidance: `.agents/skills/playwright-best-practices/SKILL.md`\n' : ''}${options.commitlint ? '- Commit messages are checked with commitlint.\n' : ''}
-${renderMotionAgentRules(options)}## shadcn MCP
+${renderMotionAgentRules(options, docs)}## shadcn MCP
 
 ${options.mcp ? 'shadcn MCP setup was requested during scaffold.' : 'shadcn MCP setup is optional and was not run by default.'}
 
@@ -1121,15 +1103,12 @@ shadcn presets are supported through \`--shadcn-args --preset <id>\`.
 `;
 }
 
-function renderMotionAgentRules(options: Pick<CreateOptions, 'framework' | 'motion'>) {
+function renderMotionAgentRules(options: Pick<CreateOptions, 'motion'>, docs: FrameworkAdapter['docs']) {
   if (!options.motion) {
     return '';
   }
 
-  const frameworkGuidance =
-    options.framework === 'astro'
-      ? '- Astro/Vite requires no additional Motion configuration; animate within React islands.'
-      : '- In the Next.js App Router, use `motion/react` in client components or `motion/react-client` for server-compatible components.';
+  const frameworkGuidance = docs.motionAgentGuidance;
 
   return `## Motion Rules
 
