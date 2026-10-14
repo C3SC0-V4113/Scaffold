@@ -359,7 +359,7 @@ export function renderViteEslintConfig(options: EslintConfigOptions) {
     'const eslintConfig = defineConfig([',
     '  ...tseslint.configs.recommended,',
     '  reactHooks.configs.flat.recommended,',
-    '  reactRefresh.configs.vite(),',
+    '  reactRefresh.configs.vite,',
     '  {',
     '    ...reactDoctor.configs.recommended,',
     "    files: ['**/*.{jsx,tsx}'],",
