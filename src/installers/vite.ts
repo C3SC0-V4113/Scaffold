@@ -85,9 +85,11 @@ export async function createViteApp(
 ) {
   const projectRoot = await validateTargetDir(options.targetDir, executor);
   const commands = getPackageManagerCommands(options.packageManager);
-  const create = commands.createViteApp(options.targetDir);
+  // create-vite resolves an absolute target as a relative path on some package
+  // manager launchers. Run it from the target's parent with only its basename.
+  const create = commands.createViteApp(path.basename(projectRoot));
 
-  await executor.run(create.command, create.args);
+  await executor.run(create.command, create.args, { cwd: path.dirname(projectRoot) });
 
   const install = commands.addDev(
     viteStarterDependencies.map((name) => pinnedSpecifier(name, 'vite')),

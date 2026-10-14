@@ -72,6 +72,15 @@ describe('Vite adapter', () => {
     },
   );
 
+  it('runs create-vite from the target parent when given an absolute target', async () => {
+    const targetDir = path.resolve('/tmp/purrfold-vite-target');
+    const executor = new DryRunExecutor();
+    await createViteApp({ ...options, targetDir }, executor);
+
+    expect(executor.operations[0]).toContain('create vite@latest purrfold-vite-target');
+    expect(executor.operations[0]).toContain(`(cwd ${path.dirname(targetDir)})`);
+  });
+
   it('adds the shadcn alias to create-vite JSONC without dropping comments', () => {
     const current = `{
   "compilerOptions": {
