@@ -500,7 +500,7 @@ export const cliE2eScenarios = [
       '--template react-ts --no-interactive --no-immediate',
       pinnedDependency('vite', 'vite'),
       pinnedDependency('@tailwindcss/vite', 'vite'),
-      'run npx shadcn@latest init -t vite --preset nova --no-monorepo --defaults',
+      'run npx shadcn@latest init -t vite --no-monorepo --defaults',
       'vitest.config.ts',
       'eslint.config.js',
     ],

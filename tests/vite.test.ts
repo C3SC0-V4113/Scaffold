@@ -45,6 +45,8 @@ describe('Vite adapter', () => {
       utilsPath: 'src/lib/utils.ts',
       uiDir: 'src/components/ui',
       motionMainPath: 'src/components/common/motion-main.tsx',
+      eslintConfigPath: 'eslint.config.js',
+      vitestConfigPath: 'vitest.config.ts',
     });
     expect(viteAdapter.vitestConfig).toEqual({ kind: 'merge-vite' });
     expect(viteAdapter.layout.eslintConfigPath).toBe('eslint.config.js');
@@ -63,14 +65,17 @@ describe('Vite adapter', () => {
       );
       expect(executor.operations[0]).toContain('--template react-ts');
       expect(executor.operations[0]).toContain('--no-interactive --no-immediate');
-      expect(executor.operations[1]).toContain(
+      const installOperation = executor.operations.find((operation) =>
+        operation.includes(pinnedSpecifier('vite', 'vite')),
+      );
+      expect(installOperation).toContain(
         pinnedSpecifier('vite', 'vite'),
       );
-      expect(executor.operations[1]).toContain(
+      expect(installOperation).toContain(
         pinnedSpecifier('@tailwindcss/vite', 'vite'),
       );
       const installIndex = executor.operations.findIndex((operation) =>
-        operation.includes(`${packageManager} add`),
+        operation === installOperation,
       );
       if (packageManager === 'pnpm') {
         const workspaceIndex = executor.operations.indexOf(
