@@ -1,12 +1,12 @@
 ---
 name: purrfold
-description: Scaffold a new production-ready frontend app (Next.js + shadcn + strict quality tooling, including @shadcn/lint design system rules) using the purrfold CLI. Use when the user wants to create/bootstrap/scaffold a new web app or project, or asks to "install/run purrfold" with or without testing, e2e, commitlint, or a specific package manager.
+description: Scaffold a new production-ready frontend app (Next.js, Astro, or Vite + shadcn + strict quality tooling, including @shadcn/lint design system rules) using the purrfold CLI. Use when the user wants to create/bootstrap/scaffold a new web app or project, or asks to "install/run purrfold" with or without testing, e2e, commitlint, or a specific package manager.
 ---
 
 # purrfold — scaffold a frontend app
 
-`purrfold` is a CLI that creates a new app from `create-next-app@latest` or
-`create-astro@latest` and applies a production-oriented quality baseline: shadcn,
+`purrfold` is a CLI that creates a new app from `create-next-app@latest`,
+`create-astro@latest`, or `create-vite@latest` and applies a production-oriented quality baseline: shadcn,
 strict ESLint with `@shadcn/lint` design system rules, Prettier, Husky, React Doctor, React Scan, agent docs, Claude
 hooks, and optional unit (Vitest), e2e (Playwright), commitlint, and GitHub
 Actions CI. The
@@ -26,7 +26,7 @@ npx purrfold@latest <target-dir> [options]
 ## Options
 
 - `--pm <npm|pnpm|bun>` — package manager (default: npm with `--yes`).
-- `--framework <next|astro>` — framework to scaffold (default: Next.js).
+- `--framework <next|astro|vite>` — framework to scaffold (default: Next.js).
 - `--ssr` — enable Astro SSR instead of a static build (default: off).
 - `--adapter <node|vercel|netlify|cloudflare>` — Astro SSR adapter (default: cloudflare when SSR is enabled).
 - `--unit` / `--no-unit` — Vitest + React Testing Library (default: included).
@@ -49,6 +49,7 @@ To fetch the canonical option schema at runtime: `npx purrfold@latest info --jso
 | --- | --- |
 | "scaffold/create a new app" (defaults) | `npx purrfold@latest <dir> --yes` |
 | "use Astro" / "scaffold Astro" | `npx purrfold@latest <dir> --framework astro --yes` |
+| "use Vite" / "scaffold Vite" | `npx purrfold@latest <dir> --framework vite --yes` |
 | "use Astro SSR" / "scaffold Astro SSR" | `npx purrfold@latest <dir> --framework astro --ssr --adapter cloudflare --yes` |
 | "without testing" / "no tests" | `npx purrfold@latest <dir> --no-unit --no-e2e --yes` |
 | "with e2e" / "add Playwright" | `npx purrfold@latest <dir> --e2e --yes` |

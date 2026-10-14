@@ -34,6 +34,7 @@ describe('purrfold info command', () => {
     expect(flagText).toContain('--no-unit');
     expect(flagText).toContain('--no-e2e');
     expect(flagText).toContain('--motion');
+    expect(flagText).toContain('<next|astro|vite>');
 
     const commands = schema.scenarios.map((scenario) => scenario.command);
     expect(
@@ -41,6 +42,7 @@ describe('purrfold info command', () => {
     ).toBe(true);
     expect(commands.some((command) => command.includes('--ssr') && command.includes('--adapter'))).toBe(true);
     expect(commands.some((command) => command.includes('--motion'))).toBe(true);
+    expect(commands.some((command) => command.includes('--framework vite'))).toBe(true);
   });
 
   it('prints a human-readable summary without --json', async () => {

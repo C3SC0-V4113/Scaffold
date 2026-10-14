@@ -24,7 +24,7 @@ export function buildProgram(): Command {
     .description('Create a new app in <target-dir>')
     .argument('<target-dir>', 'Directory for the generated app')
     .option('--pm <pm>', 'Package manager: npm, pnpm, or bun')
-    .option('--framework <framework>', 'Framework: next or astro')
+    .option('--framework <framework>', 'Framework: next, astro, or vite')
     .option('--ssr', 'Enable Astro SSR')
     .option('--adapter <node|vercel|netlify|cloudflare>', 'Astro SSR adapter')
     .option('--unit', 'Install Vitest and React Testing Library')

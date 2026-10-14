@@ -5,17 +5,18 @@
 [![npm](https://img.shields.io/npm/v/purrfold)](https://www.npmjs.com/package/purrfold)
 [![license](https://img.shields.io/npm/l/purrfold)](LICENSE)
 
-`purrfold` creates a new latest Next.js or Astro app and applies a production-oriented quality baseline: shadcn setup, strict ESLint with `@shadcn/lint` design system rules, Prettier, Husky, React Doctor, React Scan, agent docs, Claude compatibility, and optional testing/commit tooling.
+`purrfold` creates a new latest Next.js, Astro, or Vite app and applies a production-oriented quality baseline: shadcn setup, strict ESLint with `@shadcn/lint` design system rules, Prettier, Husky, React Doctor, React Scan, agent docs, Claude compatibility, and optional testing/commit tooling.
 
 ```bash
 npx purrfold@latest my-app
 ```
 
-V1 supports new projects created with `create-next-app@latest` or `create-astro@latest`. It does not retrofit existing apps.
+V1 supports new projects created with `create-next-app@latest`, `create-astro@latest`, or `create-vite@latest`. It does not retrofit existing apps.
 
 ## What It Generates
 
 - Next.js App Router project with TypeScript, Tailwind, ESLint, and `@/*` alias.
+- Vite React project with TypeScript, Tailwind CSS v4, ESLint, and `@/*` alias.
 - shadcn initialized through the official `shadcn init` flow.
 - `@shadcn/lint` in the ESLint config, blocking restyled components, raw colors, arbitrary values, inline styles, dynamic and unknown classes; the generated `DESIGN.md` explains each rule.
 - Quality scripts for linting, formatting, typechecking, React Doctor, React Scan, and final checks.
@@ -36,7 +37,7 @@ purrfold <target-dir> [options]
 Options:
 
 - `--pm npm|pnpm|bun`: choose the package manager.
-- `--framework next|astro`: choose the framework. Defaults to Next.js.
+- `--framework next|astro|vite`: choose the framework. Defaults to Next.js.
 - `--ssr`: enable Astro SSR instead of a static build.
 - `--adapter node|vercel|netlify|cloudflare`: choose the Astro SSR adapter when SSR is enabled. Defaults to cloudflare.
 - `--unit` / `--no-unit`: include or skip Vitest + React Testing Library.
@@ -77,6 +78,7 @@ Map a user's intent to the right command:
 | --- | --- |
 | Defaults (unit tests, no e2e/commitlint) | `npx purrfold@latest my-app --yes` |
 | Scaffold Astro instead of Next.js | `npx purrfold@latest my-app --framework astro --yes` |
+| Scaffold a Vite React app | `npx purrfold@latest my-app --framework vite --yes` |
 | Scaffold Astro SSR with the Cloudflare adapter | `npx purrfold@latest my-app --framework astro --ssr --adapter cloudflare --yes` |
 | No testing at all | `npx purrfold@latest my-app --no-unit --no-e2e --yes` |
 | Full setup (unit + e2e + commitlint) | `npx purrfold@latest my-app --unit --e2e --commitlint --yes` |
@@ -121,7 +123,7 @@ npm run test:e2e:cli:heavy
 
 The quick suite builds the local CLI and verifies dry-run command generation,
 including shadcn MCP commands and preset forwarding. The default suite
-(`test:e2e:cli`) generates real Next.js and Astro apps for the supported package
+(`test:e2e:cli`) generates real Next.js, Astro, and Vite apps for the supported package
 managers, checks generated files, and runs each generated app's package-manager
 `run check`. `test:e2e:cli:astro` isolates the Astro SSG, Playwright, and SSR
 adapter matrix.

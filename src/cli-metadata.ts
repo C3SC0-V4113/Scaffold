@@ -23,7 +23,7 @@ export const installCommand = 'npx purrfold@latest <target-dir>';
 
 export const cliOptions: CliOption[] = [
   {
-    flags: '--framework <next|astro>',
+    flags: '--framework <next|astro|vite>',
     description: 'Select the framework to scaffold.',
     default: 'next (or prompts, with Next as the default)',
   },
@@ -109,6 +109,10 @@ export const cliScenarios: CliScenario[] = [
   {
     intent: 'Scaffold an Astro app explicitly from the first prompt',
     command: 'npx purrfold@latest my-app --framework astro --yes',
+  },
+  {
+    intent: 'Scaffold a Vite React app',
+    command: 'npx purrfold@latest my-app --framework vite --yes',
   },
   {
     intent: 'Scaffold an Astro SSR app with the Cloudflare adapter',
