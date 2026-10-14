@@ -6,6 +6,7 @@ import { DryRunExecutor } from '../src/executor.js';
 import { viteAdapter } from '../src/frameworks/vite/index.js';
 import { resolveServerAdapter, validateFrameworkOptions } from '../src/frameworks/validate.js';
 import { createViteApp, addVitePathAliases } from '../src/installers/vite.js';
+import { initializeShadcn } from '../src/installers/shadcn.js';
 import { pinnedSpecifier } from '../src/installers/config-model.js';
 import { renderViteHomePage } from '../src/templates/files.js';
 import { renderAgents, renderDesignDoc, renderReadme } from '../src/templates/files.js';
@@ -85,6 +86,25 @@ describe('Vite adapter', () => {
 
     expect(executor.operations[0]).toContain('create vite@latest purrfold-vite-target');
     expect(executor.operations[0]).toContain(`(cwd ${path.dirname(targetDir)})`);
+  });
+
+  it('keeps interactive preset selection and forwards a user preset once', async () => {
+    const interactiveExecutor = new DryRunExecutor();
+    await initializeShadcn(
+      '/tmp/vite-interactive',
+      { ...options, yes: false, shadcnArgs: [] },
+      interactiveExecutor,
+    );
+    expect(interactiveExecutor.operations[0]).not.toContain('--preset');
+
+    const presetExecutor = new DryRunExecutor();
+    await initializeShadcn(
+      '/tmp/vite-preset',
+      { ...options, shadcnArgs: ['--preset', 'user-preset'] },
+      presetExecutor,
+    );
+    expect(presetExecutor.operations[0].match(/--preset/g)).toHaveLength(1);
+    expect(presetExecutor.operations[0]).toContain('--preset user-preset');
   });
 
   it('adds the shadcn alias to create-vite JSONC without dropping comments', () => {

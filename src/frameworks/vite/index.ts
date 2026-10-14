@@ -70,13 +70,7 @@ export const viteAdapter: FrameworkAdapter = {
   },
   vitestConfig: { kind: 'merge-vite' },
   scaffold: createViteApp,
-  shadcnInitArgs: () => [
-    '-t',
-    'vite',
-    '--preset',
-    'nova',
-    '--no-monorepo',
-  ],
+  shadcnInitArgs: () => ['-t', 'vite', '--no-monorepo'],
   async writeAppShell(
     projectRoot: string,
     executor: Executor,

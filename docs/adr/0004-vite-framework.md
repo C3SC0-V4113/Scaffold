@@ -44,12 +44,18 @@ shadcn commands:
 <pm add dev> tailwindcss @tailwindcss/vite
 # Configure the Tailwind Vite plugin and @/* aliases in vite.config.ts and
 # tsconfig.app.json, and import Tailwind in src/index.css.
-<pm-specific shadcn launcher> init -t vite --preset nova --yes --no-monorepo --cwd <project>
+<pm-specific shadcn launcher> init -t vite --defaults --no-monorepo --cwd <project>
 ```
 
 This sequence also completed without prompts for npm, pnpm, and bun. Each
 created the expected package-manager lockfile, and shadcn detected Vite,
-Tailwind v4, and the import alias before initializing the project.
+Tailwind v4, and the import alias before initializing the project. A separate
+non-TTY npm run of `init -t vite --defaults --no-monorepo` on an existing Vite
+project completed without prompting and wrote `style: "base-nova"`. The
+`--defaults` default is shared by the Next and Astro templates, so omitting an
+explicit preset keeps the Vite result aligned with them while preserving the
+interactive preset prompt when `--defaults` is absent. A user-supplied
+`--shadcn-args --preset <id>` continues to select an explicit preset.
 
 ## Decision
 
@@ -57,8 +63,10 @@ Use flow B. purrfold invokes `create-vite` with an explicit React TypeScript
 template and non-interactive flags, then owns Tailwind setup, aliases, and the
 shadcn initialization step. It keeps the chosen target path and package manager
 visible and explicit throughout the pipeline instead of delegating initial
-project creation to shadcn. Invoke shadcn with the explicit `nova` preset,
-`--yes`, and `--no-monorepo` so it does not prompt.
+project creation to shadcn. Invoke shadcn with `--defaults` only for
+non-interactive runs and `--no-monorepo`; shadcn's own default selects
+`base-nova` for the supported framework templates. Leave the preset unset
+during interactive runs so users can choose one.
 
 ## Consequences
 
