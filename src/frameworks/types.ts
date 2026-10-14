@@ -40,11 +40,15 @@ export interface FrameworkAdapter {
     scan?: string;
     typecheck: string;
   };
+  playwrightServer: { hostFlag: '--hostname' | '--host'; port: number };
+  eslintConfigFile: 'eslint.config.js' | 'eslint.config.mjs';
   prettierConfig: {
     tailwindStylesheet: string;
     extraPlugins: readonly string[];
   };
-  vitestConfig: { tsconfigPaths: 'plugin' | 'native' };
+  vitestConfig:
+    | { kind: 'standalone'; tsconfigPaths: 'plugin' | 'native' }
+    | { kind: 'merge-vite' };
   scaffold(options: CreateOptions, executor: Executor): Promise<string>;
   shadcnInitArgs(
     options: Pick<

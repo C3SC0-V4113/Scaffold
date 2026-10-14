@@ -1,11 +1,13 @@
 import type { Framework } from '../types.js';
 import { astroAdapter } from './astro/index.js';
 import { nextAdapter } from './next/index.js';
+import { viteAdapter } from './vite/index.js';
 import type { FrameworkAdapter } from './types.js';
 
 export const frameworkAdapters = {
   next: nextAdapter,
   astro: astroAdapter,
+  vite: viteAdapter,
 } satisfies Record<Framework, FrameworkAdapter>;
 export const getFrameworkAdapter = (id: Framework) => frameworkAdapters[id];
 export const frameworkRegistry = Object.values(frameworkAdapters);

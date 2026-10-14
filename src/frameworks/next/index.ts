@@ -37,11 +37,14 @@ export const nextAdapter: FrameworkAdapter = {
   dependencyOverrides: {},
   developmentDependencies: FRAMEWORK_DEVELOPMENT_DEPENDENCIES.next,
   packageScriptConfig: FRAMEWORK_PACKAGE_SCRIPT_CONFIG.next,
+  playwrightServer: { hostFlag: '--hostname', port: 3000 },
+  eslintConfigFile: 'eslint.config.mjs',
   prettierConfig: {
     tailwindStylesheet: 'app/globals.css',
     extraPlugins: [],
   },
   vitestConfig: {
+    kind: 'standalone',
     tsconfigPaths: 'plugin',
   },
   scaffold: createNextApp,

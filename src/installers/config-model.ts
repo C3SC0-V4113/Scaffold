@@ -45,6 +45,7 @@ export const FRAMEWORK_DEPENDENCY_OVERRIDES: Record<
 > = {
   next: {},
   astro: ASTRO_DEPENDENCY_VERSION_OVERRIDES,
+  vite: {},
 };
 
 /**
@@ -103,6 +104,25 @@ export const astroCoreDevDependencies = [
   '@shadcn/lint',
 ];
 
+export const viteCoreDevDependencies = [
+  'eslint',
+  'eslint-config-prettier',
+  'eslint-plugin-import',
+  'eslint-import-resolver-typescript',
+  'eslint-plugin-react-doctor',
+  'eslint-plugin-react-you-might-not-need-an-effect',
+  'eslint-plugin-react-hooks',
+  'eslint-plugin-react-refresh',
+  'typescript-eslint',
+  'prettier',
+  'prettier-plugin-tailwindcss',
+  'husky',
+  'lint-staged',
+  'react-doctor',
+  'react-scan',
+  '@shadcn/lint',
+];
+
 export const unitDevDependencies = [
   'vitest',
   'vite',
@@ -127,6 +147,11 @@ export const ASTRO_UNIT_DEPENDENCY_EXCLUSIONS = [
   'vite',
   'vite-tsconfig-paths',
 ] as const;
+export const VITE_UNIT_DEPENDENCY_EXCLUSIONS = [
+  'vite',
+  '@vitejs/plugin-react',
+  'vite-tsconfig-paths',
+] as const;
 export const FRAMEWORK_DEVELOPMENT_DEPENDENCIES: Record<
   Framework,
   { core: readonly string[]; unitExclusions: readonly string[] }
@@ -138,6 +163,10 @@ export const FRAMEWORK_DEVELOPMENT_DEPENDENCIES: Record<
   astro: {
     core: astroCoreDevDependencies,
     unitExclusions: ASTRO_UNIT_DEPENDENCY_EXCLUSIONS,
+  },
+  vite: {
+    core: viteCoreDevDependencies,
+    unitExclusions: VITE_UNIT_DEPENDENCY_EXCLUSIONS,
   },
 };
 
@@ -175,6 +204,13 @@ export const FRAMEWORK_PACKAGE_SCRIPT_CONFIG: Record<
     scanInit: 'astro dev --background',
     scan: 'astro dev',
     typecheck: 'astro check',
+  },
+  vite: {
+    doctor: 'react-doctor . --yes --blocking warning',
+    doctorStaged: 'react-doctor . --staged --blocking warning',
+    scanInit: 'react-scan init -y --skip-install',
+    scan: 'vite',
+    typecheck: 'tsc -b',
   },
 };
 

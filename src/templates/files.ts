@@ -257,6 +257,35 @@ export default function Home() {
 `;
 }
 
+export function renderViteHomePage(
+  projectName: string,
+  iconLibrary: IconLibrary = 'lucide',
+  motionEnabled = false,
+) {
+  const appName = humanizeProjectName(projectName);
+  const { importLine, markup } = getCatRender(iconLibrary);
+  const motionImport = motionEnabled
+    ? "import { MotionMain } from '@/components/common/motion-main';\n"
+    : '';
+  const mainTag = motionEnabled ? 'MotionMain' : 'main';
+
+  return `${importLine}
+
+${motionImport}import { Button } from '@/components/ui/button';
+
+export default function App() {
+  return (
+    <${mainTag} className="bg-background text-foreground flex min-h-dvh flex-col items-center justify-center gap-4 p-8 text-center">
+      ${markup}
+      <h1 className="text-2xl font-semibold tracking-tight">${appName}</h1>
+      <p className="text-muted-foreground text-sm">Edit src/App.tsx to start building.</p>
+      <Button type="button">Start building</Button>
+    </${mainTag}>
+  );
+}
+`;
+}
+
 export function renderAstroHomeHero(
   projectName: string,
   iconLibrary: IconLibrary = 'lucide',
@@ -665,6 +694,24 @@ export default defineConfig({
 `;
 
 export function renderVitestConfig(config: FrameworkAdapter['vitestConfig']) {
+  if (config.kind === 'merge-vite') {
+    return `import { defineConfig, mergeConfig } from 'vitest/config';
+
+import viteConfig from './vite.config';
+
+export default mergeConfig(
+  viteConfig,
+  defineConfig({
+    test: {
+      environment: 'jsdom',
+      include: ['tests/unit/**/*.test.{ts,tsx}', 'tests/integration/**/*.test.{ts,tsx}'],
+      restoreMocks: true,
+    },
+  }),
+);
+`;
+  }
+
   if (config.tsconfigPaths === 'plugin') return vitestConfig;
 
   return vitestConfig
@@ -701,6 +748,20 @@ describe('Home hero smoke test', () => {
 });
 `;
 }
+
+export const viteUnitSmokeTest = `import { render, screen } from '@testing-library/react';
+import { describe, expect, it } from 'vitest';
+
+import App from '@/App';
+
+describe('Home page smoke test', () => {
+  it('renders a heading', () => {
+    render(<App />);
+
+    expect(screen.getByRole('heading', { level: 1 })).toBeDefined();
+  });
+});
+`;
 
 export const motionMainUnitTest = `import { render } from '@testing-library/react';
 import { createElement, type ReactNode } from 'react';
@@ -790,13 +851,15 @@ export default defineConfig({
 });
 `;
 
-export function renderPlaywrightConfig(packageManager: string) {
-  const devCommand =
-    packageManager === 'pnpm'
-      ? 'pnpm run dev -- --hostname 127.0.0.1 --port 3000'
-      : packageManager === 'bun'
-        ? 'bun run dev -- --hostname 127.0.0.1 --port 3000'
-        : 'npm run dev -- --hostname 127.0.0.1 --port 3000';
+export function renderPlaywrightConfig(
+  packageManager: string,
+  server: { hostFlag: '--hostname' | '--host'; port: number } = {
+    hostFlag: '--hostname',
+    port: 3000,
+  },
+) {
+  const run = packageManager === 'npm' ? 'npm run' : `${packageManager} run`;
+  const devCommand = `${run} dev -- ${server.hostFlag} 127.0.0.1 --port ${server.port}`;
 
   return playwrightConfig.replace(
     "npm run dev -- --hostname 127.0.0.1 --port 3000",
