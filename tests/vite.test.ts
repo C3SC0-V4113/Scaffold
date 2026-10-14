@@ -63,6 +63,9 @@ describe('Vite adapter', () => {
       expect(executor.operations[1]).toContain(
         pinnedSpecifier('@tailwindcss/vite', 'vite'),
       );
+      if (packageManager === 'pnpm') {
+        expect(executor.operations[1]).toContain('--allow-build=esbuild');
+      }
       expect(executor.operations).toContain(
         `write ${path.resolve('vite-test-app', 'tsconfig.app.json')}`,
       );

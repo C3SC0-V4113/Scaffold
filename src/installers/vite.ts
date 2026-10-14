@@ -106,6 +106,11 @@ export async function createViteApp(
   const install = commands.addDev(
     viteStarterDependencies.map((name) => pinnedSpecifier(name, 'vite')),
   );
+  if (options.packageManager === 'pnpm') {
+    // pnpm 12 blocks dependency build scripts by default; Vite needs esbuild's
+    // native binary during install, so authorize that package explicitly.
+    install.args.splice(2, 0, '--allow-build=esbuild');
+  }
   await executor.run(install.command, install.args, { cwd: projectRoot });
   await configureViteProject(projectRoot, executor);
 
