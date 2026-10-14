@@ -23,7 +23,7 @@ export function addVitePathAliases(tsconfig: string) {
     return tsconfig.replace(
       /^\s*\{/,
       (openingBrace) =>
-        `${openingBrace}\n  "compilerOptions": {\n    "baseUrl": ".",\n    "paths": {\n      "@/*": ["./src/*"]\n    }\n  },`,
+        `${openingBrace}\n  "compilerOptions": {\n    "paths": {\n      "@/*": ["./src/*"]\n    }\n  },`,
     );
   }
   if (/"(?:baseUrl|paths)"\s*:/.test(tsconfig)) {
@@ -34,7 +34,7 @@ export function addVitePathAliases(tsconfig: string) {
 
   return tsconfig.replace(
     compilerOptions,
-    '"compilerOptions": {\n    "baseUrl": ".",\n    "paths": {\n      "@/*": ["./src/*"]\n    },',
+    '"compilerOptions": {\n    "paths": {\n      "@/*": ["./src/*"]\n    },',
   );
 }
 
