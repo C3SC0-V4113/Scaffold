@@ -16,8 +16,14 @@ const viteStarterDependencies = [
 export function addVitePathAliases(tsconfig: string) {
   const compilerOptions = /"compilerOptions"\s*:\s*\{/;
   if (!compilerOptions.test(tsconfig)) {
-    throw new Error(
-      'Expected a create-vite TypeScript config to contain compilerOptions.',
+    if (!/^\s*\{/.test(tsconfig)) {
+      throw new Error('Expected a create-vite TypeScript config to be a JSON object.');
+    }
+
+    return tsconfig.replace(
+      /^\s*\{/,
+      (openingBrace) =>
+        `${openingBrace}\n  "compilerOptions": {\n    "baseUrl": ".",\n    "paths": {\n      "@/*": ["./src/*"]\n    }\n  },`,
     );
   }
   if (/"(?:baseUrl|paths)"\s*:/.test(tsconfig)) {

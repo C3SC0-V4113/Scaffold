@@ -96,8 +96,11 @@ describe('Vite adapter', () => {
     expect(rewritten).toContain('/* bundler mode */');
     expect(rewritten).toContain('"baseUrl": "."');
     expect(rewritten).toContain('"@/*": ["./src/*"]');
-    expect(() => addVitePathAliases('{}')).toThrowError(
-      'Expected a create-vite TypeScript config to contain compilerOptions.',
+    expect(addVitePathAliases('{\n  "files": []\n}')).toContain(
+      '"@/*": ["./src/*"]',
+    );
+    expect(() => addVitePathAliases('not json')).toThrowError(
+      'Expected a create-vite TypeScript config to be a JSON object.',
     );
   });
 
