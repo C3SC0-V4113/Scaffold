@@ -174,7 +174,7 @@ export async function installQualityLayer(
   if (adapter.cleanupStarter && !options.dryRun) await adapter.cleanupStarter(projectRoot, options, executor);
 
   await executor.writeFile(
-    path.join(projectRoot, adapter.eslintConfigFile),
+    path.join(projectRoot, adapter.layout.eslintConfigPath),
     adapter.templates.eslint(options),
   );
   await executor.writeFile(

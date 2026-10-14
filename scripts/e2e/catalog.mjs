@@ -6,9 +6,9 @@ export const rootDir = path.resolve(fileURLToPath(new URL('..', import.meta.url)
 
 // Kept in sync with src/frameworks/*/index.ts by cli-e2e-catalog.test.ts.
 export const frameworkLayouts = {
-  next: { sourceRoot: '', globalStylesheet: 'app/globals.css', utilsPath: 'lib/utils.ts', uiDir: 'components/ui', motionMainPath: 'components/common/motion-main.tsx' },
-  astro: { sourceRoot: 'src/', globalStylesheet: 'src/styles/global.css', utilsPath: 'src/lib/utils.ts', uiDir: 'src/components/ui', motionMainPath: 'src/components/common/motion-main.tsx' },
-  vite: { sourceRoot: 'src/', globalStylesheet: 'src/index.css', utilsPath: 'src/lib/utils.ts', uiDir: 'src/components/ui', motionMainPath: 'src/components/common/motion-main.tsx' },
+  next: { sourceRoot: '', globalStylesheet: 'app/globals.css', utilsPath: 'lib/utils.ts', uiDir: 'components/ui', motionMainPath: 'components/common/motion-main.tsx', eslintConfigPath: 'eslint.config.mjs', vitestConfigPath: 'vitest.config.mts' },
+  astro: { sourceRoot: 'src/', globalStylesheet: 'src/styles/global.css', utilsPath: 'src/lib/utils.ts', uiDir: 'src/components/ui', motionMainPath: 'src/components/common/motion-main.tsx', eslintConfigPath: 'eslint.config.mjs', vitestConfigPath: 'vitest.config.mts' },
+  vite: { sourceRoot: 'src/', globalStylesheet: 'src/index.css', utilsPath: 'src/lib/utils.ts', uiDir: 'src/components/ui', motionMainPath: 'src/components/common/motion-main.tsx', eslintConfigPath: 'eslint.config.js', vitestConfigPath: 'vitest.config.ts' },
 };
 
 // Keep catalog construction dependency-free so CI can enumerate scenarios

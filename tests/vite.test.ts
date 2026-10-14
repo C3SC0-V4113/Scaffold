@@ -43,7 +43,8 @@ describe('Vite adapter', () => {
       motionMainPath: 'src/components/common/motion-main.tsx',
     });
     expect(viteAdapter.vitestConfig).toEqual({ kind: 'merge-vite' });
-    expect(viteAdapter.eslintConfigFile).toBe('eslint.config.js');
+    expect(viteAdapter.layout.eslintConfigPath).toBe('eslint.config.js');
+    expect(viteAdapter.layout.vitestConfigPath).toBe('vitest.config.ts');
     expect(viteAdapter.skills(options)).toEqual([]);
   });
 

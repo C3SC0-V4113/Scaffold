@@ -16,12 +16,7 @@ export async function installTestingFiles(
   const adapter = getFrameworkAdapter(options.framework);
   if (options.unit) {
     await executor.writeFile(
-      path.join(
-        projectRoot,
-        adapter.vitestConfig.kind === 'merge-vite'
-          ? 'vitest.config.ts'
-          : 'vitest.config.mts',
-      ),
+      path.join(projectRoot, adapter.layout.vitestConfigPath),
       adapter.templates.vitest(options)
     );
     await executor.writeFile(

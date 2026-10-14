@@ -563,7 +563,7 @@ function assertSkillReferencesFetched(skillDir, name) {
 export function assertGeneratedApp(projectRoot, expected) {
   const framework = expected.framework ?? 'next';
   const packageJson = readJson(path.join(projectRoot, 'package.json'));
-  const eslintConfigPath = framework === 'vite' ? 'eslint.config.js' : 'eslint.config.mjs';
+  const eslintConfigPath = frameworkLayouts[framework].eslintConfigPath;
   const eslintConfig = readFileSync(path.join(projectRoot, eslintConfigPath), 'utf8');
   const doctorConfig = readJson(path.join(projectRoot, 'doctor.config.json'));
   const skillsScript = readFileSync(path.join(projectRoot, 'skills.sh'), 'utf8');
@@ -827,7 +827,7 @@ export function assertGeneratedApp(projectRoot, expected) {
     }
   }
 
-  const vitestConfigPath = framework === 'vite' ? 'vitest.config.ts' : 'vitest.config.mts';
+  const vitestConfigPath = frameworkLayouts[framework].vitestConfigPath;
   if (expected.unit) {
     assertPath(projectRoot, vitestConfigPath);
     assertPath(projectRoot, 'tests/unit/home.test.tsx');
