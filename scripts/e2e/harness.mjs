@@ -791,6 +791,9 @@ export function assertGeneratedApp(projectRoot, expected) {
     assertIncludes(eslintConfig, 'reactRefresh.configs.vite,', eslintConfigPath);
     assertIncludes(eslintConfig, '...reactDoctor.configs.recommended', eslintConfigPath);
     assertIncludes(viteConfig, "from '@tailwindcss/vite'", 'vite.config.ts');
+    assertIncludes(viteConfig, "from '@vitejs/plugin-react'", 'vite.config.ts');
+    assertIncludes(viteConfig, "const root = path.dirname(fileURLToPath(import.meta.url));", 'vite.config.ts');
+    assertIncludes(viteConfig, 'plugins: [react(), tailwindcss()]', 'vite.config.ts');
     assertIncludes(viteConfig, "'@': path.resolve(root, 'src')", 'vite.config.ts');
     assertIncludes(tsconfig, '"@/*": ["./src/*"]', 'tsconfig.app.json');
     assertIncludes(indexHtml, '<title>', 'index.html');

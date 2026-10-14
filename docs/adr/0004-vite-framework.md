@@ -77,3 +77,14 @@ writing its config and components.
 **Trade-off**: purrfold must maintain the Vite/Tailwind/alias configuration
 steps itself. `shadcn init -t vite` remains a viable shortcut, but requires the
 same explicit preset and gives shadcn ownership of the initial scaffold.
+
+## Version policy
+
+Vite and `@vitejs/plugin-react` follow their exact pins in `src/versions.json`.
+The versions are shared with the other React framework adapters; the scaffold
+does not keep the newer ranges emitted by `create-vite@latest`. Framework major
+upgrades happen through the deliberate Renovate pin update and its changeset.
+The Vite configuration template is validated against the currently pinned
+Vite major. For a Vite major bump, run the generated app's full check and Vite
+real E2E scenarios, then confirm plugin registration, aliases, Tailwind v4,
+and the Vite config API still work before accepting the pin.
