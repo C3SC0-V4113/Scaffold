@@ -1055,14 +1055,15 @@ Import React APIs from \`motion/react\`. ${frameworkGuidance}
 `;
 }
 
-function renderAgentsForTemplate(
-  options: Pick<CreateOptions, 'framework' | 'packageManager' | 'unit' | 'e2e' | 'commitlint' | 'mcp' | 'motion'>,
-  docs: FrameworkAdapter['docs']
-) {
-  const run = options.packageManager === 'npm' ? 'npm run' : `${options.packageManager} run`;
+type AgentsOptions = Pick<CreateOptions, 'framework' | 'packageManager' | 'unit' | 'e2e' | 'commitlint' | 'mcp' | 'motion'>;
 
-  if (docs.agentsTemplate === 'astro') {
-    return `<!-- BEGIN:astro-agent-rules -->
+function agentsRunCommand(packageManager: CreateOptions['packageManager']) {
+  return packageManager === 'npm' ? 'npm run' : `${packageManager} run`;
+}
+
+function renderAstroAgents(options: AgentsOptions, docs: FrameworkAdapter['docs']) {
+  const run = agentsRunCommand(options.packageManager);
+  return `<!-- BEGIN:astro-agent-rules -->
 
 # This is an Astro scaffold
 
@@ -1114,10 +1115,11 @@ shadcn presets are supported through \`--shadcn-args --preset <id>\`.
 
 \`CLAUDE.md\` points to this file. \`.claude/skills\` should link to \`.agents/skills\`.
 `;
-  }
+}
 
-  if (docs.agentsTemplate === 'vite') {
-    return `# Vite scaffold
+function renderViteAgents(options: AgentsOptions, docs: FrameworkAdapter['docs']) {
+  const run = agentsRunCommand(options.packageManager);
+  return `# Vite scaffold
 
 This project uses Vite with React and TypeScript. Read the current Vite and React docs before changing framework APIs or project structure.
 
@@ -1149,12 +1151,10 @@ ${options.mcp ? 'shadcn MCP setup was requested during scaffold.' : 'shadcn MCP 
 
 \`CLAUDE.md\` points to this file. \`.claude/skills\` should link to \`.agents/skills\`.
 `;
-  }
+}
 
-  if (docs.agentsTemplate !== 'next') {
-    throw new Error(`Unsupported agents template: ${docs.agentsTemplate}`);
-  }
-
+function renderNextAgents(options: AgentsOptions, docs: FrameworkAdapter['docs']) {
+  const run = agentsRunCommand(options.packageManager);
   return `<!-- BEGIN:nextjs-agent-rules -->
 
 # This is NOT the Next.js you know
@@ -1213,18 +1213,14 @@ shadcn presets are supported through \`--shadcn-args --preset <id>\`.
 `;
 }
 
-
-export function renderAgents(
-  options: Pick<CreateOptions, 'framework' | 'packageManager' | 'unit' | 'e2e' | 'commitlint' | 'mcp' | 'motion'>,
-  docs: FrameworkAdapter['docs']
-) {
-  const renderers: Record<FrameworkAdapter['docs']['agentsTemplate'], () => string> = {
-    next: () => renderAgentsForTemplate(options, { ...docs, agentsTemplate: 'next' }),
-    astro: () => renderAgentsForTemplate(options, { ...docs, agentsTemplate: 'astro' }),
-    vite: () => renderAgentsForTemplate(options, { ...docs, agentsTemplate: 'vite' }),
+export function renderAgents(options: AgentsOptions, docs: FrameworkAdapter['docs']) {
+  const renderers: Record<FrameworkAdapter['docs']['agentsTemplate'], (options: AgentsOptions, docs: FrameworkAdapter['docs']) => string> = {
+    next: renderNextAgents,
+    astro: renderAstroAgents,
+    vite: renderViteAgents,
   };
 
-  return renderers[docs.agentsTemplate]();
+  return renderers[docs.agentsTemplate](options, docs);
 }
 
 function renderMotionAgentRules(options: Pick<CreateOptions, 'motion'>, docs: FrameworkAdapter['docs']) {
