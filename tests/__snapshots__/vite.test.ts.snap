@@ -1,5 +1,156 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
+exports[`Vite adapter > snapshots Vite docs and uses the Vite command and stylesheet paths > agents 1`] = `
+"# Vite scaffold
+
+This project uses Vite with React and TypeScript. Read the current Vite and React docs before changing framework APIs or project structure.
+
+## Quality Gates
+
+Run these before claiming implementation complete:
+
+1. \`npm run lint\`
+2. \`npm run typecheck\`
+3. \`npm run format:check\`
+4. \`npm run test\`
+- Run \`npm run test:e2e\` when E2E behavior changed.
+- \`npm run doctor\`
+- \`npm run check\`
+
+\`npm run lint\` runs \`@shadcn/lint\`. Fix its design system errors with the tokens, variants, and sizes described in \`DESIGN.md\`; do not disable its rules.
+
+## References
+
+- Architecture and scripts: \`README.md\`
+- Design rules: \`DESIGN.md\`
+- Vite reference docs: \`https://vite.dev/guide/\`
+- React guidance: \`.agents/skills/vercel-react-best-practices/SKILL.md\`
+- If any agent skill is missing, rerun \`sh skills.sh\`.
+- Component placement rules: \`.agents/skills/shadcn-component-boundaries/SKILL.md\`
+- Minimum evaluation: \`.agents/skills/project-min-evaluation/SKILL.md\`
+- Vitest guidance: \`.agents/skills/vitest/SKILL.md\`
+- Playwright guidance: \`.agents/skills/playwright-best-practices/SKILL.md\`
+
+## shadcn MCP
+
+shadcn MCP setup is optional and was not run by default.
+
+\`CLAUDE.md\` points to this file. \`.claude/skills\` should link to \`.agents/skills\`.
+"
+`;
+
+exports[`Vite adapter > snapshots Vite docs and uses the Vite command and stylesheet paths > design 1`] = `
+"# Design Standard
+
+This file is the UI/UX source of truth for this app.
+
+## Principles
+
+- Build the actual product surface first; avoid marketing-only landing pages.
+- Prefer dense, calm, scannable layouts for operational tools.
+- Use semantic tokens from \`src/index.css\`.
+- Keep loading, empty, error, and partial-data states explicit.
+- Make controls accessible, keyboard reachable, and clearly labeled.
+
+## Components
+
+- Use shadcn primitives before custom markup.
+- Use lucide icons for icon buttons and provide accessible labels.
+- Use tables for detailed records, cards for repeated metrics, and charts only when they answer a clear comparison question.
+- Do not nest cards inside cards.
+
+## Lint Enforcement
+
+The \`lint\` script enforces these rules with \`@shadcn/lint\`, and each error points back to this file:
+
+- \`shadcn/no-restyle\`: do not restyle a component through \`className\`. Layout classes such as \`mt-4\` and \`w-full\` are allowed; use a variant or size for anything else.
+- \`shadcn/no-raw-colors\`: use semantic tokens instead of raw palette colors such as \`bg-pink-500\`.
+- \`shadcn/no-arbitrary-values\`: stay on the theme scale instead of arbitrary values such as \`p-[13px]\`; arbitrary layout values are allowed.
+- \`shadcn/no-inline-styles\`: do not use inline styles or \`<style>\` elements in components.
+- \`shadcn/require-static-classes\`: keep component classes readable by the linter; do not interpolate them, as in \`bg-\${color}\`.
+- \`shadcn/no-unknown-classes\`: only use classes Tailwind can generate.
+
+Fix a violation with a token, variant, or size from the design system, and add one to the component only when the design calls for it. Do not disable the rules.
+
+## Motion
+
+- Use subtle transitions only when they clarify state.
+- Respect reduced-motion preferences for non-trivial animation.
+"
+`;
+
+exports[`Vite adapter > snapshots Vite docs and uses the Vite command and stylesheet paths > readme 1`] = `
+"# Vite Quality App
+
+Vite app scaffolded with strict quality tooling, shadcn, React Doctor, React Scan, agent docs, and Claude hooks.
+
+## Development
+
+\`\`\`bash
+npm run dev
+\`\`\`
+
+## Quality
+
+\`\`\`bash
+npm run lint
+npm run typecheck
+npm run format:check
+npm run test
+npm run doctor
+npm run check
+\`\`\`
+
+## Tooling
+
+- React with Vite, TypeScript, and Tailwind CSS.
+- shadcn UI initialized through the shadcn CLI.
+- ESLint flat config with TypeScript, React Hooks, and Vite Fast Refresh rules.
+- \`@shadcn/lint\` enforcing the design system rules in \`DESIGN.md\`.
+- React Doctor and React Scan.
+- Vitest and React Testing Library.
+- Playwright E2E testing.
+
+## shadcn MCP
+
+shadcn MCP setup was not run by default because some clients may update user-level tool config.
+
+Manual setup commands for this package manager:
+
+\`\`\`bash
+npx shadcn@latest mcp init --client claude
+npx shadcn@latest mcp init --client codex
+npx shadcn@latest mcp init --client opencode
+\`\`\`
+
+Codex may require user-level configuration in \`~/.codex/config.toml\`:
+
+\`\`\`toml
+[mcp_servers.shadcn]
+command = "npx"
+args = ["shadcn@latest", "mcp"]
+\`\`\`
+
+## shadcn Presets
+
+purrfold forwards additional shadcn CLI arguments, including official presets:
+
+\`\`\`bash
+npx purrfold@latest my-app --shadcn-args --preset b3REw8vwo --yes
+npx purrfold@latest my-app --shadcn-args --preset b1sSLwZVp --yes
+npx purrfold@latest my-app --shadcn-args --preset b2qMI9ufY --yes
+npx purrfold@latest my-app --shadcn-args --preset b5eH0WVTX --yes
+\`\`\`
+
+## Agent Docs
+
+- \`AGENTS.md\`: agent workflow and quality gates.
+- \`DESIGN.md\`: generic UI/UX guardrails.
+- \`.agents/skills\`: agent skills downloaded by \`skills.sh\` from their published sources. If any are missing, rerun \`sh skills.sh\`.
+- \`CLAUDE.md\`: Claude Code pointer to \`AGENTS.md\`.
+"
+`;
+
 exports[`Vite adapter > snapshots the generated Vite quality configs > doctor 1`] = `
 "{
   "ignore": {

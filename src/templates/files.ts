@@ -1108,6 +1108,41 @@ shadcn presets are supported through \`--shadcn-args --preset <id>\`.
 `;
   }
 
+  if (docs.frameworkName === 'Vite') {
+    return `# Vite scaffold
+
+This project uses Vite with React and TypeScript. Read the current Vite and React docs before changing framework APIs or project structure.
+
+## Quality Gates
+
+Run these before claiming implementation complete:
+
+1. \`${run} lint\`
+2. \`${run} typecheck\`
+3. \`${run} format:check\`
+${options.unit ? `4. \`${run} test\`\n` : ''}${options.e2e ? `- Run \`${run} test:e2e\` when E2E behavior changed.\n` : ''}- \`${run} doctor\`
+- \`${run} check\`
+
+\`${run} lint\` runs \`@shadcn/lint\`. Fix its design system errors with the tokens, variants, and sizes described in \`DESIGN.md\`; do not disable its rules.
+
+## References
+
+- Architecture and scripts: \`README.md\`
+- Design rules: \`DESIGN.md\`
+- Vite reference docs: \`https://vite.dev/guide/\`
+- React guidance: \`.agents/skills/vercel-react-best-practices/SKILL.md\`
+- If any agent skill is missing, rerun \`sh skills.sh\`.
+- Component placement rules: \`.agents/skills/shadcn-component-boundaries/SKILL.md\`
+- Minimum evaluation: \`.agents/skills/project-min-evaluation/SKILL.md\`
+${options.unit ? '- Vitest guidance: `.agents/skills/vitest/SKILL.md`\n' : ''}${options.e2e ? '- Playwright guidance: `.agents/skills/playwright-best-practices/SKILL.md`\n' : ''}${options.commitlint ? '- Commit messages are checked with commitlint.\n' : ''}
+${renderMotionAgentRules(options, docs)}## shadcn MCP
+
+${options.mcp ? 'shadcn MCP setup was requested during scaffold.' : 'shadcn MCP setup is optional and was not run by default.'}
+
+\`CLAUDE.md\` points to this file. \`.claude/skills\` should link to \`.agents/skills\`.
+`;
+  }
+
   return `<!-- BEGIN:nextjs-agent-rules -->
 
 # This is NOT the Next.js you know

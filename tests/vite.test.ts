@@ -8,6 +8,7 @@ import { resolveServerAdapter, validateFrameworkOptions } from '../src/framework
 import { createViteApp, addVitePathAliases } from '../src/installers/vite.js';
 import { pinnedSpecifier } from '../src/installers/config-model.js';
 import { renderViteHomePage } from '../src/templates/files.js';
+import { renderAgents, renderDesignDoc, renderReadme } from '../src/templates/files.js';
 import type { CreateOptions } from '../src/types.js';
 
 const options: CreateOptions = {
@@ -106,6 +107,12 @@ describe('Vite adapter', () => {
     expect(viteAdapter.templates.prettier(options)).toMatchSnapshot('prettier');
     expect(viteAdapter.templates.vitest(options)).toMatchSnapshot('vitest');
     expect(viteAdapter.templates.doctorConfig(options)).toMatchSnapshot('doctor');
+  });
+
+  it('snapshots Vite docs and uses the Vite command and stylesheet paths', () => {
+    expect(renderReadme(options, viteAdapter.docs)).toMatchSnapshot('readme');
+    expect(renderAgents(options, viteAdapter.docs)).toMatchSnapshot('agents');
+    expect(renderDesignDoc(viteAdapter.layout)).toMatchSnapshot('design');
   });
 
   it('renders the Vite starter with the selected cat icon and Motion wrapper', async () => {
