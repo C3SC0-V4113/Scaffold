@@ -64,8 +64,16 @@ describe('Vite adapter', () => {
       expect(executor.operations[1]).toContain(
         pinnedSpecifier('@tailwindcss/vite', 'vite'),
       );
+      const installIndex = executor.operations.findIndex((operation) =>
+        operation.includes(`${packageManager} add`),
+      );
       if (packageManager === 'pnpm') {
-        expect(executor.operations[1]).toContain('--allow-build=esbuild');
+        const workspaceIndex = executor.operations.indexOf(
+          `write ${path.resolve('vite-test-app', 'pnpm-workspace.yaml')}`,
+        );
+        expect(workspaceIndex).toBeGreaterThan(0);
+        expect(workspaceIndex).toBeLessThan(installIndex);
+        expect(executor.operations[installIndex]).not.toContain('--allow-build=');
       }
       expect(executor.operations).toContain(
         `write ${path.resolve('vite-test-app', 'tsconfig.app.json')}`,

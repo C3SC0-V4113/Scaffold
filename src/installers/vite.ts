@@ -2,6 +2,7 @@ import path from 'node:path';
 
 import { DryRunExecutor } from '../executor.js';
 import { getPackageManagerCommands } from '../package-manager.js';
+import { mergePnpmBuildPolicy } from '../templates/files.js';
 import type { CreateOptions, Executor } from '../types.js';
 import { pinnedSpecifier } from './config-model.js';
 import { validateTargetDir } from './next.js';
@@ -103,14 +104,17 @@ export async function createViteApp(
 
   await executor.run(create.command, create.args, { cwd: path.dirname(projectRoot) });
 
+  if (options.packageManager === 'pnpm') {
+    const workspacePath = path.join(projectRoot, 'pnpm-workspace.yaml');
+    const existing = (await executor.pathExists(workspacePath))
+      ? await executor.readFile(workspacePath)
+      : '';
+    await executor.writeFile(workspacePath, mergePnpmBuildPolicy(existing));
+  }
+
   const install = commands.addDev(
     viteStarterDependencies.map((name) => pinnedSpecifier(name, 'vite')),
   );
-  if (options.packageManager === 'pnpm') {
-    // pnpm 12 blocks dependency build scripts by default; Vite needs esbuild's
-    // native binary during install, so authorize that package explicitly.
-    install.args.splice(2, 0, '--allow-build=esbuild');
-  }
   await executor.run(install.command, install.args, { cwd: projectRoot });
   await configureViteProject(projectRoot, executor);
 
