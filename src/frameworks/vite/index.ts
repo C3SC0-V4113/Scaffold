@@ -117,6 +117,7 @@ export const viteAdapter: FrameworkAdapter = {
     buildScripts(options, viteAdapter.packageScriptConfig),
   skills: () => [],
   docs: {
+    agentsTemplate: 'vite',
     mergeStrategy: 'replace',
     frameworkName: 'Vite',
     readmeTitle: 'Vite Quality App',

@@ -1052,9 +1052,8 @@ export function renderAgents(
   docs: FrameworkAdapter['docs']
 ) {
   const run = options.packageManager === 'npm' ? 'npm run' : `${options.packageManager} run`;
-
-  if (docs.mergeStrategy === 'merge') {
-    return `<!-- BEGIN:astro-agent-rules -->
+  const renderers: Record<FrameworkAdapter['docs']['agentsTemplate'], () => string> = {
+    astro: () => `<!-- BEGIN:astro-agent-rules -->
 
 # This is an Astro scaffold
 
@@ -1072,44 +1071,8 @@ Run these before claiming implementation complete:
 ${options.unit ? `4. \`${run} test\`\n` : ''}${options.e2e ? `- Run \`${run} test:e2e\` when E2E behavior changed.\n` : ''}- \`${run} doctor\`
 - \`${run} check\`
 
-\`${run} lint\` runs \`@shadcn/lint\`. Fix its design system errors with the tokens, variants, and sizes described in \`DESIGN.md\`; do not disable its rules.
-
-## References
-
-- Architecture and scripts: \`README.md\`
-- Design rules: \`DESIGN.md\`
-- Astro reference docs: current Astro documentation
-- Astro agent rules: generated \`AGENTS.md\` / \`CLAUDE.md\`
-- If any agent skill is missing, rerun \`sh skills.sh\`.
-- Component placement rules: \`.agents/skills/shadcn-component-boundaries/SKILL.md\`
-- Minimum evaluation: \`.agents/skills/project-min-evaluation/SKILL.md\`
-${options.unit ? '- Vitest guidance: `.agents/skills/vitest/SKILL.md`\n' : ''}${options.e2e ? '- Playwright guidance: `.agents/skills/playwright-best-practices/SKILL.md`\n' : ''}${options.commitlint ? '- Commit messages are checked with commitlint.\n' : ''}
-${renderMotionAgentRules(options, docs)}## shadcn MCP
-
-${options.mcp ? 'shadcn MCP setup was requested during scaffold.' : 'shadcn MCP setup is optional and was not run by default.'}
-
-\`\`\`bash
-${shadcnMcpCommand(options.packageManager, 'claude')}
-${shadcnMcpCommand(options.packageManager, 'codex')}
-${shadcnMcpCommand(options.packageManager, 'opencode')}
-\`\`\`
-
-For Codex, verify \`~/.codex/config.toml\` if MCP is not available:
-
-\`\`\`toml
-${shadcnMcpToml(options.packageManager)}
-\`\`\`
-
-shadcn presets are supported through \`--shadcn-args --preset <id>\`.
-
-## Claude Code
-
-\`CLAUDE.md\` points to this file. \`.claude/skills\` should link to \`.agents/skills\`.
-`;
-  }
-
-  if (docs.frameworkName === 'Vite') {
-    return `# Vite scaffold
+\`${run} lint\` runs \`@shadcn/lint\`. Fix its design system errors with the tokens, variants, and sizes described in \`DESIGN.md\`,
+    vite: () => `# Vite scaffold
 
 This project uses Vite with React and TypeScript. Read the current Vite and React docs before changing framework APIs or project structure.
 
@@ -1123,27 +1086,8 @@ Run these before claiming implementation complete:
 ${options.unit ? `4. \`${run} test\`\n` : ''}${options.e2e ? `- Run \`${run} test:e2e\` when E2E behavior changed.\n` : ''}- \`${run} doctor\`
 - \`${run} check\`
 
-\`${run} lint\` runs \`@shadcn/lint\`. Fix its design system errors with the tokens, variants, and sizes described in \`DESIGN.md\`; do not disable its rules.
-
-## References
-
-- Architecture and scripts: \`README.md\`
-- Design rules: \`DESIGN.md\`
-- Vite reference docs: \`https://vite.dev/guide/\`
-- React guidance: \`.agents/skills/vercel-react-best-practices/SKILL.md\`
-- If any agent skill is missing, rerun \`sh skills.sh\`.
-- Component placement rules: \`.agents/skills/shadcn-component-boundaries/SKILL.md\`
-- Minimum evaluation: \`.agents/skills/project-min-evaluation/SKILL.md\`
-${options.unit ? '- Vitest guidance: `.agents/skills/vitest/SKILL.md`\n' : ''}${options.e2e ? '- Playwright guidance: `.agents/skills/playwright-best-practices/SKILL.md`\n' : ''}${options.commitlint ? '- Commit messages are checked with commitlint.\n' : ''}
-${renderMotionAgentRules(options, docs)}## shadcn MCP
-
-${options.mcp ? 'shadcn MCP setup was requested during scaffold.' : 'shadcn MCP setup is optional and was not run by default.'}
-
-\`CLAUDE.md\` points to this file. \`.claude/skills\` should link to \`.agents/skills\`.
-`;
-  }
-
-  return `<!-- BEGIN:nextjs-agent-rules -->
+\`${run} lint\` runs \`@shadcn/lint\`. Fix its design system errors with the tokens, variants, and sizes described in \`DESIGN.md\`,
+    next: () => `<!-- BEGIN:nextjs-agent-rules -->
 
 # This is NOT the Next.js you know
 
@@ -1161,44 +1105,10 @@ Run these before claiming implementation complete:
 ${options.unit ? `4. \`${run} test\`\n` : ''}${options.e2e ? `- Run \`${run} test:e2e\` when E2E behavior changed.\n` : ''}- \`${run} doctor\`
 - \`${run} check\`
 
-\`${run} lint\` runs \`@shadcn/lint\`. Fix its design system errors with the tokens, variants, and sizes described in \`DESIGN.md\`; do not disable its rules.
+\`${run} lint\` runs \`@shadcn/lint\`. Fix its design system errors with the tokens, variants, and sizes described in \`DESIGN.md\`,
+  };
 
-Do not use \`next lint\`; use the ESLint CLI.
-
-## References
-
-- Architecture and scripts: \`README.md\`
-- Design rules: \`DESIGN.md\`
-- Next.js reference docs: \`node_modules/next/dist/docs/\`
-- Next.js agent rules: generated \`AGENTS.md\` / \`CLAUDE.md\`
-- Purrfold-installed supported Next.js workflow skills from \`vercel/next.js\`: \`.agents/skills/next-cache-components-adoption/SKILL.md\`, \`.agents/skills/next-cache-components-optimizer/SKILL.md\`, and \`.agents/skills/next-dev-loop/SKILL.md\`
-- If bundled Next.js docs are missing, run \`npx @next/codemod@canary agents-md\`.
-- If any agent skill is missing, rerun \`sh skills.sh\`.
-- Component placement rules: \`.agents/skills/shadcn-component-boundaries/SKILL.md\`
-- Minimum evaluation: \`.agents/skills/project-min-evaluation/SKILL.md\`
-${options.unit ? '- Vitest guidance: `.agents/skills/vitest/SKILL.md`\n' : ''}${options.e2e ? '- Playwright guidance: `.agents/skills/playwright-best-practices/SKILL.md`\n' : ''}${options.commitlint ? '- Commit messages are checked with commitlint.\n' : ''}
-${renderMotionAgentRules(options, docs)}## shadcn MCP
-
-${options.mcp ? 'shadcn MCP setup was requested during scaffold.' : 'shadcn MCP setup is optional and was not run by default.'}
-
-\`\`\`bash
-${shadcnMcpCommand(options.packageManager, 'claude')}
-${shadcnMcpCommand(options.packageManager, 'codex')}
-${shadcnMcpCommand(options.packageManager, 'opencode')}
-\`\`\`
-
-For Codex, verify \`~/.codex/config.toml\` if MCP is not available:
-
-\`\`\`toml
-${shadcnMcpToml(options.packageManager)}
-\`\`\`
-
-shadcn presets are supported through \`--shadcn-args --preset <id>\`.
-
-## Claude Code
-
-\`CLAUDE.md\` points to this file. \`.claude/skills\` should link to \`.agents/skills\`.
-`;
+  return renderers[docs.agentsTemplate]();
 }
 
 function renderMotionAgentRules(options: Pick<CreateOptions, 'motion'>, docs: FrameworkAdapter['docs']) {

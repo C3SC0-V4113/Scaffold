@@ -132,6 +132,7 @@ export const astroAdapter: FrameworkAdapter = {
   packageScripts: (o) => buildScripts(o, astroAdapter.packageScriptConfig),
   skills: () => ['astro'],
   docs: {
+    agentsTemplate: 'astro',
     mergeStrategy: 'merge',
     frameworkName: 'Astro',
     readmeTitle: 'Astro Quality App',

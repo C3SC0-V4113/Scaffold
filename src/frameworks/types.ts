@@ -85,6 +85,7 @@ export interface FrameworkAdapter {
   ): string[];
   docs: {
     mergeStrategy: 'replace' | 'merge';
+    agentsTemplate: 'next' | 'astro' | 'vite';
     frameworkName: string;
     readmeTitle: string;
     toolingLines: readonly string[];

@@ -90,6 +90,7 @@ export const nextAdapter: FrameworkAdapter = {
     'next-dev-loop',
   ],
   docs: {
+    agentsTemplate: 'next',
     mergeStrategy: 'replace',
     frameworkName: 'Next.js',
     readmeTitle: 'Next Quality App',
