@@ -781,6 +781,8 @@ export function assertGeneratedApp(projectRoot, expected) {
     assertPath(projectRoot, 'src/lib/utils.ts');
     assertPath(projectRoot, 'src/index.css');
     assertPath(projectRoot, 'src/App.tsx');
+    assertPath(projectRoot, '@/components/ui/button.tsx', false);
+    assertPath(projectRoot, '@/lib/utils.ts', false);
     assertPath(projectRoot, 'src/App.css', false);
     assertPath(projectRoot, 'src/assets/react.svg', false);
     assertPath(projectRoot, 'public/vite.svg', false);
