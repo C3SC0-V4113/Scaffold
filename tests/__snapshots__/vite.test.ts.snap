@@ -309,7 +309,7 @@ exports[`Vite adapter > snapshots the generated Vite quality configs > prettier 
 exports[`Vite adapter > snapshots the generated Vite quality configs > vitest 1`] = `
 "import { defineConfig, mergeConfig } from 'vitest/config';
 
-import viteConfig from './vite.config';
+import viteConfig from './vite.config.ts';
 
 export default mergeConfig(
   viteConfig,
