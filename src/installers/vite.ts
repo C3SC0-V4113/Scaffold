@@ -39,6 +39,36 @@ export function addVitePathAliases(tsconfig: string) {
   );
 }
 
+export function addViteTypecheckCoverage(
+  tsconfigApp: string,
+  tsconfigNode: string,
+  options: Pick<CreateOptions, 'unit' | 'e2e'>,
+) {
+  const appInclude = options.unit || options.e2e
+    ? '"include": ["src", "tests"]'
+    : '"include": ["src"]';
+  if (!/"include"\s*:\s*\[\s*"src"\s*\]/.test(tsconfigApp)) {
+    throw new Error('Expected a fresh create-vite app config with only src included.');
+  }
+
+  const nodeIncludes = [
+    'vite.config.ts',
+    ...(options.unit ? ['vitest.config.ts'] : []),
+    ...(options.e2e ? ['playwright.config.ts'] : []),
+  ];
+  if (!/"include"\s*:\s*\[\s*"vite.config.ts"\s*\]/.test(tsconfigNode)) {
+    throw new Error('Expected a fresh create-vite node config with only vite.config.ts included.');
+  }
+
+  return {
+    app: tsconfigApp.replace(/"include"\s*:\s*\[\s*"src"\s*\]/, appInclude),
+    node: tsconfigNode.replace(
+      /"include"\s*:\s*\[\s*"vite.config.ts"\s*\]/,
+      `"include": ${JSON.stringify(nodeIncludes)}`,
+    ),
+  };
+}
+
 export const viteConfig = `import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -58,21 +88,27 @@ export default defineConfig({
 });
 `;
 
-async function configureViteProject(projectRoot: string, executor: Executor) {
+async function configureViteProject(
+  projectRoot: string,
+  options: CreateOptions,
+  executor: Executor,
+) {
   const tsconfigPath = path.join(projectRoot, 'tsconfig.app.json');
   const rootTsconfigPath = path.join(projectRoot, 'tsconfig.json');
+  const nodeTsconfigPath = path.join(projectRoot, 'tsconfig.node.json');
   const configPath = path.join(projectRoot, 'vite.config.ts');
   const stylesheetPath = path.join(projectRoot, 'src', 'index.css');
 
   if (executor instanceof DryRunExecutor) {
     await executor.writeFile(tsconfigPath);
     await executor.writeFile(rootTsconfigPath);
+    await executor.writeFile(nodeTsconfigPath);
     await executor.writeFile(configPath);
     await executor.writeFile(stylesheetPath);
     return;
   }
 
-  for (const filePath of [tsconfigPath, rootTsconfigPath, configPath, stylesheetPath]) {
+  for (const filePath of [tsconfigPath, rootTsconfigPath, nodeTsconfigPath, configPath, stylesheetPath]) {
     if (!(await executor.pathExists(filePath))) {
       throw new Error(
         `Expected create-vite to create ${path.relative(projectRoot, filePath)}.`,
@@ -88,6 +124,13 @@ async function configureViteProject(projectRoot: string, executor: Executor) {
     rootTsconfigPath,
     addVitePathAliases(await executor.readFile(rootTsconfigPath)),
   );
+  const typecheckConfigs = addViteTypecheckCoverage(
+    await executor.readFile(tsconfigPath),
+    await executor.readFile(nodeTsconfigPath),
+    options,
+  );
+  await executor.writeFile(tsconfigPath, typecheckConfigs.app);
+  await executor.writeFile(nodeTsconfigPath, typecheckConfigs.node);
   await executor.writeFile(configPath, viteConfig);
   await executor.writeFile(stylesheetPath, '@import "tailwindcss";\n');
 }
@@ -116,7 +159,7 @@ export async function createViteApp(
     viteStarterDependencies.map((name) => pinnedSpecifier(name, 'vite')),
   );
   await executor.run(install.command, install.args, { cwd: projectRoot });
-  await configureViteProject(projectRoot, executor);
+  await configureViteProject(projectRoot, options, executor);
 
   return projectRoot;
 }

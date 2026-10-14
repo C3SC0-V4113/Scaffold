@@ -774,6 +774,7 @@ export function assertGeneratedApp(projectRoot, expected) {
     }
   } else if (framework === 'vite') {
     const tsconfig = readFileSync(path.join(projectRoot, 'tsconfig.app.json'), 'utf8');
+    const tsconfigNode = readFileSync(path.join(projectRoot, 'tsconfig.node.json'), 'utf8');
     const viteConfig = readFileSync(path.join(projectRoot, 'vite.config.ts'), 'utf8');
     const indexHtml = readFileSync(path.join(projectRoot, 'index.html'), 'utf8');
 
@@ -796,6 +797,15 @@ export function assertGeneratedApp(projectRoot, expected) {
     assertIncludes(viteConfig, 'plugins: [react(), tailwindcss()]', 'vite.config.ts');
     assertIncludes(viteConfig, "'@': path.resolve(root, 'src')", 'vite.config.ts');
     assertIncludes(tsconfig, '"@/*": ["./src/*"]', 'tsconfig.app.json');
+    if (expected.unit || expected.e2e) {
+      assertIncludes(tsconfig, '"tests"', 'tsconfig.app.json');
+    }
+    if (expected.unit) {
+      assertIncludes(tsconfigNode, 'vitest.config.ts', 'tsconfig.node.json');
+    }
+    if (expected.e2e) {
+      assertIncludes(tsconfigNode, 'playwright.config.ts', 'tsconfig.node.json');
+    }
     assertIncludes(indexHtml, '<title>', 'index.html');
     assertNotIncludes(indexHtml, 'Vite + React + TS', 'index.html');
     assertIncludes(packageJson.scripts?.typecheck ?? '', 'tsc -b', 'Vite typecheck script');

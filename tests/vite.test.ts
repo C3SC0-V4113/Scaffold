@@ -5,7 +5,11 @@ import { describe, expect, it } from 'vitest';
 import { DryRunExecutor } from '../src/executor.js';
 import { viteAdapter } from '../src/frameworks/vite/index.js';
 import { resolveServerAdapter, validateFrameworkOptions } from '../src/frameworks/validate.js';
-import { createViteApp, addVitePathAliases } from '../src/installers/vite.js';
+import {
+  createViteApp,
+  addVitePathAliases,
+  addViteTypecheckCoverage,
+} from '../src/installers/vite.js';
 import { initializeShadcn } from '../src/installers/shadcn.js';
 import { pinnedSpecifier } from '../src/installers/config-model.js';
 import { renderViteHomePage } from '../src/templates/files.js';
@@ -83,6 +87,9 @@ describe('Vite adapter', () => {
         `write ${path.resolve('vite-test-app', 'tsconfig.json')}`,
       );
       expect(executor.operations).toContain(
+        `write ${path.resolve('vite-test-app', 'tsconfig.node.json')}`,
+      );
+      expect(executor.operations).toContain(
         `write ${path.resolve('vite-test-app', 'vite.config.ts')}`,
       );
     },
@@ -132,6 +139,19 @@ describe('Vite adapter', () => {
     );
     expect(() => addVitePathAliases('not json')).toThrowError(
       'Expected a create-vite TypeScript config to be a JSON object.',
+    );
+  });
+
+  it('includes generated tests and tool configs in the TypeScript projects', () => {
+    const configs = addViteTypecheckCoverage(
+      '{ "include": ["src"] }',
+      '{ "include": ["vite.config.ts"] }',
+      { unit: true, e2e: true },
+    );
+
+    expect(configs.app).toContain('"include": ["src", "tests"]');
+    expect(configs.node).toContain(
+      '"include": ["vite.config.ts","vitest.config.ts","playwright.config.ts"]',
     );
   });
 

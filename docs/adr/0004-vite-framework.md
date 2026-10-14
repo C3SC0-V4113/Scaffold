@@ -76,7 +76,8 @@ writing its config and components.
 
 **Trade-off**: purrfold must maintain the Vite/Tailwind/alias configuration
 steps itself. `shadcn init -t vite` remains a viable shortcut, but requires the
-same explicit preset and gives shadcn ownership of the initial scaffold.
+same framework and alias setup and gives shadcn ownership of the initial
+scaffold.
 
 ## Version policy
 
