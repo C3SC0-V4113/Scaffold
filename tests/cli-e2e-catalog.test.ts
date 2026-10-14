@@ -196,6 +196,7 @@ describe('CLI E2E catalog boundary', () => {
         'dry-run-reported-b6-mcp-npm',
         'dry-run-astro-ssg-npm',
         'dry-run-astro-ssr-cloudflare-pnpm',
+        'dry-run-vite-npm',
       ];
 
       try {

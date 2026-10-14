@@ -9,7 +9,7 @@ import { pinnedSpecifier } from '../src/installers/config-model.js';
 type CliE2eScenario = {
   name: string;
   kind: 'real' | 'dry-run' | 'interactive' | 'external-shadcn';
-  framework?: 'next' | 'astro';
+  framework?: 'next' | 'astro' | 'vite';
   packageManager?: 'npm' | 'pnpm' | 'bun';
   ssrAdapter?: 'node' | 'vercel' | 'netlify' | 'cloudflare';
   args?: string[];
@@ -32,7 +32,7 @@ type CliE2eScenario = {
 type ScenarioMetadata = {
   name: string;
   kind: CliE2eScenario['kind'];
-  framework: 'next' | 'astro';
+  framework: 'next' | 'astro' | 'vite';
   packageManager: 'npm' | 'pnpm' | 'bun';
   quick: boolean;
   heavy: boolean;
@@ -53,7 +53,7 @@ type ScenariosModule = {
     quick?: boolean;
     heavy?: boolean;
     names?: string[];
-    framework?: 'next' | 'astro';
+    framework?: 'next' | 'astro' | 'vite';
   }) => CliE2eScenario[];
 };
 
@@ -274,7 +274,7 @@ describe('CLI E2E scenario definitions', () => {
     expect(metadata).toHaveLength(cliE2eScenarios.length);
     for (const entry of metadata) {
       expect(entry.name).toBeTruthy();
-      expect(['next', 'astro']).toContain(entry.framework);
+      expect(['next', 'astro', 'vite']).toContain(entry.framework);
       expect(['npm', 'pnpm', 'bun']).toContain(entry.packageManager);
       expect(typeof entry.quick).toBe('boolean');
       expect(typeof entry.heavy).toBe('boolean');
@@ -288,6 +288,20 @@ describe('CLI E2E scenario definitions', () => {
     expect(metadata.find((entry) => entry.name === 'astro-pnpm-ssg-e2e')).toMatchObject({
       packageManager: 'pnpm',
       framework: 'astro',
+    });
+    const names = metadata.map((entry) => entry.name);
+    for (const name of [
+      'vite-npm-unit',
+      'vite-pnpm-e2e',
+      'vite-bun-minimal',
+      'dry-run-vite-npm',
+    ]) {
+      expect(names).toContain(name);
+    }
+    expect(metadata.find((entry) => entry.name === 'vite-npm-unit')).toMatchObject({
+      framework: 'vite',
+      packageManager: 'npm',
+      execution: { os: ['ubuntu-latest'] },
     });
 
     const selected = scenarioMetadata(selectScenarios({ quick: true }));
