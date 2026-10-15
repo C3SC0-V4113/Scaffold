@@ -169,6 +169,21 @@ describe('external skill install script', () => {
     expect(script).not.toContain('skills-lock.json');
   });
 
+  it.each(['react-router-data', 'react-router-declarative'] as const)(
+    'selects one consolidated React Router skill for %s',
+    (router) => {
+      const options = { framework: 'vite' as const, router, unit: false, e2e: false, motion: false };
+      const commands = buildSkillInstallCommands(options).map(({ command, args }) => [command, ...args].join(' '));
+      const script = renderSkillsScript(options);
+
+      expect(commands).toContain(
+        'npx --yes skills@latest add remix-run/react-router --skill react-router --agent codex --copy --yes'
+      );
+      expect(commands.filter((command) => command.includes('remix-run/react-router'))).toHaveLength(1);
+      expect(script.match(/--skill react-router\b/g)).toHaveLength(1);
+    }
+  );
+
   it.each(['next', 'astro'] as const)(
     'fetches the purrfold-owned skills and React Doctor from their published sources for %s',
     (framework) => {

@@ -10,10 +10,10 @@ export const routerCatalog = {
   none: { label: 'No router', skills: [] },
   'react-router-data': {
     label: 'React Router (data mode)',
-    skills: ['react-router-data-mode'],
+    skills: ['react-router'],
   },
   'react-router-declarative': {
     label: 'React Router (declarative mode)',
-    skills: ['react-router-declarative-mode'],
+    skills: ['react-router'],
   },
 } satisfies Record<RouterChoice, { label: string; skills: readonly string[] }>;

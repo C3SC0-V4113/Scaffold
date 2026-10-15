@@ -112,11 +112,11 @@ describe('router selection', () => {
 
   it('selects the router skill and lint rules only for router modes', () => {
     expect(selectSkillNames({ framework: 'vite', router: 'react-router-data', unit: false, e2e: false, motion: false }))
-      .toContain('react-router-data-mode');
+      .toContain('react-router');
     expect(selectSkillNames({ framework: 'vite', router: 'react-router-declarative', unit: false, e2e: false, motion: false }))
-      .toContain('react-router-declarative-mode');
+      .toContain('react-router');
     expect(selectSkillNames({ framework: 'vite', router: 'none', unit: false, e2e: false, motion: false }))
-      .not.toContain('react-router-data-mode');
+      .not.toContain('react-router');
     expect(renderViteEslintConfig({
       framework: 'vite', router: 'none', unit: false, e2e: false,
     })).not.toContain('reactDoctor.configs.all.rules');

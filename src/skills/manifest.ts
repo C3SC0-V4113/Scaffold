@@ -2,13 +2,9 @@ import type { SkillInstallManifest } from '../types.js';
 
 export const externalSkillManifest: SkillInstallManifest = {
   skills: {
-    'react-router-data-mode': {
-      source: 'remix-run/agent-skills',
-      skill: 'react-router-data-mode',
-    },
-    'react-router-declarative-mode': {
-      source: 'remix-run/agent-skills',
-      skill: 'react-router-declarative-mode',
+    'react-router': {
+      source: 'remix-run/react-router',
+      skill: 'react-router',
     },
     'architecture-decision-records': {
       source: 'wshobson/agents',

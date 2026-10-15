@@ -505,7 +505,7 @@ function runMotionImportCheck(projectRoot, env, nodeExecutable) {
  * the availability of many third-party repositories and turn their outages into
  * our red builds. shadcn stands in for the third-party sources; the purrfold-owned
  * skills and React Doctor are required individually because purrfold no longer
- * writes them itself — a missing one means the project ships without it.
+ * writes them itself. Router modes also require their consolidated skill below.
  */
 const requiredFetchedSkills = [
   // Shipped by shadcn/ui, requested for every framework and flag combination.
@@ -618,8 +618,7 @@ export function assertGeneratedApp(projectRoot, expected) {
     for (const file of routerFiles) assertPath(projectRoot, file, false);
   }
   if (router === 'none') {
-    assertNotIncludes(skillsScript, 'react-router-data-mode', 'skills.sh');
-    assertNotIncludes(skillsScript, 'react-router-declarative-mode', 'skills.sh');
+    assertNotIncludes(skillsScript, '--skill react-router', 'skills.sh');
     if (framework === 'vite') {
       if (packageJson.dependencies?.['react-router']) {
         throw new Error('package.json should not include react-router when router is none');
@@ -628,7 +627,8 @@ export function assertGeneratedApp(projectRoot, expected) {
       assertNotIncludes(readFileSync(path.join(projectRoot, 'src/main.tsx'), 'utf8'), 'RouterProvider', 'src/main.tsx');
     }
   } else {
-    assertIncludes(skillsScript, `${router}-mode`, 'skills.sh');
+    assertIncludes(skillsScript, 'remix-run/react-router --skill react-router', 'skills.sh');
+    assertPath(projectRoot, '.agents/skills/react-router/SKILL.md');
     if (!packageJson.dependencies?.['react-router']) {
       throw new Error('package.json should pin react-router for a router-enabled Vite app');
     }

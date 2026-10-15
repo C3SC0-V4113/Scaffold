@@ -19,6 +19,11 @@ Represent router selection as the `RouterChoice` enum on resolved
 Next.js and Astro declare an empty list and resolve to `none`. Generic option
 validation uses these capability declarations.
 
+Both React Router modes install one consolidated skill from
+`remix-run/react-router`. It covers data, declarative, framework, and RSC modes.
+The former Remix router-skills repository is archived, so purrfold no longer
+requests its separate data-mode and declarative-mode skills.
+
 Router selection belongs to a framework adapter rather than a feature module
 because it reshapes the app shell and how routes are registered. Future router
 support, such as `tanstack-router`, should add an enum choice and capability to
