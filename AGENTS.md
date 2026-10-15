@@ -1,6 +1,6 @@
 ﻿# AGENTS.md
 
-This repository is a standalone Node/TypeScript ESM CLI package. It generates new Next.js apps with shadcn, quality tooling, docs, hooks, and optional tests.
+This repository is a standalone Node/TypeScript ESM CLI package. It generates new Next.js, Astro, and Vite apps with shadcn, quality tooling, docs, hooks, and optional tests.
 
 ## Quality Gate
 

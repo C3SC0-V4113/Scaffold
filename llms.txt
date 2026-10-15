@@ -5,7 +5,7 @@
 > Prettier, React Doctor, React Scan), agent
 > docs, Claude hooks, and optional unit (Vitest) / e2e (Playwright) / commitlint /
 > GitHub Actions CI.
-> It starts from `create-next-app@latest` or `create-astro@latest`. No install needed — run it with `npx`.
+> It starts from `create-next-app@latest`, `create-astro@latest`, or `create-vite@latest`. No install needed — run it with `npx`.
 
 ## Install / run
 
@@ -20,7 +20,7 @@ fails if it is not green.
 ## Options
 
 - `--pm <npm|pnpm|bun>` — package manager (default: prompts, or npm with `--yes`).
-- `--framework <next|astro>` — scaffold framework (default: Next.js).
+- `--framework <next|astro|vite>` — scaffold framework (default: Next.js).
 - `--ssr` — enable Astro SSR instead of a static build (default: off).
 - `--adapter <node|vercel|netlify|cloudflare>` — Astro SSR adapter (default: cloudflare when SSR is enabled).
 - `--unit` / `--no-unit` — Vitest + React Testing Library (default: included).
@@ -47,6 +47,7 @@ npx purrfold@latest info --json
 | --- | --- |
 | Defaults (unit tests, no e2e/commitlint) | `npx purrfold@latest my-app --yes` |
 | Scaffold Astro instead of Next.js | `npx purrfold@latest my-app --framework astro --yes` |
+| Scaffold a Vite React app | `npx purrfold@latest my-app --framework vite --yes` |
 | Scaffold Astro SSR with the Cloudflare adapter | `npx purrfold@latest my-app --framework astro --ssr --adapter cloudflare --yes` |
 | No testing at all | `npx purrfold@latest my-app --no-unit --no-e2e --yes` |
 | Full setup (unit + e2e + commitlint) | `npx purrfold@latest my-app --unit --e2e --commitlint --yes` |

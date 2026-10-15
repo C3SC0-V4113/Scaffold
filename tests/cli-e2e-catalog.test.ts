@@ -15,7 +15,8 @@ import path from 'node:path';
 import { tmpdir } from 'node:os';
 
 import { describe, expect, it } from 'vitest';
-import { frameworkLayouts } from '../scripts/e2e/catalog.mjs';
+import { frameworkLayouts, frameworkVersionOverrides } from '../scripts/e2e/catalog.mjs';
+import versions from '../src/versions.json' with { type: 'json' };
 import { frameworkAdapters } from '../src/frameworks/registry.js';
 
 function resolveNpmCli(): string {
@@ -52,6 +53,63 @@ function pathContainsPnpm(directory: string): boolean {
 }
 
 describe('CLI E2E catalog boundary', () => {
+  it('maps every framework override table from versions.json', () => {
+    const overrideKeys = Object.keys(versions).filter((key) => key.endsWith('Overrides'));
+    const versionTables = versions as Record<string, unknown>;
+
+    expect(Object.keys(frameworkVersionOverrides).map((framework) => `${framework}Overrides`).sort()).toEqual(
+      overrideKeys.sort()
+    );
+    for (const framework of ['astro', 'vite'] as const) {
+      expect(frameworkVersionOverrides[framework]).toEqual(versionTables[`${framework}Overrides`]);
+    }
+  });
+
+  it('registers every framework override table with Renovate', () => {
+    const renovate = JSON.parse(readFileSync(path.join(process.cwd(), 'renovate.json'), 'utf8')) as {
+      customManagers: Array<{ matchStrings: string[] }>;
+    };
+
+    for (const key of Object.keys(versions).filter((entry) => entry.endsWith('Overrides'))) {
+      const framework = key.replace(/Overrides$/, '');
+      const manager = renovate.customManagers.find((candidate) =>
+        candidate.matchStrings.some((match) => match.includes(`$each(${key},`))
+      );
+
+      expect(manager, `${key} must have a Renovate custom manager`).toBeDefined();
+      expect(manager?.matchStrings.join('\n')).toContain(`"depType": "generated-${framework}"`);
+    }
+  });
+
+  it('rejects an override table the catalog does not know about', () => {
+    const fixtureRoot = mkdtempSync(path.join(tmpdir(), 'purrfold unmapped overrides '));
+    const fixtureScripts = path.join(fixtureRoot, 'scripts');
+    const fixtureE2e = path.join(fixtureScripts, 'e2e');
+    const fixtureSrc = path.join(fixtureRoot, 'src');
+
+    try {
+      mkdirSync(fixtureE2e, { recursive: true });
+      mkdirSync(fixtureSrc, { recursive: true });
+      copyFileSync(path.join(process.cwd(), 'scripts', 'cli-e2e.mjs'), path.join(fixtureScripts, 'cli-e2e.mjs'));
+      copyFileSync(path.join(process.cwd(), 'scripts', 'e2e', 'catalog.mjs'), path.join(fixtureE2e, 'catalog.mjs'));
+      copyFileSync(path.join(process.cwd(), 'scripts', 'e2e', 'scenarios.mjs'), path.join(fixtureE2e, 'scenarios.mjs'));
+      writeFileSync(
+        path.join(fixtureSrc, 'versions.json'),
+        JSON.stringify({ ...versions, experimentalOverrides: { vite: '9.0.0' } })
+      );
+
+      const result = spawnSync(process.execPath, [path.join(fixtureScripts, 'cli-e2e.mjs'), '--list'], {
+        cwd: fixtureRoot,
+        encoding: 'utf8',
+        shell: false,
+      });
+      expect(result.status).not.toBe(0);
+      expect(result.stderr).toContain('No E2E catalog override mapping registered for "experimentalOverrides"');
+    } finally {
+      rmSync(fixtureRoot, { recursive: true, force: true });
+    }
+  });
+
   it('keeps the plain JavaScript harness layouts aligned with framework adapters', () => {
     for (const [framework, adapter] of Object.entries(frameworkAdapters)) {
       expect(frameworkLayouts[framework as keyof typeof frameworkLayouts]).toEqual(adapter.layout);
@@ -196,6 +254,7 @@ describe('CLI E2E catalog boundary', () => {
         'dry-run-reported-b6-mcp-npm',
         'dry-run-astro-ssg-npm',
         'dry-run-astro-ssr-cloudflare-pnpm',
+        'dry-run-vite-npm',
       ];
 
       try {

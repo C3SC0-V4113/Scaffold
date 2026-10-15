@@ -2,6 +2,7 @@ import type { PackageManager, ShadcnMcpClient } from './types.js';
 
 export interface PackageManagerCommands {
   createNextApp: (targetDir: string, yes: boolean) => { command: string; args: string[] };
+  createViteApp: (targetDir: string) => { command: string; args: string[] };
   shadcn: (args: string[]) => { command: string; args: string[] };
   shadcnMcp: (client: ShadcnMcpClient) => { command: string; args: string[] };
   addDev: (packages: string[]) => { command: string; args: string[] };
@@ -22,6 +23,13 @@ const createNextBaseArgs = [
   '@/*',
 ];
 
+const createViteBaseArgs = [
+  '--template',
+  'react-ts',
+  '--no-interactive',
+  '--no-immediate',
+];
+
 export function getPackageManagerCommands(packageManager: PackageManager): PackageManagerCommands {
   if (packageManager === 'pnpm') {
     return {
@@ -35,6 +43,10 @@ export function getPackageManagerCommands(packageManager: PackageManager): Packa
           '--use-pnpm',
           ...(yes ? ['--yes'] : []),
         ],
+      }),
+      createViteApp: (targetDir) => ({
+        command: 'pnpm',
+        args: ['create', 'vite@latest', targetDir, ...createViteBaseArgs],
       }),
       shadcn: (args) => ({ command: 'pnpm', args: ['dlx', 'shadcn@latest', ...args] }),
       shadcnMcp: (client) => ({
@@ -62,6 +74,10 @@ export function getPackageManagerCommands(packageManager: PackageManager): Packa
           ...(yes ? ['--yes'] : []),
         ],
       }),
+      createViteApp: (targetDir) => ({
+        command: 'bun',
+        args: ['create', 'vite@latest', targetDir, ...createViteBaseArgs],
+      }),
       shadcn: (args) => ({ command: 'bunx', args: ['--bun', 'shadcn@latest', ...args] }),
       shadcnMcp: (client) => ({
         command: 'bunx',
@@ -85,6 +101,10 @@ export function getPackageManagerCommands(packageManager: PackageManager): Packa
         '--use-npm',
         ...(yes ? ['--yes'] : []),
       ],
+    }),
+    createViteApp: (targetDir) => ({
+      command: 'npm',
+      args: ['create', 'vite@latest', targetDir, '--', ...createViteBaseArgs],
     }),
     shadcn: (args) => ({ command: 'npx', args: ['shadcn@latest', ...args] }),
     shadcnMcp: (client) => ({

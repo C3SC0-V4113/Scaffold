@@ -257,6 +257,35 @@ export default function Home() {
 `;
 }
 
+export function renderViteHomePage(
+  projectName: string,
+  iconLibrary: IconLibrary = 'lucide',
+  motionEnabled = false,
+) {
+  const appName = humanizeProjectName(projectName);
+  const { importLine, markup } = getCatRender(iconLibrary);
+  const motionImport = motionEnabled
+    ? "import { MotionMain } from '@/components/common/motion-main';\n"
+    : '';
+  const mainTag = motionEnabled ? 'MotionMain' : 'main';
+
+  return `${importLine}
+
+${motionImport}import { Button } from '@/components/ui/button';
+
+export default function App() {
+  return (
+    <${mainTag} className="bg-background text-foreground flex min-h-dvh flex-col items-center justify-center gap-4 p-8 text-center">
+      ${markup}
+      <h1 className="text-2xl font-semibold tracking-tight">${appName}</h1>
+      <p className="text-muted-foreground text-sm">Edit src/App.tsx to start building.</p>
+      <Button type="button">Start building</Button>
+    </${mainTag}>
+  );
+}
+`;
+}
+
 export function renderAstroHomeHero(
   projectName: string,
   iconLibrary: IconLibrary = 'lucide',
@@ -422,7 +451,15 @@ ${ignoredFiles.map((file) => `      "${file}"`).join(',\n')}
 }
 
 export const reactDoctorConfig = renderReactDoctorConfig(
-  { sourceRoot: '', globalStylesheet: 'app/globals.css', utilsPath: 'lib/utils.ts', uiDir: 'components/ui', motionMainPath: 'components/common/motion-main.tsx' },
+  {
+    sourceRoot: '',
+    globalStylesheet: 'app/globals.css',
+    utilsPath: 'lib/utils.ts',
+    uiDir: 'components/ui',
+    motionMainPath: 'components/common/motion-main.tsx',
+    eslintConfigPath: 'eslint.config.mjs',
+    vitestConfigPath: 'vitest.config.mts',
+  },
   false,
   true
 );
@@ -665,6 +702,24 @@ export default defineConfig({
 `;
 
 export function renderVitestConfig(config: FrameworkAdapter['vitestConfig']) {
+  if (config.kind === 'merge-vite') {
+    return `import { defineConfig, mergeConfig } from 'vitest/config';
+
+import viteConfig from './vite.config.ts';
+
+export default mergeConfig(
+  viteConfig,
+  defineConfig({
+    test: {
+      environment: 'jsdom',
+      include: ['tests/unit/**/*.test.{ts,tsx}', 'tests/integration/**/*.test.{ts,tsx}'],
+      restoreMocks: true,
+    },
+  }),
+);
+`;
+  }
+
   if (config.tsconfigPaths === 'plugin') return vitestConfig;
 
   return vitestConfig
@@ -701,6 +756,20 @@ describe('Home hero smoke test', () => {
 });
 `;
 }
+
+export const viteUnitSmokeTest = `import { render, screen } from '@testing-library/react';
+import { describe, expect, it } from 'vitest';
+
+import App from '@/App';
+
+describe('Home page smoke test', () => {
+  it('renders a heading', () => {
+    render(<App />);
+
+    expect(screen.getByRole('heading', { level: 1 })).toBeDefined();
+  });
+});
+`;
 
 export const motionMainUnitTest = `import { render } from '@testing-library/react';
 import { createElement, type ReactNode } from 'react';
@@ -790,13 +859,15 @@ export default defineConfig({
 });
 `;
 
-export function renderPlaywrightConfig(packageManager: string) {
-  const devCommand =
-    packageManager === 'pnpm'
-      ? 'pnpm run dev -- --hostname 127.0.0.1 --port 3000'
-      : packageManager === 'bun'
-        ? 'bun run dev -- --hostname 127.0.0.1 --port 3000'
-        : 'npm run dev -- --hostname 127.0.0.1 --port 3000';
+export function renderPlaywrightConfig(
+  packageManager: string,
+  server: { hostFlag: '--hostname' | '--host'; port: number } = {
+    hostFlag: '--hostname',
+    port: 3000,
+  },
+) {
+  const run = packageManager === 'npm' ? 'npm run' : `${packageManager} run`;
+  const devCommand = `${run} dev -- ${server.hostFlag} 127.0.0.1 --port ${server.port}`;
 
   return playwrightConfig.replace(
     "npm run dev -- --hostname 127.0.0.1 --port 3000",
@@ -984,14 +1055,15 @@ Import React APIs from \`motion/react\`. ${frameworkGuidance}
 `;
 }
 
-export function renderAgents(
-  options: Pick<CreateOptions, 'framework' | 'packageManager' | 'unit' | 'e2e' | 'commitlint' | 'mcp' | 'motion'>,
-  docs: FrameworkAdapter['docs']
-) {
-  const run = options.packageManager === 'npm' ? 'npm run' : `${options.packageManager} run`;
+type AgentsOptions = Pick<CreateOptions, 'framework' | 'packageManager' | 'unit' | 'e2e' | 'commitlint' | 'mcp' | 'motion'>;
 
-  if (docs.mergeStrategy === 'merge') {
-    return `<!-- BEGIN:astro-agent-rules -->
+function agentsRunCommand(packageManager: CreateOptions['packageManager']) {
+  return packageManager === 'npm' ? 'npm run' : `${packageManager} run`;
+}
+
+function renderAstroAgents(options: AgentsOptions, docs: FrameworkAdapter['docs']) {
+  const run = agentsRunCommand(options.packageManager);
+  return `<!-- BEGIN:astro-agent-rules -->
 
 # This is an Astro scaffold
 
@@ -1043,8 +1115,46 @@ shadcn presets are supported through \`--shadcn-args --preset <id>\`.
 
 \`CLAUDE.md\` points to this file. \`.claude/skills\` should link to \`.agents/skills\`.
 `;
-  }
+}
 
+function renderViteAgents(options: AgentsOptions, docs: FrameworkAdapter['docs']) {
+  const run = agentsRunCommand(options.packageManager);
+  return `# Vite scaffold
+
+This project uses Vite with React and TypeScript. Read the current Vite and React docs before changing framework APIs or project structure.
+
+## Quality Gates
+
+Run these before claiming implementation complete:
+
+1. \`${run} lint\`
+2. \`${run} typecheck\`
+3. \`${run} format:check\`
+${options.unit ? `4. \`${run} test\`\n` : ''}${options.e2e ? `- Run \`${run} test:e2e\` when E2E behavior changed.\n` : ''}- \`${run} doctor\`
+- \`${run} check\`
+
+\`${run} lint\` runs \`@shadcn/lint\`. Fix its design system errors with the tokens, variants, and sizes described in \`DESIGN.md\`; do not disable its rules.
+
+## References
+
+- Architecture and scripts: \`README.md\`
+- Design rules: \`DESIGN.md\`
+- Vite reference docs: \`https://vite.dev/guide/\`
+- React guidance: \`.agents/skills/vercel-react-best-practices/SKILL.md\`
+- If any agent skill is missing, rerun \`sh skills.sh\`.
+- Component placement rules: \`.agents/skills/shadcn-component-boundaries/SKILL.md\`
+- Minimum evaluation: \`.agents/skills/project-min-evaluation/SKILL.md\`
+${options.unit ? '- Vitest guidance: `.agents/skills/vitest/SKILL.md`\n' : ''}${options.e2e ? '- Playwright guidance: `.agents/skills/playwright-best-practices/SKILL.md`\n' : ''}${options.commitlint ? '- Commit messages are checked with commitlint.\n' : ''}
+${renderMotionAgentRules(options, docs)}## shadcn MCP
+
+${options.mcp ? 'shadcn MCP setup was requested during scaffold.' : 'shadcn MCP setup is optional and was not run by default.'}
+
+\`CLAUDE.md\` points to this file. \`.claude/skills\` should link to \`.agents/skills\`.
+`;
+}
+
+function renderNextAgents(options: AgentsOptions, docs: FrameworkAdapter['docs']) {
+  const run = agentsRunCommand(options.packageManager);
   return `<!-- BEGIN:nextjs-agent-rules -->
 
 # This is NOT the Next.js you know
@@ -1101,6 +1211,16 @@ shadcn presets are supported through \`--shadcn-args --preset <id>\`.
 
 \`CLAUDE.md\` points to this file. \`.claude/skills\` should link to \`.agents/skills\`.
 `;
+}
+
+export function renderAgents(options: AgentsOptions, docs: FrameworkAdapter['docs']) {
+  const renderers: Record<FrameworkAdapter['docs']['agentsTemplate'], (options: AgentsOptions, docs: FrameworkAdapter['docs']) => string> = {
+    next: renderNextAgents,
+    astro: renderAstroAgents,
+    vite: renderViteAgents,
+  };
+
+  return renderers[docs.agentsTemplate](options, docs);
 }
 
 function renderMotionAgentRules(options: Pick<CreateOptions, 'motion'>, docs: FrameworkAdapter['docs']) {

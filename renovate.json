@@ -27,6 +27,16 @@
     {
       "customType": "jsonata",
       "fileFormat": "json",
+      "description": "Vite-specific dependency overrides in src/versions.json.",
+      "managerFilePatterns": ["src/versions.json"],
+      "matchStrings": [
+        "$each(viteOverrides, function($v, $k) { { \"depName\": $k, \"currentValue\": $v, \"depType\": \"generated-vite\" } })"
+      ],
+      "datasourceTemplate": "npm"
+    },
+    {
+      "customType": "jsonata",
+      "fileFormat": "json",
       "description": "GitHub-owned action tags purrfold pins into generated .github/workflows/. Without this manager the generated pipelines rot silently: every app scaffolded before an action's major bump keeps running a deprecated runner (the actions/checkout@v4 node20 deprecation is exactly how this was found).",
       "managerFilePatterns": ["src/versions.json"],
       "matchStrings": [
@@ -80,9 +90,10 @@
       "enabled": false
     },
     {
-      "description": "@vitejs/plugin-react v6 is a known-bad line for generated Next apps (original bug report: pulled vite@7 into the unit-test toolchain).",
+      "description": "@vitejs/plugin-react v6 is a known-bad line for generated Next unit tooling; the Vite framework tracks v6 in its own override.",
       "matchFileNames": ["src/versions.json"],
       "matchDepNames": ["@vitejs/plugin-react"],
+      "matchDepTypes": ["generated-next"],
       "matchUpdateTypes": ["major"],
       "enabled": false
     },
@@ -94,9 +105,10 @@
       "enabled": false
     },
     {
-      "description": "vite is the unit-test toolchain of generated Next apps, and @vitejs/plugin-react 5.1.x (held below 5.2 by the rule above) peer-requires vite <= 7. Taking vite 8 here would install a Vite the pinned plugin does not claim to support. Unblock together with the plugin-react major.",
+      "description": "vite is the unit-test toolchain of generated Next apps, and @vitejs/plugin-react 5.1.x peer-requires Vite 7. The Vite framework tracks its Vite 8 major in viteOverrides.",
       "matchFileNames": ["src/versions.json"],
       "matchDepNames": ["vite"],
+      "matchDepTypes": ["generated-next"],
       "matchUpdateTypes": ["major"],
       "enabled": false
     },

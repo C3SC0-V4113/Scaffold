@@ -54,6 +54,9 @@ describe('cli metadata', () => {
     expect(
       commands.some((command) => command.includes('--framework astro --ssr --adapter cloudflare'))
     ).toBe(true);
+    expect(
+      commands.some((command) => command.includes('--framework vite --yes')),
+    ).toBe(true);
   });
 
   it('exposes the install command', () => {

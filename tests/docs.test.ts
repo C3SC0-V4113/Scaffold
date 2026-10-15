@@ -135,6 +135,24 @@ describe('generated documentation installer', () => {
     expect(occurrences(updatedAgents, PURRFOLD_MANAGED_BEGIN)).toBe(1);
   });
 
+  it('writes Vite-specific generated docs and the Claude pointer', async () => {
+    const root = await project();
+    const createOptions = options('vite');
+
+    await installDocsAndClaude(root, createOptions, new RealExecutor());
+
+    const readme = await readFile(path.join(root, 'README.md'), 'utf8');
+    const agents = await readFile(path.join(root, 'AGENTS.md'), 'utf8');
+    expect(readme).toContain('# Vite Quality App');
+    expect(readme).toContain('npm run dev');
+    expect(agents).toContain('# Vite scaffold');
+    expect(agents).toContain('npm run typecheck');
+    expect(agents).toContain('Vite reference docs');
+    expect(await readFile(path.join(root, 'CLAUDE.md'), 'utf8')).toBe('@AGENTS.md\n');
+    expect(readme).not.toContain(PURRFOLD_MANAGED_BEGIN);
+    expect(agents).not.toContain(PURRFOLD_MANAGED_BEGIN);
+  });
+
   it('creates missing Astro Markdown files from the managed content', async () => {
     const root = await project();
 

@@ -33,15 +33,19 @@ export const nextAdapter: FrameworkAdapter = {
     utilsPath: 'lib/utils.ts',
     uiDir: 'components/ui',
     motionMainPath: 'components/common/motion-main.tsx',
+    eslintConfigPath: 'eslint.config.mjs',
+    vitestConfigPath: 'vitest.config.mts',
   },
   dependencyOverrides: {},
   developmentDependencies: FRAMEWORK_DEVELOPMENT_DEPENDENCIES.next,
   packageScriptConfig: FRAMEWORK_PACKAGE_SCRIPT_CONFIG.next,
+  playwrightServer: { hostFlag: '--hostname', port: 3000 },
   prettierConfig: {
     tailwindStylesheet: 'app/globals.css',
     extraPlugins: [],
   },
   vitestConfig: {
+    kind: 'standalone',
     tsconfigPaths: 'plugin',
   },
   scaffold: createNextApp,
@@ -87,6 +91,7 @@ export const nextAdapter: FrameworkAdapter = {
     'next-dev-loop',
   ],
   docs: {
+    agentsTemplate: 'next',
     mergeStrategy: 'replace',
     frameworkName: 'Next.js',
     readmeTitle: 'Next Quality App',

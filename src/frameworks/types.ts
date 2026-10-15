@@ -27,6 +27,8 @@ export interface FrameworkAdapter {
     utilsPath: string;
     uiDir: string;
     motionMainPath: string;
+    eslintConfigPath: 'eslint.config.js' | 'eslint.config.mjs';
+    vitestConfigPath: 'vitest.config.ts' | 'vitest.config.mts';
   };
   dependencyOverrides: Readonly<Record<string, string>>;
   developmentDependencies: {
@@ -40,11 +42,14 @@ export interface FrameworkAdapter {
     scan?: string;
     typecheck: string;
   };
+  playwrightServer: { hostFlag: '--hostname' | '--host'; port: number };
   prettierConfig: {
     tailwindStylesheet: string;
     extraPlugins: readonly string[];
   };
-  vitestConfig: { tsconfigPaths: 'plugin' | 'native' };
+  vitestConfig:
+    | { kind: 'standalone'; tsconfigPaths: 'plugin' | 'native' }
+    | { kind: 'merge-vite' };
   scaffold(options: CreateOptions, executor: Executor): Promise<string>;
   shadcnInitArgs(
     options: Pick<
@@ -81,6 +86,7 @@ export interface FrameworkAdapter {
   ): string[];
   docs: {
     mergeStrategy: 'replace' | 'merge';
+    agentsTemplate: 'next' | 'astro' | 'vite';
     frameworkName: string;
     readmeTitle: string;
     toolingLines: readonly string[];

@@ -6,8 +6,9 @@ export const rootDir = path.resolve(fileURLToPath(new URL('..', import.meta.url)
 
 // Kept in sync with src/frameworks/*/index.ts by cli-e2e-catalog.test.ts.
 export const frameworkLayouts = {
-  next: { sourceRoot: '', globalStylesheet: 'app/globals.css', utilsPath: 'lib/utils.ts', uiDir: 'components/ui', motionMainPath: 'components/common/motion-main.tsx' },
-  astro: { sourceRoot: 'src/', globalStylesheet: 'src/styles/global.css', utilsPath: 'src/lib/utils.ts', uiDir: 'src/components/ui', motionMainPath: 'src/components/common/motion-main.tsx' },
+  next: { sourceRoot: '', globalStylesheet: 'app/globals.css', utilsPath: 'lib/utils.ts', uiDir: 'components/ui', motionMainPath: 'components/common/motion-main.tsx', eslintConfigPath: 'eslint.config.mjs', vitestConfigPath: 'vitest.config.mts' },
+  astro: { sourceRoot: 'src/', globalStylesheet: 'src/styles/global.css', utilsPath: 'src/lib/utils.ts', uiDir: 'src/components/ui', motionMainPath: 'src/components/common/motion-main.tsx', eslintConfigPath: 'eslint.config.mjs', vitestConfigPath: 'vitest.config.mts' },
+  vite: { sourceRoot: 'src/', globalStylesheet: 'src/index.css', utilsPath: 'src/lib/utils.ts', uiDir: 'src/components/ui', motionMainPath: 'src/components/common/motion-main.tsx', eslintConfigPath: 'eslint.config.js', vitestConfigPath: 'vitest.config.ts' },
 };
 
 // Keep catalog construction dependency-free so CI can enumerate scenarios
@@ -16,9 +17,21 @@ export const generatedVersions = JSON.parse(
   readFileSync(path.join(rootDir, 'src', 'versions.json'), 'utf8')
 );
 
+export const frameworkVersionOverrides = {
+  astro: generatedVersions.astroOverrides,
+  vite: generatedVersions.viteOverrides,
+};
+
+for (const framework of Object.keys(generatedVersions).filter((key) => key.endsWith('Overrides'))) {
+  const frameworkId = framework.replace(/Overrides$/, '').toLowerCase();
+  if (!(frameworkId in frameworkVersionOverrides)) {
+    throw new Error(`No E2E catalog override mapping registered for "${framework}" in src/versions.json.`);
+  }
+}
+
 export function pinnedDependency(name, framework = 'next') {
   const version =
-    (framework === 'astro' ? generatedVersions.astroOverrides[name] : undefined) ??
+    frameworkVersionOverrides[framework]?.[name] ??
     generatedVersions.dependencies[name];
   if (!version) {
     throw new Error(`No pinned version registered for "${name}" in src/versions.json.`);

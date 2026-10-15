@@ -10,6 +10,19 @@ describe('package manager command mapping', () => {
   it('maps npm commands', () => {
     const commands = getPackageManagerCommands('npm');
     const create = commands.createNextApp('my-app', true);
+    expect(commands.createViteApp('my-app')).toEqual({
+      command: 'npm',
+      args: [
+        'create',
+        'vite@latest',
+        'my-app',
+        '--',
+        '--template',
+        'react-ts',
+        '--no-interactive',
+        '--no-immediate',
+      ],
+    });
 
     expect(create).toEqual({
       command: 'npx',
@@ -38,6 +51,18 @@ describe('package manager command mapping', () => {
   it('maps pnpm commands', () => {
     const commands = getPackageManagerCommands('pnpm');
     const create = commands.createNextApp('my-app', false);
+    expect(commands.createViteApp('my-app')).toEqual({
+      command: 'pnpm',
+      args: [
+        'create',
+        'vite@latest',
+        'my-app',
+        '--template',
+        'react-ts',
+        '--no-interactive',
+        '--no-immediate',
+      ],
+    });
 
     expect(create).toEqual({
       command: 'pnpm',
@@ -62,6 +87,18 @@ describe('package manager command mapping', () => {
   it('maps bun commands', () => {
     const commands = getPackageManagerCommands('bun');
     const create = commands.createNextApp('my-app', false);
+    expect(commands.createViteApp('my-app')).toEqual({
+      command: 'bun',
+      args: [
+        'create',
+        'vite@latest',
+        'my-app',
+        '--template',
+        'react-ts',
+        '--no-interactive',
+        '--no-immediate',
+      ],
+    });
 
     expect(create).toEqual({
       command: 'bunx',

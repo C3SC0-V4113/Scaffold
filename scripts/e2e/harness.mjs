@@ -563,7 +563,8 @@ function assertSkillReferencesFetched(skillDir, name) {
 export function assertGeneratedApp(projectRoot, expected) {
   const framework = expected.framework ?? 'next';
   const packageJson = readJson(path.join(projectRoot, 'package.json'));
-  const eslintConfig = readFileSync(path.join(projectRoot, 'eslint.config.mjs'), 'utf8');
+  const eslintConfigPath = frameworkLayouts[framework].eslintConfigPath;
+  const eslintConfig = readFileSync(path.join(projectRoot, eslintConfigPath), 'utf8');
   const doctorConfig = readJson(path.join(projectRoot, 'doctor.config.json'));
   const skillsScript = readFileSync(path.join(projectRoot, 'skills.sh'), 'utf8');
   const readme = readFileSync(path.join(projectRoot, 'README.md'), 'utf8');
@@ -598,9 +599,9 @@ export function assertGeneratedApp(projectRoot, expected) {
   }
   assertNotIncludes(packageJson.scripts?.check ?? '', 'doctor:design', 'package.json check script');
   assertNotIncludes(packageJson.scripts?.['doctor:ci'] ?? '', '--design', 'package.json doctor:ci script');
-  assertNotIncludes(eslintConfig, 'reactDoctor.configs.all', 'eslint.config.mjs');
-  assertIncludes(eslintConfig, "import { plugin as shadcn } from '@shadcn/lint';", 'eslint.config.mjs');
-  assertIncludes(eslintConfig, 'plugins: { shadcn }', 'eslint.config.mjs');
+  assertNotIncludes(eslintConfig, 'reactDoctor.configs.all', eslintConfigPath);
+  assertIncludes(eslintConfig, "import { plugin as shadcn } from '@shadcn/lint';", eslintConfigPath);
+  assertIncludes(eslintConfig, 'plugins: { shadcn }', eslintConfigPath);
 
   // purrfold only ignores what purrfold creates, so the wrangler entries must
   // follow the adapter it actually installed. Every non-cloudflare scenario is
@@ -636,10 +637,10 @@ export function assertGeneratedApp(projectRoot, expected) {
   // the generated lint script runs with --max-warnings 0.
   const eslintIgnoresWorkerTypes = eslintConfig.includes("'worker-configuration.d.ts'");
   if (expected.ssrAdapter === 'cloudflare' && !eslintIgnoresWorkerTypes) {
-    throw new Error('eslint.config.mjs should ignore worker-configuration.d.ts for the Cloudflare adapter');
+    throw new Error(`${eslintConfigPath} should ignore worker-configuration.d.ts for the Cloudflare adapter`);
   }
   if (expected.ssrAdapter !== 'cloudflare' && eslintIgnoresWorkerTypes) {
-    throw new Error('eslint.config.mjs should not ignore worker-configuration.d.ts without the Cloudflare adapter');
+    throw new Error(`${eslintConfigPath} should not ignore worker-configuration.d.ts without the Cloudflare adapter`);
   }
 
   // Prettier reads only the root .gitignore and .prettierignore, so agent state
@@ -729,7 +730,7 @@ export function assertGeneratedApp(projectRoot, expected) {
     assertPath(projectRoot, 'src/components/Button.astro', false);
     assertPath(projectRoot, 'src/pages/index.astro');
     assertPath(projectRoot, 'src/layouts/main.astro');
-    assertIncludes(eslintConfig, "'src/components/ui/**'", 'eslint.config.mjs');
+    assertIncludes(eslintConfig, "'src/components/ui/**'", eslintConfigPath);
 
     if (tsconfig.compilerOptions?.paths?.['@/*']?.[0] !== './src/*') {
       throw new Error('tsconfig.json should map @/* to ./src/*');
@@ -739,7 +740,7 @@ export function assertGeneratedApp(projectRoot, expected) {
     }
     assertIncludes(packageJson.scripts?.doctor ?? '', 'astro check && react-doctor', 'Astro doctor script');
     assertIncludes(packageJson.scripts?.['doctor:ci'] ?? '', 'astro check && react-doctor', 'Astro doctor:ci script');
-    assertIncludes(eslintConfig, '...reactDoctor.configs.recommended', 'eslint.config.mjs');
+    assertIncludes(eslintConfig, '...reactDoctor.configs.recommended', eslintConfigPath);
     assertIncludes(agents, 'astro dev --background', 'AGENTS.md');
     if (readme.indexOf('<!-- BEGIN:purrfold-managed -->') <= 0) {
       throw new Error('Astro README.md should preserve starter content before the Purrfold block');
@@ -771,11 +772,66 @@ export function assertGeneratedApp(projectRoot, expected) {
     } else {
       assertNotIncludes(astroConfig, "output: 'server'", 'astro.config.mjs');
     }
+  } else if (framework === 'vite') {
+    const tsconfig = readFileSync(path.join(projectRoot, 'tsconfig.app.json'), 'utf8');
+    const tsconfigNode = readFileSync(path.join(projectRoot, 'tsconfig.node.json'), 'utf8');
+    const viteConfig = readFileSync(path.join(projectRoot, 'vite.config.ts'), 'utf8');
+    const indexHtml = readFileSync(path.join(projectRoot, 'index.html'), 'utf8');
+
+    assertPath(projectRoot, 'src/components/ui/button.tsx');
+    assertPath(projectRoot, 'src/lib/utils.ts');
+    assertPath(projectRoot, 'src/index.css');
+    assertPath(projectRoot, 'src/App.tsx');
+    assertPath(projectRoot, '@/components/ui/button.tsx', false);
+    assertPath(projectRoot, '@/lib/utils.ts', false);
+    assertPath(projectRoot, 'src/App.css', false);
+    assertPath(projectRoot, 'src/assets/react.svg', false);
+    assertPath(projectRoot, 'public/vite.svg', false);
+    assertIncludes(eslintConfig, "import reactHooks from 'eslint-plugin-react-hooks';", eslintConfigPath);
+    assertIncludes(eslintConfig, "import reactRefresh from 'eslint-plugin-react-refresh';", eslintConfigPath);
+    assertIncludes(eslintConfig, 'reactRefresh.configs.vite,', eslintConfigPath);
+    assertIncludes(eslintConfig, '...reactDoctor.configs.recommended', eslintConfigPath);
+    assertIncludes(viteConfig, "from '@tailwindcss/vite'", 'vite.config.ts');
+    assertIncludes(viteConfig, "from '@vitejs/plugin-react'", 'vite.config.ts');
+    assertIncludes(viteConfig, "const root = path.dirname(fileURLToPath(import.meta.url));", 'vite.config.ts');
+    assertIncludes(viteConfig, 'plugins: [react(), tailwindcss()]', 'vite.config.ts');
+    assertIncludes(viteConfig, "'@': path.resolve(root, 'src')", 'vite.config.ts');
+    assertIncludes(tsconfig, '"@/*": ["./src/*"]', 'tsconfig.app.json');
+    if (expected.unit || expected.e2e) {
+      assertIncludes(tsconfig, '"tests"', 'tsconfig.app.json');
+    }
+    if (expected.unit) {
+      assertIncludes(tsconfigNode, 'vitest.config.ts', 'tsconfig.node.json');
+    }
+    if (expected.e2e) {
+      assertIncludes(tsconfigNode, 'playwright.config.ts', 'tsconfig.node.json');
+    }
+    assertIncludes(indexHtml, '<title>', 'index.html');
+    assertNotIncludes(indexHtml, 'Vite + React + TS', 'index.html');
+    assertIncludes(packageJson.scripts?.typecheck ?? '', 'tsc -b', 'Vite typecheck script');
+    assertIncludes(packageJson.scripts?.doctor ?? '', 'react-doctor', 'Vite doctor script');
+    for (const dependency of ['vite', '@vitejs/plugin-react', 'tailwindcss', '@tailwindcss/vite']) {
+      const version = generatedVersions.viteOverrides[dependency] ?? generatedVersions.dependencies[dependency];
+      if (!packageJson.devDependencies?.[dependency]?.includes(version)) {
+        throw new Error(`${dependency} should be pinned to ${version}`);
+      }
+    }
+    assertIncludes(readme, '# Vite Quality App', 'README.md');
+    assertIncludes(agents, '# Vite scaffold', 'AGENTS.md');
+    assertNotIncludes(readme, '<!-- BEGIN:purrfold-managed -->', 'README.md');
+    assertNotIncludes(agents, '<!-- BEGIN:purrfold-managed -->', 'AGENTS.md');
+    if (expected.e2e) {
+      const playwrightConfig = readFileSync(path.join(projectRoot, 'playwright.config.ts'), 'utf8');
+      const devCommand = expected.pnpm
+        ? 'pnpm run dev -- --host 127.0.0.1 --port 3000'
+        : 'npm run dev -- --host 127.0.0.1 --port 3000';
+      assertIncludes(playwrightConfig, devCommand, 'playwright.config.ts');
+    }
   } else {
     assertPath(projectRoot, 'components/ui/button.tsx');
     assertPath(projectRoot, 'lib/utils.ts');
     assertPath(projectRoot, 'app/globals.css');
-    assertIncludes(eslintConfig, "'components/ui/**'", 'eslint.config.mjs');
+    assertIncludes(eslintConfig, "'components/ui/**'", eslintConfigPath);
     assertIncludes(readme, 'shadcn MCP', 'README.md');
     assertIncludes(agents, 'shadcn MCP', 'AGENTS.md');
     assertNotIncludes(readme, '<!-- BEGIN:purrfold-managed -->', 'README.md');
@@ -785,12 +841,13 @@ export function assertGeneratedApp(projectRoot, expected) {
     }
   }
 
+  const vitestConfigPath = frameworkLayouts[framework].vitestConfigPath;
   if (expected.unit) {
-    assertPath(projectRoot, 'vitest.config.mts');
+    assertPath(projectRoot, vitestConfigPath);
     assertPath(projectRoot, 'tests/unit/home.test.tsx');
     if (!packageJson.scripts?.test) throw new Error('package.json should include test script');
   } else {
-    assertPath(projectRoot, 'vitest.config.mts', false);
+    assertPath(projectRoot, vitestConfigPath, false);
     assertPath(projectRoot, 'tests/unit/home.test.tsx', false);
     if (packageJson.scripts?.test) throw new Error('package.json should not include test script');
   }

@@ -16,7 +16,7 @@ export async function installTestingFiles(
   const adapter = getFrameworkAdapter(options.framework);
   if (options.unit) {
     await executor.writeFile(
-      path.join(projectRoot, 'vitest.config.mts'),
+      path.join(projectRoot, adapter.layout.vitestConfigPath),
       adapter.templates.vitest(options)
     );
     await executor.writeFile(
@@ -34,7 +34,7 @@ export async function installTestingFiles(
   if (options.e2e) {
     await executor.writeFile(
       path.join(projectRoot, 'playwright.config.ts'),
-      renderPlaywrightConfig(options.packageManager)
+      renderPlaywrightConfig(options.packageManager, adapter.playwrightServer)
     );
     await executor.writeFile(path.join(projectRoot, 'tests', 'e2e', 'home.spec.ts'), e2eSmokeTest);
   }

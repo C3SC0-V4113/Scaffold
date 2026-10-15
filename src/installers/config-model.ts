@@ -22,13 +22,12 @@ import type { CreateOptions, Framework } from '../types.js';
  * - `eslint-plugin-astro` stays on v1: v2 peer-requires eslint >= 10, so it
  *   moves together with the eslint major (npm fails ERESOLVE on it; pnpm only
  *   warns, which is why only npm Astro scenarios caught it).
- * - `vite` is pinned to the 7 line: it is the only major that both vitest and
- *   @vitejs/plugin-react 5.1.x accept (plugin-react gains Vite 8 support in
- *   5.2, which the Next line deliberately does not take). Moving vite past 7
- *   means moving plugin-react first.
+ * - shared `vite` 7 and `@vitejs/plugin-react` 5.1.x pins keep the Next unit
+ *   toolchain compatible. Vite's scaffold has its own Vite 8 pins in
+ *   viteOverrides; Vitest 5 and plugin-react 6 support that major.
  * - astroOverrides['@vitejs/plugin-react']: Astro 7 installs Vite 8 and
- *   @astrojs/react 6 requires plugin-react 5.2+, while Next stays on the
- *   Vite-6-compatible line.
+ *   @astrojs/react 6 requires plugin-react 5.2+, while Next unit tooling keeps
+ *   using the shared pins above.
  *
  * Bumping a pin is a deliberate act: change the version, then run the CLI E2E
  * suite (`npm run test:e2e:cli`) so an incompatible upgrade is caught here, not
@@ -39,12 +38,15 @@ export const DEPENDENCY_VERSIONS: Record<string, string> =
 
 export const ASTRO_DEPENDENCY_VERSION_OVERRIDES: Record<string, string> =
   versions.astroOverrides;
+export const VITE_DEPENDENCY_VERSION_OVERRIDES: Record<string, string> =
+  versions.viteOverrides;
 export const FRAMEWORK_DEPENDENCY_OVERRIDES: Record<
   Framework,
   Readonly<Record<string, string>>
 > = {
   next: {},
   astro: ASTRO_DEPENDENCY_VERSION_OVERRIDES,
+  vite: VITE_DEPENDENCY_VERSION_OVERRIDES,
 };
 
 /**
@@ -103,6 +105,25 @@ export const astroCoreDevDependencies = [
   '@shadcn/lint',
 ];
 
+export const viteCoreDevDependencies = [
+  'eslint',
+  'eslint-config-prettier',
+  'eslint-plugin-import',
+  'eslint-import-resolver-typescript',
+  'eslint-plugin-react-doctor',
+  'eslint-plugin-react-you-might-not-need-an-effect',
+  'eslint-plugin-react-hooks',
+  'eslint-plugin-react-refresh',
+  'typescript-eslint',
+  'prettier',
+  'prettier-plugin-tailwindcss',
+  'husky',
+  'lint-staged',
+  'react-doctor',
+  'react-scan',
+  '@shadcn/lint',
+];
+
 export const unitDevDependencies = [
   'vitest',
   'vite',
@@ -127,6 +148,11 @@ export const ASTRO_UNIT_DEPENDENCY_EXCLUSIONS = [
   'vite',
   'vite-tsconfig-paths',
 ] as const;
+export const VITE_UNIT_DEPENDENCY_EXCLUSIONS = [
+  'vite',
+  '@vitejs/plugin-react',
+  'vite-tsconfig-paths',
+] as const;
 export const FRAMEWORK_DEVELOPMENT_DEPENDENCIES: Record<
   Framework,
   { core: readonly string[]; unitExclusions: readonly string[] }
@@ -138,6 +164,10 @@ export const FRAMEWORK_DEVELOPMENT_DEPENDENCIES: Record<
   astro: {
     core: astroCoreDevDependencies,
     unitExclusions: ASTRO_UNIT_DEPENDENCY_EXCLUSIONS,
+  },
+  vite: {
+    core: viteCoreDevDependencies,
+    unitExclusions: VITE_UNIT_DEPENDENCY_EXCLUSIONS,
   },
 };
 
@@ -175,6 +205,13 @@ export const FRAMEWORK_PACKAGE_SCRIPT_CONFIG: Record<
     scanInit: 'astro dev --background',
     scan: 'astro dev',
     typecheck: 'astro check',
+  },
+  vite: {
+    doctor: 'react-doctor . --yes --blocking warning',
+    doctorStaged: 'react-doctor . --staged --blocking warning',
+    scanInit: 'react-scan init -y --skip-install',
+    scan: 'vite',
+    typecheck: 'tsc -b',
   },
 };
 

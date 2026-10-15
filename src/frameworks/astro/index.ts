@@ -52,15 +52,19 @@ export const astroAdapter: FrameworkAdapter = {
     utilsPath: 'src/lib/utils.ts',
     uiDir: 'src/components/ui',
     motionMainPath: 'src/components/common/motion-main.tsx',
+    eslintConfigPath: 'eslint.config.mjs',
+    vitestConfigPath: 'vitest.config.mts',
   },
   dependencyOverrides: ASTRO_DEPENDENCY_VERSION_OVERRIDES,
   developmentDependencies: FRAMEWORK_DEVELOPMENT_DEPENDENCIES.astro,
   packageScriptConfig: FRAMEWORK_PACKAGE_SCRIPT_CONFIG.astro,
+  playwrightServer: { hostFlag: '--hostname', port: 3000 },
   prettierConfig: {
     tailwindStylesheet: 'src/styles/global.css',
     extraPlugins: ['prettier-plugin-astro'],
   },
   vitestConfig: {
+    kind: 'standalone',
     tsconfigPaths: 'native',
   },
   scaffold: createAstroApp,
@@ -129,6 +133,7 @@ export const astroAdapter: FrameworkAdapter = {
   packageScripts: (o) => buildScripts(o, astroAdapter.packageScriptConfig),
   skills: () => ['astro'],
   docs: {
+    agentsTemplate: 'astro',
     mergeStrategy: 'merge',
     frameworkName: 'Astro',
     readmeTitle: 'Astro Quality App',

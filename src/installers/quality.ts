@@ -173,7 +173,10 @@ export async function installQualityLayer(
   await applyPackageJsonQualityConfig(projectRoot, executor, options);
   if (adapter.cleanupStarter && !options.dryRun) await adapter.cleanupStarter(projectRoot, options, executor);
 
-  await executor.writeFile(path.join(projectRoot, 'eslint.config.mjs'), adapter.templates.eslint(options));
+  await executor.writeFile(
+    path.join(projectRoot, adapter.layout.eslintConfigPath),
+    adapter.templates.eslint(options),
+  );
   await executor.writeFile(
     path.join(projectRoot, '.prettierrc'),
     adapter.templates.prettier(options)

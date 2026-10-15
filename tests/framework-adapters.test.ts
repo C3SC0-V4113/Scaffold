@@ -6,7 +6,7 @@ import type { Framework } from '../src/types.js';
 
 describe('framework adapter registry', () => {
   it('registers an adapter for every framework', () => {
-    const frameworks: Framework[] = ['next', 'astro'];
+    const frameworks: Framework[] = ['next', 'astro', 'vite'];
     expect(Object.keys(frameworkAdapters).sort()).toEqual([...frameworks].sort());
     expect(frameworkRegistry.map((adapter) => adapter.id).sort()).toEqual([...frameworks].sort());
   });
@@ -14,6 +14,7 @@ describe('framework adapter registry', () => {
   it('returns the registered adapter', () => {
     expect(getFrameworkAdapter('next')).toBe(frameworkAdapters.next);
     expect(getFrameworkAdapter('astro')).toBe(frameworkAdapters.astro);
+    expect(getFrameworkAdapter('vite')).toBe(frameworkAdapters.vite);
   });
 });
 

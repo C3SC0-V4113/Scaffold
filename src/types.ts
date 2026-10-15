@@ -1,4 +1,4 @@
-export type Framework = 'next' | 'astro';
+export type Framework = 'next' | 'astro' | 'vite';
 
 export type PackageManager = 'npm' | 'pnpm' | 'bun';
 
