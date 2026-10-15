@@ -4,6 +4,7 @@ import { DryRunExecutor } from '../../executor.js';
 import { createViteApp } from '../../installers/vite.js';
 import {
   buildScripts,
+  VITE_DEPENDENCY_VERSION_OVERRIDES,
   FRAMEWORK_DEVELOPMENT_DEPENDENCIES,
   FRAMEWORK_PACKAGE_SCRIPT_CONFIG,
 } from '../../installers/config-model.js';
@@ -61,7 +62,7 @@ export const viteAdapter: FrameworkAdapter = {
     eslintConfigPath: 'eslint.config.js',
     vitestConfigPath: 'vitest.config.ts',
   },
-  dependencyOverrides: {},
+  dependencyOverrides: VITE_DEPENDENCY_VERSION_OVERRIDES,
   developmentDependencies: FRAMEWORK_DEVELOPMENT_DEPENDENCIES.vite,
   packageScriptConfig: FRAMEWORK_PACKAGE_SCRIPT_CONFIG.vite,
   playwrightServer: { hostFlag: '--host', port: 3000 },

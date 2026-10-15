@@ -22,13 +22,12 @@ import type { CreateOptions, Framework } from '../types.js';
  * - `eslint-plugin-astro` stays on v1: v2 peer-requires eslint >= 10, so it
  *   moves together with the eslint major (npm fails ERESOLVE on it; pnpm only
  *   warns, which is why only npm Astro scenarios caught it).
- * - `vite` is pinned to the 7 line: it is the only major that both vitest and
- *   @vitejs/plugin-react 5.1.x accept (plugin-react gains Vite 8 support in
- *   5.2, which the Next line deliberately does not take). Moving vite past 7
- *   means moving plugin-react first.
+ * - shared `vite` 7 and `@vitejs/plugin-react` 5.1.x pins keep the Next unit
+ *   toolchain compatible. Vite's scaffold has its own Vite 8 pins in
+ *   viteOverrides; Vitest 5 and plugin-react 6 support that major.
  * - astroOverrides['@vitejs/plugin-react']: Astro 7 installs Vite 8 and
- *   @astrojs/react 6 requires plugin-react 5.2+, while Next stays on the
- *   Vite-6-compatible line.
+ *   @astrojs/react 6 requires plugin-react 5.2+, while Next unit tooling keeps
+ *   using the shared pins above.
  *
  * Bumping a pin is a deliberate act: change the version, then run the CLI E2E
  * suite (`npm run test:e2e:cli`) so an incompatible upgrade is caught here, not
@@ -39,13 +38,15 @@ export const DEPENDENCY_VERSIONS: Record<string, string> =
 
 export const ASTRO_DEPENDENCY_VERSION_OVERRIDES: Record<string, string> =
   versions.astroOverrides;
+export const VITE_DEPENDENCY_VERSION_OVERRIDES: Record<string, string> =
+  versions.viteOverrides;
 export const FRAMEWORK_DEPENDENCY_OVERRIDES: Record<
   Framework,
   Readonly<Record<string, string>>
 > = {
   next: {},
   astro: ASTRO_DEPENDENCY_VERSION_OVERRIDES,
-  vite: {},
+  vite: VITE_DEPENDENCY_VERSION_OVERRIDES,
 };
 
 /**

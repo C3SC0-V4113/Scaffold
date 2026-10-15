@@ -267,6 +267,17 @@ describe('CLI E2E scenario definitions', () => {
     );
   });
 
+  it('keeps all real Vite scenarios in the generated CLI E2E matrix', async () => {
+    const { cliE2eScenarios } = await loadScenarios();
+    const viteScenarios = cliE2eScenarios.filter((scenario) => scenario.framework === 'vite' && scenario.kind === 'real');
+
+    expect(viteScenarios.map((scenario) => scenario.name)).toEqual([
+      'vite-npm-unit',
+      'vite-pnpm-e2e',
+      'vite-bun-minimal',
+    ]);
+  });
+
   it('exposes CI-matrix metadata with explicit defaults for every scenario', async () => {
     const { cliE2eScenarios, scenarioMetadata, selectScenarios } = await loadScenarios();
     const metadata = scenarioMetadata();

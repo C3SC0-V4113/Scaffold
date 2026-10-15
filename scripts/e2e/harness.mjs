@@ -811,8 +811,9 @@ export function assertGeneratedApp(projectRoot, expected) {
     assertIncludes(packageJson.scripts?.typecheck ?? '', 'tsc -b', 'Vite typecheck script');
     assertIncludes(packageJson.scripts?.doctor ?? '', 'react-doctor', 'Vite doctor script');
     for (const dependency of ['vite', '@vitejs/plugin-react', 'tailwindcss', '@tailwindcss/vite']) {
-      if (!packageJson.devDependencies?.[dependency]?.includes(generatedVersions.dependencies[dependency])) {
-        throw new Error(`${dependency} should be pinned to ${generatedVersions.dependencies[dependency]}`);
+      const version = generatedVersions.viteOverrides[dependency] ?? generatedVersions.dependencies[dependency];
+      if (!packageJson.devDependencies?.[dependency]?.includes(version)) {
+        throw new Error(`${dependency} should be pinned to ${version}`);
       }
     }
     assertIncludes(readme, '# Vite Quality App', 'README.md');

@@ -17,9 +17,21 @@ export const generatedVersions = JSON.parse(
   readFileSync(path.join(rootDir, 'src', 'versions.json'), 'utf8')
 );
 
+export const frameworkVersionOverrides = {
+  astro: generatedVersions.astroOverrides,
+  vite: generatedVersions.viteOverrides,
+};
+
+for (const framework of Object.keys(generatedVersions).filter((key) => key.endsWith('Overrides'))) {
+  const frameworkId = framework.replace(/Overrides$/, '').toLowerCase();
+  if (!(frameworkId in frameworkVersionOverrides)) {
+    throw new Error(`No E2E catalog override mapping registered for "${framework}" in src/versions.json.`);
+  }
+}
+
 export function pinnedDependency(name, framework = 'next') {
   const version =
-    (framework === 'astro' ? generatedVersions.astroOverrides[name] : undefined) ??
+    frameworkVersionOverrides[framework]?.[name] ??
     generatedVersions.dependencies[name];
   if (!version) {
     throw new Error(`No pinned version registered for "${name}" in src/versions.json.`);

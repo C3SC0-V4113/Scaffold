@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { buildDevDependencies, buildScripts, pinnedSpecifier } from '../src/installers/config-model.js';
+import { viteAdapter } from '../src/frameworks/vite/index.js';
 import versions from '../src/versions.json' with { type: 'json' };
 
 describe('quality config model', () => {
@@ -46,6 +47,7 @@ describe('quality config model', () => {
 
     expect(nextUnitDeps).not.toEqual(expect.arrayContaining(['@vitejs/plugin-react@6.0.2']));
     expect(versions.dependencies.vite).toMatch(/^7./);
+    expect(nextUnitDeps).toContain(pinnedSpecifier('vite'));
   });
 
   it('includes Astro-specific quality dependencies', () => {
@@ -70,6 +72,18 @@ describe('quality config model', () => {
     // astro depends on Vite directly; declaring it again would pin a second,
     // narrower range against the one Astro already resolved.
     expect(deps).not.toContain(pinnedSpecifier('vite'));
+  });
+
+  it('uses the Vite 8 framework pins without installing a second Vite toolchain', () => {
+    const deps = buildDevDependencies({ framework: 'vite', unit: true, e2e: false, commitlint: false });
+
+    expect(pinnedSpecifier('vite', 'vite')).toBe('vite@8.3.4');
+    expect(pinnedSpecifier('@vitejs/plugin-react', 'vite')).toBe('@vitejs/plugin-react@6.1.2');
+    expect(deps).toContain('vitest@5.0.3');
+    expect(deps).not.toContain('vite@8.3.4');
+    expect(deps).not.toContain('@vitejs/plugin-react@6.1.2');
+    expect(deps).not.toContain('vite-tsconfig-paths@6.1.1');
+    expect(viteAdapter.dependencyOverrides).toEqual({ vite: '8.3.4', '@vitejs/plugin-react': '6.1.2' });
   });
 
   it('omits optional dependency groups when disabled', () => {
