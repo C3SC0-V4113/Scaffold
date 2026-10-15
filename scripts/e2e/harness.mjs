@@ -599,7 +599,43 @@ export function assertGeneratedApp(projectRoot, expected) {
   }
   assertNotIncludes(packageJson.scripts?.check ?? '', 'doctor:design', 'package.json check script');
   assertNotIncludes(packageJson.scripts?.['doctor:ci'] ?? '', '--design', 'package.json doctor:ci script');
-  assertNotIncludes(eslintConfig, 'reactDoctor.configs.all', eslintConfigPath);
+  const router = expected.router ?? (framework === 'vite' ? 'react-router-data' : 'none');
+  if (router === 'none') {
+    assertNotIncludes(eslintConfig, 'reactDoctor.configs.all', eslintConfigPath);
+  } else {
+    assertIncludes(eslintConfig, 'reactDoctor.configs.all.rules', eslintConfigPath);
+    assertIncludes(eslintConfig, 'react-doctor/react-router-', eslintConfigPath);
+  }
+  const routerFiles = ['src/router.tsx', 'src/NotFound.tsx'];
+  if (framework === 'vite' && router === 'react-router-data') {
+    for (const file of routerFiles) assertPath(projectRoot, file);
+    assertPath(projectRoot, 'src/RouterLayout.tsx');
+  } else if (framework === 'vite' && router === 'react-router-declarative') {
+    assertPath(projectRoot, 'src/NotFound.tsx');
+    assertPath(projectRoot, 'src/main.tsx');
+    assertPath(projectRoot, 'src/router.tsx', false);
+  } else if (framework === 'vite') {
+    for (const file of routerFiles) assertPath(projectRoot, file, false);
+  }
+  if (router === 'none') {
+    assertNotIncludes(skillsScript, 'react-router-data-mode', 'skills.sh');
+    assertNotIncludes(skillsScript, 'react-router-declarative-mode', 'skills.sh');
+    if (framework === 'vite') {
+      if (packageJson.dependencies?.['react-router']) {
+        throw new Error('package.json should not include react-router when router is none');
+      }
+      assertNotIncludes(readFileSync(path.join(projectRoot, 'src/App.tsx'), 'utf8'), "from 'react-router'", 'src/App.tsx');
+      assertNotIncludes(readFileSync(path.join(projectRoot, 'src/main.tsx'), 'utf8'), 'RouterProvider', 'src/main.tsx');
+    }
+  } else {
+    assertIncludes(skillsScript, `${router}-mode`, 'skills.sh');
+    if (!packageJson.dependencies?.['react-router']) {
+      throw new Error('package.json should pin react-router for a router-enabled Vite app');
+    }
+    if (!packageJson.dependencies['react-router'].includes(generatedVersions.dependencies['react-router'])) {
+      throw new Error(`react-router should be pinned to ${generatedVersions.dependencies['react-router']}`);
+    }
+  }
   assertIncludes(eslintConfig, "import { plugin as shadcn } from '@shadcn/lint';", eslintConfigPath);
   assertIncludes(eslintConfig, 'plugins: { shadcn }', eslintConfigPath);
 
@@ -1203,7 +1239,8 @@ export async function runScenario(scenario, context, cliPath, options = {}) {
     shell: false,
   });
 
-  if (result.status !== 0) {
+  const expectedExitCode = scenario.expectExitCode ?? 0;
+  if (result.status !== expectedExitCode) {
     throw new Error(`${scenario.name} failed with exit ${result.status}\n${result.output}`);
   }
 
@@ -1212,6 +1249,10 @@ export async function runScenario(scenario, context, cliPath, options = {}) {
   }
   for (const unexpected of scenario.rejectOutput ?? []) {
     assertNotIncludes(result.output, unexpected, scenario.name);
+  }
+
+  if (scenario.expectExitCode !== undefined) {
+    return { name: targetName, output: result.output };
   }
 
   if (scenario.kind === 'real') {

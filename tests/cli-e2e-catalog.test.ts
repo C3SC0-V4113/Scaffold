@@ -255,6 +255,9 @@ describe('CLI E2E catalog boundary', () => {
         'dry-run-astro-ssg-npm',
         'dry-run-astro-ssr-cloudflare-pnpm',
         'dry-run-vite-npm',
+        'dry-run-vite-rr-data-pnpm',
+        'dry-run-next-router-unsupported',
+        'dry-run-vite-router-unknown',
       ];
 
       try {
