@@ -13,6 +13,7 @@ import { initializeShadcn } from '../installers/shadcn.js';
 import { installSkills } from '../installers/skills.js';
 import { installTestingFiles } from '../installers/testing.js';
 import { supportedIconLibraries } from '../templates/icons.js';
+import { routerCatalog } from '../routers.js';
 import type { AstroServerAdapter, CreateOptions, IconLibrary, PackageManager, RouterChoice } from '../types.js';
 
 export interface RawCreateFlags {
@@ -146,12 +147,7 @@ async function resolveRouter(
     message: 'Router',
     default: fallback,
     choices: routers.map((router) => ({
-      name:
-        router === 'none'
-          ? 'No router'
-          : router === 'react-router-data'
-            ? 'React Router (data mode)'
-            : 'React Router (declarative mode)',
+      name: routerCatalog[router].label,
       value: router,
     })),
   });

@@ -1,6 +1,7 @@
-export type Framework = 'next' | 'astro' | 'vite';
+import type { RouterChoice } from './routers.js';
+export type { RouterChoice } from './routers.js';
 
-export type RouterChoice = 'none' | 'react-router-data' | 'react-router-declarative';
+export type Framework = 'next' | 'astro' | 'vite';
 
 export type PackageManager = 'npm' | 'pnpm' | 'bun';
 

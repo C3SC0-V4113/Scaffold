@@ -2,6 +2,7 @@ import path from 'node:path';
 
 import { getFrameworkAdapter } from '../frameworks/registry.js';
 import { externalSkillManifest } from '../skills/manifest.js';
+import { routerCatalog } from '../routers.js';
 import type { CreateOptions, Executor, SkillInstallEntry } from '../types.js';
 
 const frameworkAgnosticExternalSkills = [
@@ -17,16 +18,14 @@ const reactExternalSkills = [
   'vercel-react-best-practices',
 ] as const;
 
-type SkillSelectionOptions = Pick<CreateOptions, 'framework' | 'unit' | 'e2e' | 'motion'> &
-  Partial<Pick<CreateOptions, 'router'>>;
+type SkillSelectionOptions = Pick<CreateOptions, 'framework' | 'router' | 'unit' | 'e2e' | 'motion'>;
 
 export function selectSkillNames(options: SkillSelectionOptions) {
   return [
     ...frameworkAgnosticExternalSkills,
     ...reactExternalSkills,
     ...getFrameworkAdapter(options.framework).skills(options),
-    ...(options.router === 'react-router-data' ? ['react-router-data-mode'] : []),
-    ...(options.router === 'react-router-declarative' ? ['react-router-declarative-mode'] : []),
+    ...routerCatalog[options.router].skills,
     'project-architecture',
     'shadcn-component-boundaries',
     'project-min-evaluation',

@@ -1,4 +1,5 @@
-import type { AstroServerAdapter, PackageManager, RouterChoice } from '../types.js';
+import type { AstroServerAdapter, PackageManager } from '../types.js';
+import { routerChoices, type RouterChoice } from '../routers.js';
 import { frameworkRegistry } from './registry.js';
 import type { FrameworkAdapter } from './types.js';
 
@@ -13,10 +14,9 @@ export function validateFrameworkOptions(
   packageManager: PackageManager,
   flags: { ssr?: boolean; adapter?: string; router?: string },
 ) {
-  const allRouters: RouterChoice[] = ['none', 'react-router-data', 'react-router-declarative'];
-  if (flags.router !== undefined && !allRouters.includes(flags.router as RouterChoice)) {
+  if (flags.router !== undefined && !routerChoices.includes(flags.router as RouterChoice)) {
     throw new Error(
-      'Unsupported router "' + flags.router + '". Use none, react-router-data, or react-router-declarative.',
+      `Unsupported router "${flags.router}". Use ${formatChoices(routerChoices)}.`,
     );
   }
   if (
