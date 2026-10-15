@@ -1,9 +1,12 @@
 import { describe, expect, it, vi } from 'vitest';
+import { select } from '@inquirer/prompts';
 
 import { resolveCreateOptions } from '../src/commands/create.js';
 import { frameworkAdapters } from '../src/frameworks/registry.js';
 import { validateFrameworkOptions } from '../src/frameworks/validate.js';
-import { select } from '@inquirer/prompts';
+import { selectSkillNames } from '../src/installers/skills.js';
+import { renderViteEslintConfig } from '../src/templates/eslint.js';
+import { renderViteRouterFiles, renderViteRouterUnitSmokeTest } from '../src/templates/vite-router.js';
 
 vi.mock('@inquirer/prompts', () => ({
   confirm: vi.fn().mockResolvedValue(false),
@@ -58,5 +61,40 @@ describe('router selection', () => {
     expect(() =>
       validateFrameworkOptions(frameworkAdapters.next, 'npm', { router: 'react-router-data' }),
     ).toThrow('--router is only available when --framework vite is selected.');
+  });
+
+  it('scaffolds the selected Vite routes and keeps none empty', () => {
+    expect(renderViteRouterFiles('none', 'app', 'lucide', false)).toEqual({});
+    const data = renderViteRouterFiles('react-router-data', 'app', 'lucide', true);
+    expect(data).toMatchSnapshot('data router files');
+    expect(data['src/router.tsx']).toContain('createBrowserRouter');
+    expect(data['src/RouterLayout.tsx']).toContain('<Outlet />');
+    expect(data['src/router.tsx']).toContain('errorElement: <ErrorBoundary />');
+    expect(data['src/router.tsx']).toContain("{ path: '*', element: <NotFound /> }");
+    expect(data['src/main.tsx']).toContain('<RouterProvider router={router} />');
+    expect(data['src/App.tsx']).toContain('MotionMain');
+    expect(renderViteRouterUnitSmokeTest('react-router-data')).toContain('createMemoryRouter');
+
+    const declarative = renderViteRouterFiles('react-router-declarative', 'app', 'lucide', false);
+    expect(declarative).toMatchSnapshot('declarative router files');
+    expect(declarative['src/main.tsx']).toContain('<BrowserRouter>');
+    expect(declarative['src/App.tsx']).toContain('<Routes>');
+    expect(declarative['src/App.tsx']).toContain('<Route path="*"');
+    expect(renderViteRouterUnitSmokeTest('react-router-declarative')).toContain('<MemoryRouter');
+  });
+
+  it('selects the router skill and lint rules only for router modes', () => {
+    expect(selectSkillNames({ framework: 'vite', router: 'react-router-data', unit: false, e2e: false, motion: false }))
+      .toContain('react-router-data-mode');
+    expect(selectSkillNames({ framework: 'vite', router: 'react-router-declarative', unit: false, e2e: false, motion: false }))
+      .toContain('react-router-declarative-mode');
+    expect(selectSkillNames({ framework: 'vite', router: 'none', unit: false, e2e: false, motion: false }))
+      .not.toContain('react-router-data-mode');
+    expect(renderViteEslintConfig({
+      framework: 'vite', router: 'none', unit: false, e2e: false,
+    })).not.toContain('reactDoctor.configs.all.rules');
+    expect(renderViteEslintConfig({
+      framework: 'vite', router: 'react-router-data', unit: false, e2e: false,
+    })).toContain('reactDoctor.configs.all.rules');
   });
 });

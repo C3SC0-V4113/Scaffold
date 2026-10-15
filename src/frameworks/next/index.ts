@@ -54,10 +54,10 @@ export const nextAdapter: FrameworkAdapter = {
     projectRoot: string,
     executor: Executor,
     iconLibrary: IconLibrary,
-    motion: boolean,
+    options,
   ) {
     const name = path.basename(projectRoot);
-    if (motion) {
+    if (options.motion) {
       await executor.writeFile(
         path.join(projectRoot, nextAdapter.layout.motionMainPath),
         motionMainComponent,
@@ -69,7 +69,7 @@ export const nextAdapter: FrameworkAdapter = {
     );
     await executor.writeFile(
       path.join(projectRoot, 'app/page.tsx'),
-      renderHomePage(name, iconLibrary, motion),
+      renderHomePage(name, iconLibrary, options.motion),
     );
   },
   templates: {

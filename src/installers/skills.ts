@@ -17,13 +17,16 @@ const reactExternalSkills = [
   'vercel-react-best-practices',
 ] as const;
 
-type SkillSelectionOptions = Pick<CreateOptions, 'framework' | 'unit' | 'e2e' | 'motion'>;
+type SkillSelectionOptions = Pick<CreateOptions, 'framework' | 'unit' | 'e2e' | 'motion'> &
+  Partial<Pick<CreateOptions, 'router'>>;
 
 export function selectSkillNames(options: SkillSelectionOptions) {
   return [
     ...frameworkAgnosticExternalSkills,
     ...reactExternalSkills,
     ...getFrameworkAdapter(options.framework).skills(options),
+    ...(options.router === 'react-router-data' ? ['react-router-data-mode'] : []),
+    ...(options.router === 'react-router-declarative' ? ['react-router-declarative-mode'] : []),
     'project-architecture',
     'shadcn-component-boundaries',
     'project-min-evaluation',

@@ -68,13 +68,14 @@ export interface FrameworkAdapter {
     projectRoot: string,
     executor: Executor,
     iconLibrary: IconLibrary,
-    motion: boolean,
+    options: CreateOptions,
   ): Promise<void>;
   templates: {
     eslint(options: CreateOptions): string;
     prettier(options: CreateOptions): string;
     vitest(options: Pick<CreateOptions, 'framework'>): string;
-    unitSmokeTest(options: Pick<CreateOptions, 'framework'>): string;
+    unitSmokeTest(options: Pick<CreateOptions, 'framework' | 'router'>): string;
+    e2eSmokeTest?(options: Pick<CreateOptions, 'router'>): string | undefined;
     doctorConfig(options: CreateOptions): string;
   };
   packageScripts(
@@ -96,5 +97,6 @@ export interface FrameworkAdapter {
     motionAgentGuidance: string;
     doctorIgnoreMotionRule: boolean;
     agentsRules: string;
+    routerGuidance?(router: RouterChoice): string;
   };
 }

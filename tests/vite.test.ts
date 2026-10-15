@@ -195,8 +195,8 @@ describe('Vite adapter', () => {
     expect(page).toContain("import { Cat } from 'lucide-react';");
     expect(page).toContain("import { MotionMain } from '@/components/common/motion-main';");
     expect(page).toContain('<h1 className="text-2xl font-semibold tracking-tight">My Vite App</h1>');
-    expect(viteAdapter.templates.unitSmokeTest(options)).toContain("import App from '@/App';");
-    await viteAdapter.writeAppShell('/tmp/my-vite-app', executor, 'lucide', true);
+    expect(viteAdapter.templates.unitSmokeTest(options)).toContain("import { routes } from '@/router';");
+    await viteAdapter.writeAppShell('/tmp/my-vite-app', executor, 'lucide', { ...options, motion: true });
     expect(executor.operations).toContain('remove /tmp/my-vite-app/src/App.css');
     expect(executor.operations).toContain('remove /tmp/my-vite-app/src/assets/react.svg');
     expect(executor.operations).toContain('remove /tmp/my-vite-app/public/vite.svg');
