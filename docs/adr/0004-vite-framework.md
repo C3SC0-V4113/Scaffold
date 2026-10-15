@@ -81,11 +81,15 @@ scaffold.
 
 ## Version policy
 
-Vite and `@vitejs/plugin-react` follow their exact pins in `src/versions.json`.
-The versions are shared with the other React framework adapters; the scaffold
-does not keep the newer ranges emitted by `create-vite@latest`. Framework major
-upgrades happen through the deliberate Renovate pin update and its changeset.
-The Vite configuration template is validated against the currently pinned
-Vite major. For a Vite major bump, run the generated app's full check and Vite
-real E2E scenarios, then confirm plugin registration, aliases, Tailwind v4,
-and the Vite config API still work before accepting the pin.
+The Vite framework pins its `vite` and `@vitejs/plugin-react` dependencies in
+`viteOverrides` in `src/versions.json`. The shared pins remain the versions
+used by Next unit tooling and Astro's unit tooling. Vite unit dependencies
+reuse the Vite and React plugin installed by the framework scaffold instead of
+adding a second copy.
+
+For a Vite major bump, check current stable versions and peer ranges for
+`@vitejs/plugin-react`, Vitest and its `@vitest/*` packages,
+`@tailwindcss/vite`, and `jsdom`. Run the generated Vite app's full check and
+all three Vite real E2E scenarios, then confirm the resolved tree contains one
+Vite, plugin registration, aliases, Tailwind v4, and the Vite config API still
+work. The Next and Astro generated app snapshots should remain unchanged.
