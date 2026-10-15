@@ -145,8 +145,8 @@ export const viteAdapter: FrameworkAdapter = {
     routerGuidance: (router) => {
       if (router === 'none') return '';
       return router === 'react-router-data'
-        ? 'React Router data mode is enabled. Add route definitions in `src/router.tsx`; the home route is `src/App.tsx`. Configure your static host to rewrite application paths to `/index.html` so direct navigation works.'
-        : 'React Router declarative mode is enabled. Add routes in `src/App.tsx`; the home page is `src/App.tsx`. Configure your static host to rewrite application paths to `/index.html` so direct navigation works.';
+        ? 'React Router data mode is enabled. Define routes in `src/router.tsx`; the index route renders `src/App.tsx`. `src/NotFound.tsx` handles unknown paths, and `src/RouterLayout.tsx` provides the `ErrorBoundary`. Configure your static host to rewrite application paths to `/index.html` so direct navigation works.'
+        : 'React Router declarative mode is enabled. Routes are declared in `src/App.tsx` (`<Routes>`); `HomePage` renders `/` and `src/NotFound.tsx` handles unknown paths. Configure your static host to rewrite application paths to `/index.html` so direct navigation works.';
     },
   },
 };

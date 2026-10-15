@@ -1,5 +1,6 @@
 import versions from '../versions.json' with { type: 'json' };
 
+import { routerCatalog } from '../routers.js';
 import type { CreateOptions, IconLibrary, PackageManager } from '../types.js';
 import type { FrameworkAdapter } from '../frameworks/types.js';
 import { getCatRender } from './icons.js';
@@ -969,7 +970,7 @@ ${run} check
 ## Tooling
 
 ${docs.toolingLines.join('\n')}
-${docs.routerGuidance?.(options.router ?? 'none') ? `- ${docs.routerGuidance(options.router ?? 'none')}\n` : ''}${options.unit ? '- Vitest and React Testing Library.\n' : ''}${options.e2e ? '- Playwright E2E testing.\n' : ''}${options.commitlint ? '- Conventional commit linting.\n' : ''}${options.motion ? '- Motion for React animations.\n' : ''}
+${(options.router ?? 'none') !== 'none' ? `- ${routerCatalog[options.router ?? 'none'].label}.\n` : ''}${options.unit ? '- Vitest and React Testing Library.\n' : ''}${options.e2e ? '- Playwright E2E testing.\n' : ''}${options.commitlint ? '- Conventional commit linting.\n' : ''}${options.motion ? '- Motion for React animations.\n' : ''}
 ${docs.routerGuidance?.(options.router ?? 'none') ? `## Router\n\n${docs.routerGuidance(options.router ?? 'none')}\n\n` : ''}${renderMotionGuide(options, docs)}${renderShadcnMcpGuide(options)}
 ## shadcn Presets
 
