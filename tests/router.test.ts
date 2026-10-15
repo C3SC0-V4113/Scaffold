@@ -6,6 +6,7 @@ import { frameworkAdapters } from '../src/frameworks/registry.js';
 import { validateFrameworkOptions } from '../src/frameworks/validate.js';
 import { selectSkillNames } from '../src/installers/skills.js';
 import { renderViteEslintConfig } from '../src/templates/eslint.js';
+import { renderViteHomePage } from '../src/templates/files.js';
 import {
   renderViteRouterE2ESmokeTest,
   renderViteRouterFiles,
@@ -84,7 +85,9 @@ describe('router selection', () => {
   });
 
   it('scaffolds the selected Vite routes and keeps none empty', () => {
-    expect(renderViteRouterFiles('none', 'app', 'lucide', false)).toEqual({});
+    expect(renderViteRouterFiles('none', 'app', 'lucide', false)).toEqual({
+      'src/App.tsx': renderViteHomePage('app', 'lucide', false),
+    });
     const data = renderViteRouterFiles('react-router-data', 'app', 'lucide', true);
     expect(data).toMatchSnapshot('data router files');
     expect(data['src/router.tsx']).toContain('createBrowserRouter');
@@ -100,6 +103,7 @@ describe('router selection', () => {
     expect(declarative).toMatchSnapshot('declarative router files');
     expect(declarative['src/main.tsx']).toContain('<BrowserRouter>');
     expect(declarative['src/App.tsx']).toContain('<Routes>');
+    expect(declarative['src/App.tsx']).toContain('export function HomePage()');
     expect(declarative['src/App.tsx']).toContain('<Route path="*"');
     expect(renderViteRouterUnitSmokeTest('react-router-declarative')).toContain('<MemoryRouter');
     expect(renderViteRouterE2ESmokeTest('react-router-declarative')).toContain("page.goto('/missing-route')");

@@ -21,8 +21,7 @@ export function renderViteDeclarativeApp(
   iconLibrary: IconLibrary,
   motionEnabled: boolean,
 ) {
-  const home = renderViteHomePage(projectName, iconLibrary, motionEnabled)
-    .replace('export default function App()', 'export function HomePage()');
+  const home = renderViteHomePage(projectName, iconLibrary, motionEnabled, 'HomePage', false);
   return `import { Route, Routes } from 'react-router';
 
 import NotFound from '@/NotFound';
@@ -46,7 +45,9 @@ export function renderViteRouterFiles(
   iconLibrary: IconLibrary,
   motionEnabled: boolean,
 ) {
-  if (router === 'none') return {};
+  if (router === 'none') {
+    return { 'src/App.tsx': renderViteHomePage(projectName, iconLibrary, motionEnabled) };
+  }
 
   const main =
     router === 'react-router-data'

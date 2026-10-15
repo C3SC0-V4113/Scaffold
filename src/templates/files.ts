@@ -262,6 +262,8 @@ export function renderViteHomePage(
   projectName: string,
   iconLibrary: IconLibrary = 'lucide',
   motionEnabled = false,
+  componentName = 'App',
+  defaultExport = true,
 ) {
   const appName = humanizeProjectName(projectName);
   const { importLine, markup } = getCatRender(iconLibrary);
@@ -270,11 +272,13 @@ export function renderViteHomePage(
     : '';
   const mainTag = motionEnabled ? 'MotionMain' : 'main';
 
+  const componentExport = defaultExport ? 'export default function' : 'export function';
+
   return `${importLine}
 
 ${motionImport}import { Button } from '@/components/ui/button';
 
-export default function App() {
+${componentExport} ${componentName}() {
   return (
     <${mainTag} className="bg-background text-foreground flex min-h-dvh flex-col items-center justify-center gap-4 p-8 text-center">
       ${markup}

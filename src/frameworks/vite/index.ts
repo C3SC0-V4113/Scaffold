@@ -20,7 +20,6 @@ import {
   renderPrettierConfig,
   renderReactDoctorConfig,
   renderVitestConfig,
-  renderViteHomePage,
 } from '../../templates/files.js';
 import type { Executor, IconLibrary } from '../../types.js';
 import type { FrameworkAdapter } from '../types.js';
@@ -95,11 +94,6 @@ export const viteAdapter: FrameworkAdapter = {
     await executor.remove(path.join(projectRoot, 'src', 'App.css'));
     await executor.remove(path.join(projectRoot, 'src', 'assets', 'react.svg'));
     await executor.remove(path.join(projectRoot, 'public', 'vite.svg'));
-    await executor.writeFile(
-      path.join(projectRoot, 'src', 'App.tsx'),
-      renderViteHomePage(name, iconLibrary, options.motion),
-    );
-
     for (const [relativePath, content] of Object.entries(
       renderViteRouterFiles(options.router, name, iconLibrary, options.motion),
     )) {

@@ -158,7 +158,7 @@ export async function resolveCreateOptions(
   flags: RawCreateFlags
 ): Promise<CreateOptions> {
   const yes = flags.yes ?? false;
-    const framework = await resolveFramework(flags);
+  const framework = await resolveFramework(flags);
   const packageManager = await resolvePackageManager(flags);
 
   const frameworkAdapter = getFrameworkAdapter(framework);
