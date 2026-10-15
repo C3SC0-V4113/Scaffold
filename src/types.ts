@@ -1,5 +1,7 @@
 export type Framework = 'next' | 'astro' | 'vite';
 
+export type RouterChoice = 'none' | 'react-router-data' | 'react-router-declarative';
+
 export type PackageManager = 'npm' | 'pnpm' | 'bun';
 
 export type AstroServerAdapter = 'node' | 'vercel' | 'netlify' | 'cloudflare';
@@ -13,6 +15,8 @@ export type ShadcnMcpClient = 'claude' | 'codex' | 'opencode';
 export interface CreateOptions {
   targetDir: string;
   framework: Framework;
+  /** Always resolved from the framework's router capability; 'none' when unused. */
+  router: RouterChoice;
   packageManager: PackageManager;
   ssr: boolean;
   astroAdapter?: AstroServerAdapter;

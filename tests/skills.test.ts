@@ -25,6 +25,7 @@ const reactDoctorSkillCommand =
 const createOptions: CreateOptions = {
   targetDir: 'my-app',
   framework: 'next',
+  router: 'none',
   packageManager: 'npm',
   ssr: false,
   unit: false,

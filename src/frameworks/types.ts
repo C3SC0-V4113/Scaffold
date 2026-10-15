@@ -5,6 +5,7 @@ import type {
   PackageManager,
   AstroServerAdapter,
   IconLibrary,
+  RouterChoice,
 } from '../types.js';
 
 /** FrameworkAdapter is the framework port; AstroServerAdapter is an Astro deploy adapter. */
@@ -19,7 +20,8 @@ export interface FrameworkAdapter {
       adapters?: readonly AstroServerAdapter[];
       defaultAdapter?: AstroServerAdapter;
     };
-    routers: readonly string[];
+    routers: readonly RouterChoice[];
+    defaultRouter?: RouterChoice;
   };
   layout: {
     sourceRoot: '' | 'src/';

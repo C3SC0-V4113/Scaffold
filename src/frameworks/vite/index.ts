@@ -51,7 +51,8 @@ export const viteAdapter: FrameworkAdapter = {
   description: 'React app with Vite, Tailwind CSS, and shadcn UI.',
   capabilities: {
     packageManagers: ['npm', 'pnpm', 'bun'],
-    routers: [],
+    routers: ['none', 'react-router-data', 'react-router-declarative'],
+    defaultRouter: 'react-router-data',
   },
   layout: {
     sourceRoot: 'src/',

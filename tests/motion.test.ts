@@ -48,6 +48,7 @@ function options(
   return {
     targetDir: 'my-app',
     framework: 'next',
+    router: 'none',
     packageManager,
     ssr: false,
     unit: true,

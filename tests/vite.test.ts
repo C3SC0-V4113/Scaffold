@@ -19,6 +19,7 @@ import type { CreateOptions } from '../src/types.js';
 const options: CreateOptions = {
   targetDir: 'vite-test-app',
   framework: 'vite',
+  router: 'react-router-data',
   packageManager: 'npm',
   ssr: false,
   unit: true,
@@ -37,7 +38,8 @@ describe('Vite adapter', () => {
   it('declares Vite layout, capabilities, and configuration variants', () => {
     expect(viteAdapter.capabilities).toEqual({
       packageManagers: ['npm', 'pnpm', 'bun'],
-      routers: [],
+      routers: ['none', 'react-router-data', 'react-router-declarative'],
+      defaultRouter: 'react-router-data',
     });
     expect(viteAdapter.layout).toEqual({
       sourceRoot: 'src/',

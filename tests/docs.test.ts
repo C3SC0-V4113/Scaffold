@@ -26,6 +26,7 @@ function options(framework: CreateOptions['framework'], overrides: Partial<Creat
   return {
     targetDir: 'app',
     framework,
+    router: framework === 'vite' ? 'react-router-data' : 'none',
     packageManager: 'npm',
     ssr: false,
     unit: true,
