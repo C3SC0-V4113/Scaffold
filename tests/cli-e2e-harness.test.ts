@@ -7,6 +7,7 @@ import {
   readFileSync,
   realpathSync,
   rmSync,
+  symlinkSync,
   writeFileSync,
 } from 'node:fs';
 import path from 'node:path';
@@ -27,6 +28,12 @@ type RunContext = {
 };
 
 type HarnessModule = {
+  assertAstroClaudeFile: (
+    projectRoot: string,
+    agents: string,
+    claude: string,
+    platform?: string
+  ) => void;
   assertExternalSkillsFetched: (projectRoot: string) => void;
   cleanupContext: (context: RunContext) => void;
   createRunContext: (argv: string[], prefix?: string) => RunContext;
@@ -74,6 +81,35 @@ async function loadHarness(): Promise<HarnessModule> {
 }
 
 describe('CLI E2E harness', () => {
+  it('accepts legacy Astro CLAUDE symlinks and the create-astro 5.3 pointer file', async () => {
+    const { assertAstroClaudeFile } = await loadHarness();
+    const projectRoot = mkdtempSync(path.join(tmpdir(), 'purrfold-astro-claude-'));
+    const agents = '# Astro project instructions\n';
+    const claudePath = path.join(projectRoot, 'CLAUDE.md');
+    writeFileSync(path.join(projectRoot, 'AGENTS.md'), agents);
+
+    try {
+      writeFileSync(claudePath, '@AGENTS.md\n');
+      expect(() => assertAstroClaudeFile(projectRoot, agents, '@AGENTS.md\n', 'linux')).not.toThrow();
+      expect(() => assertAstroClaudeFile(projectRoot, agents, agents, 'linux')).toThrow(
+        'Astro CLAUDE.md should be a relative symlink to AGENTS.md or a regular file'
+      );
+      expect(() => assertAstroClaudeFile(projectRoot, agents, agents, 'win32')).not.toThrow();
+
+      rmSync(claudePath);
+      symlinkSync('AGENTS.md', claudePath);
+      expect(() => assertAstroClaudeFile(projectRoot, agents, agents, 'linux')).not.toThrow();
+
+      rmSync(claudePath);
+      symlinkSync('../AGENTS.md', claudePath);
+      expect(() => assertAstroClaudeFile(projectRoot, agents, agents, 'linux')).toThrow(
+        'Astro CLAUDE.md should be a relative symlink to AGENTS.md.'
+      );
+    } finally {
+      rmSync(projectRoot, { recursive: true, force: true });
+    }
+  });
+
   it('keeps the pnpm cache under the work dir off Windows', async () => {
     const { resolvePnpmCacheDir } = await loadHarness();
     const workDir = path.join(tmpdir(), 'purrfold-e2e-test');
