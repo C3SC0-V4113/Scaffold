@@ -61,6 +61,22 @@ describe('router selection', () => {
     expect(() =>
       validateFrameworkOptions(frameworkAdapters.next, 'npm', { router: 'react-router-data' }),
     ).toThrow('--router is only available when --framework vite is selected.');
+
+    const partialAstro = {
+      ...frameworkAdapters.astro,
+      capabilities: {
+        ...frameworkAdapters.astro.capabilities,
+        routers: ['none', 'react-router-data'] as const,
+      },
+    };
+    expect(() =>
+      validateFrameworkOptions(partialAstro, 'npm', { router: 'react-router-declarative' }),
+    ).toThrow('--router is only available when --framework vite is selected.');
+    expect(() =>
+      validateFrameworkOptions(partialAstro, 'npm', { router: 'react-router-data' }),
+    ).not.toThrow();
+    expect(() => validateFrameworkOptions(frameworkAdapters.next, 'npm', { router: 'none' })).not.toThrow();
+    expect(() => validateFrameworkOptions(frameworkAdapters.astro, 'npm', { router: 'none' })).not.toThrow();
   });
 
   it('scaffolds the selected Vite routes and keeps none empty', () => {

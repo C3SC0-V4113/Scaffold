@@ -19,9 +19,13 @@ export function validateFrameworkOptions(
       'Unsupported router "' + flags.router + '". Use none, react-router-data, or react-router-declarative.',
     );
   }
-  if (flags.router !== undefined && flags.router !== 'none' && adapter.capabilities.routers.length === 0) {
+  if (
+    flags.router !== undefined &&
+    flags.router !== 'none' &&
+    !adapter.capabilities.routers.includes(flags.router as RouterChoice)
+  ) {
     const frameworks = frameworkRegistry
-      .filter((item) => item.capabilities.routers.length > 0)
+      .filter((item) => item.capabilities.routers.includes(flags.router as RouterChoice))
       .map((item) => item.id);
     throw new Error(
       `--router is only available when --framework ${formatChoices(frameworks)} is selected.`,
