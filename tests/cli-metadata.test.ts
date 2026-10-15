@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { cliOptions, cliScenarios, installCommand } from '../src/cli-metadata.js';
 import { buildProgram } from '../src/cli.js';
@@ -57,9 +57,32 @@ describe('cli metadata', () => {
     expect(
       commands.some((command) => command.includes('--framework vite --yes')),
     ).toBe(true);
+    expect(commands.some((command) => command.includes('--router react-router-declarative'))).toBe(true);
+    expect(commands.some((command) => command.includes('--router none'))).toBe(true);
   });
 
   it('exposes the install command', () => {
     expect(installCommand).toContain('npx purrfold@latest');
+  });
+
+  it('lists router capabilities per framework in info JSON', async () => {
+    const log = vi.spyOn(console, 'log').mockImplementation(() => {});
+    try {
+      await buildProgram().parseAsync(['node', 'purrfold', 'info', '--json']);
+      const schema = JSON.parse(String(log.mock.calls[0]?.[0])) as {
+        frameworks: Array<{ id: string; routers: string[]; defaultRouter: string }>;
+      };
+      expect(schema.frameworks).toEqual([
+        { id: 'next', routers: [], defaultRouter: 'none' },
+        { id: 'astro', routers: [], defaultRouter: 'none' },
+        {
+          id: 'vite',
+          routers: ['none', 'react-router-data', 'react-router-declarative'],
+          defaultRouter: 'react-router-data',
+        },
+      ]);
+    } finally {
+      log.mockRestore();
+    }
   });
 });
