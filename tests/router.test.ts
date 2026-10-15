@@ -6,7 +6,11 @@ import { frameworkAdapters } from '../src/frameworks/registry.js';
 import { validateFrameworkOptions } from '../src/frameworks/validate.js';
 import { selectSkillNames } from '../src/installers/skills.js';
 import { renderViteEslintConfig } from '../src/templates/eslint.js';
-import { renderViteRouterFiles, renderViteRouterUnitSmokeTest } from '../src/templates/vite-router.js';
+import {
+  renderViteRouterE2ESmokeTest,
+  renderViteRouterFiles,
+  renderViteRouterUnitSmokeTest,
+} from '../src/templates/vite-router.js';
 
 vi.mock('@inquirer/prompts', () => ({
   confirm: vi.fn().mockResolvedValue(false),
@@ -90,6 +94,7 @@ describe('router selection', () => {
     expect(data['src/main.tsx']).toContain('<RouterProvider router={router} />');
     expect(data['src/App.tsx']).toContain('MotionMain');
     expect(renderViteRouterUnitSmokeTest('react-router-data')).toContain('createMemoryRouter');
+    expect(renderViteRouterE2ESmokeTest('react-router-data')).toContain("page.goto('/missing-route')");
 
     const declarative = renderViteRouterFiles('react-router-declarative', 'app', 'lucide', false);
     expect(declarative).toMatchSnapshot('declarative router files');
@@ -97,6 +102,8 @@ describe('router selection', () => {
     expect(declarative['src/App.tsx']).toContain('<Routes>');
     expect(declarative['src/App.tsx']).toContain('<Route path="*"');
     expect(renderViteRouterUnitSmokeTest('react-router-declarative')).toContain('<MemoryRouter');
+    expect(renderViteRouterE2ESmokeTest('react-router-declarative')).toContain("page.goto('/missing-route')");
+    expect(renderViteRouterE2ESmokeTest('none')).toBeUndefined();
   });
 
   it('selects the router skill and lint rules only for router modes', () => {

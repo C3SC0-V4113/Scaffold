@@ -275,7 +275,7 @@ describe('CLI E2E scenario definitions', () => {
       'vite-npm-unit',
       'vite-pnpm-e2e',
       'vite-bun-minimal',
-      'vite-npm-rr-data-unit',
+      'vite-npm-rr-data-unit-e2e',
       'vite-pnpm-rr-declarative-e2e',
       'vite-npm-router-none',
     ]);

@@ -134,7 +134,7 @@ export const router = createBrowserRouter(routes);
 }
 
 export function renderViteRouterE2ESmokeTest(router: RouterChoice) {
-  if (router !== 'react-router-declarative') return undefined;
+  if (router === 'none') return undefined;
 
   return `import { expect, test } from '@playwright/test';
 

@@ -508,13 +508,13 @@ export const cliE2eScenarios = [
     quick: true,
   },
   {
-    name: 'vite-npm-rr-data-unit',
+    name: 'vite-npm-rr-data-unit-e2e',
     kind: 'real',
     framework: 'vite',
     packageManager: 'npm',
     execution: { requires: ['npm'] },
-    args: ['--framework', 'vite', '--pm', 'npm', '--router', 'react-router-data', '--unit', '--no-e2e', '--yes'],
-    expect: { router: 'react-router-data', unit: true, e2e: false, commitlint: false, pnpm: false, mcp: false },
+    args: ['--framework', 'vite', '--pm', 'npm', '--router', 'react-router-data', '--unit', '--e2e', '--yes'],
+    expect: { router: 'react-router-data', unit: true, e2e: true, commitlint: false, pnpm: false, mcp: false },
     quick: false,
   },
   {
