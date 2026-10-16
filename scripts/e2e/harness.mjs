@@ -384,6 +384,30 @@ function runGeneratedCheck(projectRoot, packageManager, env) {
   return result.output;
 }
 
+function runGeneratedE2e(projectRoot, packageManager, env) {
+  const command = packageManager ?? 'npm';
+  const install = runProcess(
+    process.execPath,
+    [path.join(projectRoot, 'node_modules', '@playwright', 'test', 'cli.js'), 'install', 'chromium'],
+    { cwd: projectRoot, env, timeoutMs: 20 * 60 * 1000 },
+  );
+  if (install.status !== 0) {
+    throw new Error(`Playwright Chromium install failed in ${projectRoot}\n${install.output}`);
+  }
+  const testArgs = command === 'npm'
+    ? ['run', 'test:e2e', '--', '--project=chromium']
+    : ['run', 'test:e2e', '--project=chromium'];
+  const result = runProcess(command, testArgs, {
+    cwd: projectRoot,
+    env,
+    timeoutMs: 20 * 60 * 1000,
+  });
+  if (result.status !== 0) {
+    throw new Error(`Generated app E2E failed in ${projectRoot}\n${result.output}`);
+  }
+  return result.output;
+}
+
 function runGeneratedDoctorDesign(projectRoot, packageManager, env) {
   const command = packageManager ?? 'npm';
   const result = runProcess(command, packageManagerRunArgs(command, 'doctor:design'), {
@@ -622,7 +646,7 @@ export function assertGeneratedApp(projectRoot, expected) {
   assertNotIncludes(packageJson.scripts?.check ?? '', 'doctor:design', 'package.json check script');
   assertNotIncludes(packageJson.scripts?.['doctor:ci'] ?? '', '--design', 'package.json doctor:ci script');
   const router = expected.router ?? (framework === 'vite' ? 'react-router-data' : 'none');
-  if (router === 'none') {
+  if (router === 'none' && framework !== 'react-router') {
     assertNotIncludes(eslintConfig, 'reactDoctor.configs.all', eslintConfigPath);
   } else {
     assertIncludes(eslintConfig, 'reactDoctor.configs.all.rules', eslintConfigPath);
@@ -638,8 +662,28 @@ export function assertGeneratedApp(projectRoot, expected) {
     assertPath(projectRoot, 'src/router.tsx', false);
   } else if (framework === 'vite') {
     for (const file of routerFiles) assertPath(projectRoot, file, false);
+  } else if (framework === 'react-router') {
+    assertPath(projectRoot, 'app/root.tsx');
+    assertPath(projectRoot, 'app/routes.ts');
+    assertPath(projectRoot, 'app/routes/home.tsx');
+    assertPath(projectRoot, 'app/welcome', false);
+    assertPath(projectRoot, 'Dockerfile', false);
+    assertPath(projectRoot, '.dockerignore', false);
+    assertPath(projectRoot, 'components.json');
+    assertPath(projectRoot, layout.globalStylesheet);
+    assertPath(projectRoot, layout.utilsPath);
+    assertPath(projectRoot, `${layout.uiDir}/button.tsx`);
+    assertIncludes(readFileSync(path.join(projectRoot, 'tsconfig.json'), 'utf8'), '"~/*": ["./app/*"]', 'tsconfig.json');
+    const routerConfig = readFileSync(path.join(projectRoot, 'react-router.config.ts'), 'utf8');
+    if (expected.ssr) {
+      assertIncludes(routerConfig, 'ssr: true', 'react-router.config.ts');
+      assertNotIncludes(routerConfig, 'prerender:', 'react-router.config.ts');
+    } else {
+      assertIncludes(routerConfig, 'ssr: false', 'react-router.config.ts');
+      assertIncludes(routerConfig, "prerender: ['/']", 'react-router.config.ts');
+    }
   }
-  if (router === 'none') {
+  if (router === 'none' && framework !== 'react-router') {
     assertNotIncludes(skillsScript, '--skill react-router', 'skills.sh');
     if (framework === 'vite') {
       if (packageJson.dependencies?.['react-router']) {
@@ -879,6 +923,46 @@ export function assertGeneratedApp(projectRoot, expected) {
         ? 'pnpm run dev -- --host 127.0.0.1 --port 3000'
         : 'npm run dev -- --host 127.0.0.1 --port 3000';
       assertIncludes(playwrightConfig, devCommand, 'playwright.config.ts');
+    }
+  } else if (framework === 'react-router') {
+    assertPath(projectRoot, 'app/components/ui/button.tsx');
+    assertPath(projectRoot, 'app/lib/utils.ts');
+    assertPath(projectRoot, 'app/routes/home.tsx');
+    assertPath(projectRoot, 'app/welcome', false);
+    assertIncludes(
+      readFileSync(path.join(projectRoot, 'vite.config.ts'), 'utf8'),
+      "from '@react-router/dev/vite'",
+      'vite.config.ts',
+    );
+    assertIncludes(eslintConfig, "import reactHooks from 'eslint-plugin-react-hooks';", eslintConfigPath);
+    assertIncludes(eslintConfig, 'react-doctor/react-router-', eslintConfigPath);
+    assertIncludes(eslintConfig, "'.react-router/**'", eslintConfigPath);
+    assertIncludes(eslintConfig, "'build/**'", eslintConfigPath);
+    assertIncludes(packageJson.scripts?.typecheck ?? '', 'react-router typegen && tsc', 'React Router typecheck script');
+    assertIncludes(
+      packageJson.scripts?.start ?? '',
+      expected.ssr ? 'react-router-serve' : 'vite preview',
+      'React Router start script',
+    );
+    if (expected.unit) {
+      assertIncludes(
+        packageJson.devDependencies?.['@vitejs/plugin-react'] ?? '',
+        generatedVersions.reactRouterOverrides['@vitejs/plugin-react'],
+        'React Router unit plugin pin',
+      );
+    }
+    assertNotIncludes(eslintConfig, 'reactRefresh.configs.vite', eslintConfigPath);
+    assertIncludes(readme, '# React Router Quality App', 'README.md');
+    assertIncludes(agents, '# React Router scaffold', 'AGENTS.md');
+    assertNotIncludes(readme, '<!-- BEGIN:purrfold-managed -->', 'README.md');
+    assertNotIncludes(agents, '<!-- BEGIN:purrfold-managed -->', 'AGENTS.md');
+    if (expected.e2e) {
+      const playwrightConfig = readFileSync(path.join(projectRoot, 'playwright.config.ts'), 'utf8');
+      const run = expected.pnpm ? 'pnpm run' : 'npm run';
+      const serverCommand = expected.ssr
+        ? `${run} dev -- --host 127.0.0.1 --port 5173`
+        : `${run} build && ${run} start ${expected.pnpm ? '' : '-- '}--host 127.0.0.1 --port 5173`;
+      assertIncludes(playwrightConfig, serverCommand, 'playwright.config.ts');
     }
   } else {
     assertPath(projectRoot, 'components/ui/button.tsx');
@@ -1283,6 +1367,18 @@ export async function runScenario(scenario, context, cliPath, options = {}) {
     const checkOutput = scenario.expect.skipInstall
       ? ''
       : runGeneratedCheck(projectRoot, scenario.packageManager, scenarioContext.env);
+    if (scenario.framework === 'react-router' && !scenario.expect.skipInstall) {
+      if (scenario.expect.e2e) {
+        runGeneratedE2e(projectRoot, scenario.packageManager, scenarioContext.env);
+      }
+      if (
+        scenario.expect.e2e &&
+        !scenario.expect.ssr &&
+        !existsSync(path.join(projectRoot, 'build/client/index.html'))
+      ) {
+        throw new Error('React Router SSG E2E did not emit build/client/index.html');
+      }
+    }
     if (scenario.verifyDoctorDesign) {
       runGeneratedDoctorDesign(projectRoot, scenario.packageManager, scenarioContext.env);
     }

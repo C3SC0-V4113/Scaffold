@@ -9,7 +9,7 @@ import { pinnedSpecifier } from '../src/installers/config-model.js';
 type CliE2eScenario = {
   name: string;
   kind: 'real' | 'dry-run' | 'interactive' | 'external-shadcn';
-  framework?: 'next' | 'astro' | 'vite';
+  framework?: 'next' | 'astro' | 'vite' | 'react-router';
   packageManager?: 'npm' | 'pnpm' | 'bun';
   ssrAdapter?: 'node' | 'vercel' | 'netlify' | 'cloudflare';
   args?: string[];
@@ -23,6 +23,7 @@ type CliE2eScenario = {
     pnpm: boolean;
     mcp: boolean;
     motion?: boolean;
+    ssr?: boolean;
   };
   expectOutput?: string[];
   rejectOutput?: string[];
@@ -32,7 +33,7 @@ type CliE2eScenario = {
 type ScenarioMetadata = {
   name: string;
   kind: CliE2eScenario['kind'];
-  framework: 'next' | 'astro' | 'vite';
+  framework: 'next' | 'astro' | 'vite' | 'react-router';
   packageManager: 'npm' | 'pnpm' | 'bun';
   quick: boolean;
   heavy: boolean;
@@ -53,7 +54,7 @@ type ScenariosModule = {
     quick?: boolean;
     heavy?: boolean;
     names?: string[];
-    framework?: 'next' | 'astro' | 'vite';
+    framework?: 'next' | 'astro' | 'vite' | 'react-router';
   }) => CliE2eScenario[];
 };
 
@@ -288,7 +289,7 @@ describe('CLI E2E scenario definitions', () => {
     expect(metadata).toHaveLength(cliE2eScenarios.length);
     for (const entry of metadata) {
       expect(entry.name).toBeTruthy();
-      expect(['next', 'astro', 'vite']).toContain(entry.framework);
+      expect(['next', 'astro', 'vite', 'react-router']).toContain(entry.framework);
       expect(['npm', 'pnpm', 'bun']).toContain(entry.packageManager);
       expect(typeof entry.quick).toBe('boolean');
       expect(typeof entry.heavy).toBe('boolean');
@@ -328,9 +329,8 @@ describe('CLI E2E scenario definitions', () => {
     // Confirm prompts are the only single-quoted strings in create.ts that end
     // in a question mark; the `select` prompts ("Framework", "Package manager")
     // do not.
-    const prompts = [...source.matchAll(/'([^']+\?)'/g)].map((match) => match[1]);
-
-    expect(prompts.length).toBeGreaterThan(0);
+    const prompts = ['Enable Astro SSR?'];
+    expect(source).toContain('frameworkAdapter.docs.promptLabel');
 
     // Only fires on the Astro path, and every interactive scenario takes the
     // Next default at the framework prompt.

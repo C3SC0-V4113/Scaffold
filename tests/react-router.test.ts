@@ -95,7 +95,7 @@ describe('React Router framework adapter', () => {
       { ssr: false, staticBuild: reactRouterAdapter.playwrightServer.staticBuild },
     );
     expect(staticPlaywright).toContain(
-      'pnpm run build && pnpm run start -- --host 127.0.0.1 --port 5173',
+      'pnpm run build && pnpm run start --host 127.0.0.1 --port 5173',
     );
     expect(staticPlaywright).not.toContain('PURRFOLD_E2E_SERVER_COMMAND');
   });

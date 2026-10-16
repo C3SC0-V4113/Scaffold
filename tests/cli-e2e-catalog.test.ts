@@ -261,6 +261,9 @@ describe('CLI E2E catalog boundary', () => {
         'dry-run-vite-rr-data-pnpm',
         'dry-run-next-router-unsupported',
         'dry-run-vite-router-unknown',
+        'dry-run-react-router-npm',
+        'dry-run-react-router-adapter-unsupported',
+        'dry-run-react-router-router-unsupported',
       ];
 
       try {

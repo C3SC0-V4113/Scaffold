@@ -9,7 +9,7 @@ const listMatrix = process.argv.includes('--list-matrix');
 const failOnTtyMissing = process.argv.includes('--require-tty');
 const names = readListFlag(process.argv, '--scenario');
 const framework = readFlag(process.argv, '--framework');
-if (framework !== undefined && framework !== 'next' && framework !== 'astro' && framework !== 'vite') {
+if (framework !== undefined && framework !== 'next' && framework !== 'astro' && framework !== 'vite' && framework !== 'react-router') {
   throw new Error(`Unsupported E2E framework filter: ${framework}`);
 }
 const scenarios = selectScenarios({ quick, heavy, names, framework });

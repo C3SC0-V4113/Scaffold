@@ -894,7 +894,7 @@ export function renderPlaywrightConfig(
   const ssr = options.ssr ?? true;
   const command =
     !ssr && options.staticBuild
-      ? `${run} ${options.staticBuild.buildScript} && ${run} ${options.staticBuild.startScript} -- ${hostArgs}`
+      ? `${run} ${options.staticBuild.buildScript} && ${run} ${options.staticBuild.startScript} ${packageManager === 'npm' ? '-- ' : ''}${hostArgs}`
       : `${run} dev -- ${hostArgs}`;
 
   return playwrightConfig
