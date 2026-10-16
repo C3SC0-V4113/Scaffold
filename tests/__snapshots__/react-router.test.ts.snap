@@ -1,0 +1,38 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`React Router framework adapter > snapshots the generated home route, lint config, and SSR/SSG config > home-route 1`] = `
+"import { Cat } from 'lucide-react';
+
+import { Button } from '~/components/ui/button';
+
+export default function Home() {
+  return (
+    <main className="bg-background text-foreground flex min-h-dvh flex-col items-center justify-center gap-4 p-8 text-center">
+      <Cat className="size-10 text-muted-foreground" aria-hidden />
+      <h1 className="text-2xl font-semibold tracking-tight">Demo</h1>
+      <p className="text-muted-foreground text-sm">Edit app/routes/home.tsx to start building.</p>
+      <Button type="button">Start building</Button>
+    </main>
+  );
+}
+"
+`;
+
+exports[`React Router framework adapter > snapshots the generated home route, lint config, and SSR/SSG config > ssg-config 1`] = `
+"import type { Config } from '@react-router/dev/config';
+
+export default {
+  ssr: false,
+  prerender: ['/'],
+} satisfies Config;
+"
+`;
+
+exports[`React Router framework adapter > snapshots the generated home route, lint config, and SSR/SSG config > ssr-config 1`] = `
+"import type { Config } from '@react-router/dev/config';
+
+export default {
+  ssr: true,
+} satisfies Config;
+"
+`;
