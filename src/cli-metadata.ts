@@ -33,6 +33,11 @@ export const cliOptions: CliOption[] = [
     default: 'off',
   },
   {
+    flags: '--router <none|react-router-data|react-router-declarative>',
+    description: 'Select Vite routing mode; router choices are listed per framework in info --json.',
+    default: 'React Router data mode for Vite; none for frameworks with their own router',
+  },
+  {
     flags: '--adapter <node|vercel|netlify|cloudflare>',
     description: 'Astro SSR adapter to install when SSR is enabled.',
     default: 'cloudflare when SSR is enabled',
@@ -102,6 +107,18 @@ export const cliOptions: CliOption[] = [
 ];
 
 export const cliScenarios: CliScenario[] = [
+  {
+    intent: 'Scaffold a Vite app with React Router data mode',
+    command: 'npx purrfold@latest my-app --framework vite --router react-router-data --yes',
+  },
+  {
+    intent: 'Scaffold a Vite app with React Router declarative mode',
+    command: 'npx purrfold@latest my-app --framework vite --router react-router-declarative --yes',
+  },
+  {
+    intent: 'Scaffold a Vite app without a router',
+    command: 'npx purrfold@latest my-app --framework vite --router none --yes',
+  },
   {
     intent: 'Scaffold a new app with the recommended defaults (unit tests, no e2e/commitlint)',
     command: 'npx purrfold@latest my-app --yes',

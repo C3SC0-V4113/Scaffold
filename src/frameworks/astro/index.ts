@@ -92,10 +92,10 @@ export const astroAdapter: FrameworkAdapter = {
     projectRoot: string,
     executor: Executor,
     iconLibrary: IconLibrary,
-    motion: boolean,
+    options,
   ) {
     const name = path.basename(projectRoot);
-    if (motion) {
+    if (options.motion) {
       await executor.writeFile(
         path.join(projectRoot, astroAdapter.layout.motionMainPath),
         motionMainComponent,
@@ -106,11 +106,11 @@ export const astroAdapter: FrameworkAdapter = {
     );
     await executor.writeFile(
       path.join(projectRoot, 'src/components/home-hero.tsx'),
-      renderAstroHomeHero(name, iconLibrary, motion),
+      renderAstroHomeHero(name, iconLibrary, options.motion),
     );
     await executor.writeFile(
       path.join(projectRoot, 'src/pages/index.astro'),
-      renderAstroHomePage(name, motion),
+      renderAstroHomePage(name, options.motion),
     );
     await executor.writeFile(
       path.join(projectRoot, 'src/layouts/main.astro'),

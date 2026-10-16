@@ -1,3 +1,6 @@
+import type { RouterChoice } from './routers.js';
+export type { RouterChoice } from './routers.js';
+
 export type Framework = 'next' | 'astro' | 'vite';
 
 export type PackageManager = 'npm' | 'pnpm' | 'bun';
@@ -13,6 +16,8 @@ export type ShadcnMcpClient = 'claude' | 'codex' | 'opencode';
 export interface CreateOptions {
   targetDir: string;
   framework: Framework;
+  /** Always resolved from the framework's router capability; 'none' when unused. */
+  router: RouterChoice;
   packageManager: PackageManager;
   ssr: boolean;
   astroAdapter?: AstroServerAdapter;

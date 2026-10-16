@@ -21,6 +21,7 @@ fails if it is not green.
 
 - `--pm <npm|pnpm|bun>` — package manager (default: prompts, or npm with `--yes`).
 - `--framework <next|astro|vite>` — scaffold framework (default: Next.js).
+- `--router <none|react-router-data|react-router-declarative>` — Vite routing (default: React Router data mode); Next.js and Astro accept only `none`.
 - `--ssr` — enable Astro SSR instead of a static build (default: off).
 - `--adapter <node|vercel|netlify|cloudflare>` — Astro SSR adapter (default: cloudflare when SSR is enabled).
 - `--unit` / `--no-unit` — Vitest + React Testing Library (default: included).
@@ -48,6 +49,8 @@ npx purrfold@latest info --json
 | Defaults (unit tests, no e2e/commitlint) | `npx purrfold@latest my-app --yes` |
 | Scaffold Astro instead of Next.js | `npx purrfold@latest my-app --framework astro --yes` |
 | Scaffold a Vite React app | `npx purrfold@latest my-app --framework vite --yes` |
+| Scaffold Vite with declarative React Router | `npx purrfold@latest my-app --framework vite --router react-router-declarative --yes` |
+| Scaffold Vite without a router | `npx purrfold@latest my-app --framework vite --router none --yes` |
 | Scaffold Astro SSR with the Cloudflare adapter | `npx purrfold@latest my-app --framework astro --ssr --adapter cloudflare --yes` |
 | No testing at all | `npx purrfold@latest my-app --no-unit --no-e2e --yes` |
 | Full setup (unit + e2e + commitlint) | `npx purrfold@latest my-app --unit --e2e --commitlint --yes` |

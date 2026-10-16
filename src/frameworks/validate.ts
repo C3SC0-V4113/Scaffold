@@ -1,4 +1,5 @@
 import type { AstroServerAdapter, PackageManager } from '../types.js';
+import { routerChoices, type RouterChoice } from '../routers.js';
 import { frameworkRegistry } from './registry.js';
 import type { FrameworkAdapter } from './types.js';
 
@@ -11,8 +12,25 @@ function formatChoices(values: readonly string[]) {
 export function validateFrameworkOptions(
   adapter: FrameworkAdapter,
   packageManager: PackageManager,
-  flags: { ssr?: boolean; adapter?: string },
+  flags: { ssr?: boolean; adapter?: string; router?: string },
 ) {
+  if (flags.router !== undefined && !routerChoices.includes(flags.router as RouterChoice)) {
+    throw new Error(
+      `Unsupported router "${flags.router}". Use ${formatChoices(routerChoices)}.`,
+    );
+  }
+  if (
+    flags.router !== undefined &&
+    flags.router !== 'none' &&
+    !adapter.capabilities.routers.includes(flags.router as RouterChoice)
+  ) {
+    const frameworks = frameworkRegistry
+      .filter((item) => item.capabilities.routers.includes(flags.router as RouterChoice))
+      .map((item) => item.id);
+    throw new Error(
+      `--router is only available when --framework ${formatChoices(frameworks)} is selected.`,
+    );
+  }
   if (
     !adapter.capabilities.rendering?.ssr &&
     (flags.ssr !== undefined || flags.adapter !== undefined)

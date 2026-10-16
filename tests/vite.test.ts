@@ -19,6 +19,7 @@ import type { CreateOptions } from '../src/types.js';
 const options: CreateOptions = {
   targetDir: 'vite-test-app',
   framework: 'vite',
+  router: 'react-router-data',
   packageManager: 'npm',
   ssr: false,
   unit: true,
@@ -37,7 +38,8 @@ describe('Vite adapter', () => {
   it('declares Vite layout, capabilities, and configuration variants', () => {
     expect(viteAdapter.capabilities).toEqual({
       packageManagers: ['npm', 'pnpm', 'bun'],
-      routers: [],
+      routers: ['none', 'react-router-data', 'react-router-declarative'],
+      defaultRouter: 'react-router-data',
     });
     expect(viteAdapter.layout).toEqual({
       sourceRoot: 'src/',
@@ -193,8 +195,11 @@ describe('Vite adapter', () => {
     expect(page).toContain("import { Cat } from 'lucide-react';");
     expect(page).toContain("import { MotionMain } from '@/components/common/motion-main';");
     expect(page).toContain('<h1 className="text-2xl font-semibold tracking-tight">My Vite App</h1>');
-    expect(viteAdapter.templates.unitSmokeTest(options)).toContain("import App from '@/App';");
-    await viteAdapter.writeAppShell('/tmp/my-vite-app', executor, 'lucide', true);
+    expect(viteAdapter.templates.unitSmokeTest(options)).toContain("import { routes } from '@/router';");
+    await viteAdapter.writeAppShell('/tmp/my-vite-app', executor, 'lucide', { ...options, motion: true });
+    expect(
+      executor.operations.filter((operation) => operation === 'write /tmp/my-vite-app/src/App.tsx'),
+    ).toHaveLength(1);
     expect(executor.operations).toContain('remove /tmp/my-vite-app/src/App.css');
     expect(executor.operations).toContain('remove /tmp/my-vite-app/src/assets/react.svg');
     expect(executor.operations).toContain('remove /tmp/my-vite-app/public/vite.svg');

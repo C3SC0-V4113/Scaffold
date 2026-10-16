@@ -8,6 +8,30 @@ afterEach(() => {
 });
 
 describe('dry-run integration', () => {
+  it.each(['react-router-data', 'react-router-declarative'] as const)(
+    'shows the consolidated React Router skill install for %s',
+    async (router) => {
+      const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+      await runCreate('my-app', {
+        framework: 'vite',
+        pm: 'npm',
+        router,
+        unit: false,
+        e2e: false,
+        commitlint: false,
+        yes: true,
+        dryRun: true,
+      });
+
+      const output = log.mock.calls.map((call) => call.join(' ')).join('\n');
+      expect(output).toContain(
+        'run npx --yes skills@latest add remix-run/react-router --skill react-router --agent codex --copy --yes'
+      );
+      expect(output.match(/--skill react-router\b/g)).toHaveLength(1);
+    }
+  );
+
   it('npm scaffold installs quality dev deps with --legacy-peer-deps after shadcn init', async () => {
     const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
 

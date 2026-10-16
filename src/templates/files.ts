@@ -1,5 +1,6 @@
 import versions from '../versions.json' with { type: 'json' };
 
+import { routerCatalog } from '../routers.js';
 import type { CreateOptions, IconLibrary, PackageManager } from '../types.js';
 import type { FrameworkAdapter } from '../frameworks/types.js';
 import { getCatRender } from './icons.js';
@@ -261,6 +262,8 @@ export function renderViteHomePage(
   projectName: string,
   iconLibrary: IconLibrary = 'lucide',
   motionEnabled = false,
+  componentName = 'App',
+  defaultExport = true,
 ) {
   const appName = humanizeProjectName(projectName);
   const { importLine, markup } = getCatRender(iconLibrary);
@@ -269,11 +272,13 @@ export function renderViteHomePage(
     : '';
   const mainTag = motionEnabled ? 'MotionMain' : 'main';
 
+  const componentExport = defaultExport ? 'export default function' : 'export function';
+
   return `${importLine}
 
 ${motionImport}import { Button } from '@/components/ui/button';
 
-export default function App() {
+${componentExport} ${componentName}() {
   return (
     <${mainTag} className="bg-background text-foreground flex min-h-dvh flex-col items-center justify-center gap-4 p-8 text-center">
       ${markup}
@@ -940,7 +945,8 @@ ${shadcnMcpToml(options.packageManager)}
 }
 
 export function renderReadme(
-  options: Pick<CreateOptions, 'framework' | 'packageManager' | 'unit' | 'e2e' | 'commitlint' | 'mcp' | 'motion'>,
+  options: Pick<CreateOptions, 'framework' | 'packageManager' | 'unit' | 'e2e' | 'commitlint' | 'mcp' | 'motion'> &
+    Partial<Pick<CreateOptions, 'router'>>,
   docs: FrameworkAdapter['docs']
 ) {
   const run = options.packageManager === 'npm' ? 'npm run' : `${options.packageManager} run`;
@@ -968,8 +974,8 @@ ${run} check
 ## Tooling
 
 ${docs.toolingLines.join('\n')}
-${options.unit ? '- Vitest and React Testing Library.\n' : ''}${options.e2e ? '- Playwright E2E testing.\n' : ''}${options.commitlint ? '- Conventional commit linting.\n' : ''}${options.motion ? '- Motion for React animations.\n' : ''}
-${renderMotionGuide(options, docs)}${renderShadcnMcpGuide(options)}
+${(options.router ?? 'none') !== 'none' ? `- ${routerCatalog[options.router ?? 'none'].label}.\n` : ''}${options.unit ? '- Vitest and React Testing Library.\n' : ''}${options.e2e ? '- Playwright E2E testing.\n' : ''}${options.commitlint ? '- Conventional commit linting.\n' : ''}${options.motion ? '- Motion for React animations.\n' : ''}
+${docs.routerGuidance?.(options.router ?? 'none') ? `## Router\n\n${docs.routerGuidance(options.router ?? 'none')}\n\n` : ''}${renderMotionGuide(options, docs)}${renderShadcnMcpGuide(options)}
 ## shadcn Presets
 
 purrfold forwards additional shadcn CLI arguments, including official presets:
@@ -1055,7 +1061,8 @@ Import React APIs from \`motion/react\`. ${frameworkGuidance}
 `;
 }
 
-type AgentsOptions = Pick<CreateOptions, 'framework' | 'packageManager' | 'unit' | 'e2e' | 'commitlint' | 'mcp' | 'motion'>;
+type AgentsOptions = Pick<CreateOptions, 'framework' | 'packageManager' | 'unit' | 'e2e' | 'commitlint' | 'mcp' | 'motion'> &
+  Partial<Pick<CreateOptions, 'router'>>;
 
 function agentsRunCommand(packageManager: CreateOptions['packageManager']) {
   return packageManager === 'npm' ? 'npm run' : `${packageManager} run`;
@@ -1145,7 +1152,7 @@ ${options.unit ? `4. \`${run} test\`\n` : ''}${options.e2e ? `- Run \`${run} tes
 - Component placement rules: \`.agents/skills/shadcn-component-boundaries/SKILL.md\`
 - Minimum evaluation: \`.agents/skills/project-min-evaluation/SKILL.md\`
 ${options.unit ? '- Vitest guidance: `.agents/skills/vitest/SKILL.md`\n' : ''}${options.e2e ? '- Playwright guidance: `.agents/skills/playwright-best-practices/SKILL.md`\n' : ''}${options.commitlint ? '- Commit messages are checked with commitlint.\n' : ''}
-${renderMotionAgentRules(options, docs)}## shadcn MCP
+${docs.routerGuidance?.(options.router ?? 'none') ? `## Router\n\n${docs.routerGuidance(options.router ?? 'none')}\n\n` : ''}${renderMotionAgentRules(options, docs)}## shadcn MCP
 
 ${options.mcp ? 'shadcn MCP setup was requested during scaffold.' : 'shadcn MCP setup is optional and was not run by default.'}
 

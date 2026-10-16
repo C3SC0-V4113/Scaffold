@@ -221,7 +221,7 @@ export async function installQualityLayer(
   }
 
   const iconLibrary = await reconcileIconLibrary(projectRoot, options, executor);
-  await adapter.writeAppShell(projectRoot, executor, iconLibrary, options.motion);
+  await adapter.writeAppShell(projectRoot, executor, iconLibrary, options);
 }
 
 /**

@@ -31,6 +31,10 @@ Run these before claiming implementation complete:
 - Vitest guidance: \`.agents/skills/vitest/SKILL.md\`
 - Playwright guidance: \`.agents/skills/playwright-best-practices/SKILL.md\`
 
+## Router
+
+React Router data mode is enabled. Define routes in \`src/router.tsx\`; the index route renders \`src/App.tsx\`. \`src/NotFound.tsx\` handles unknown paths, and \`src/RouterLayout.tsx\` provides the \`ErrorBoundary\`. Configure your static host to rewrite application paths to \`/index.html\` so direct navigation works.
+
 ## shadcn MCP
 
 shadcn MCP setup is optional and was not run by default.
@@ -108,8 +112,13 @@ npm run check
 - ESLint flat config with TypeScript, React Hooks, and Vite Fast Refresh rules.
 - \`@shadcn/lint\` enforcing the design system rules in \`DESIGN.md\`.
 - React Doctor and React Scan.
+- React Router (data mode).
 - Vitest and React Testing Library.
 - Playwright E2E testing.
+
+## Router
+
+React Router data mode is enabled. Define routes in \`src/router.tsx\`; the index route renders \`src/App.tsx\`. \`src/NotFound.tsx\` handles unknown paths, and \`src/RouterLayout.tsx\` provides the \`ErrorBoundary\`. Configure your static host to rewrite application paths to \`/index.html\` so direct navigation works.
 
 ## shadcn MCP
 
@@ -197,6 +206,11 @@ const eslintConfig = defineConfig([
   {
     ...reactYouMightNotNeedAnEffect.configs.recommended,
     files: ['**/*.{jsx,tsx}'],
+  },
+  {
+    files: ['**/*.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
+    plugins: reactDoctor.configs.recommended.plugins,
+    rules: Object.fromEntries(Object.entries(reactDoctor.configs.all.rules).filter(([rule]) => rule.startsWith('react-doctor/react-router-'))),
   },
   {
     files: ['**/*.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],

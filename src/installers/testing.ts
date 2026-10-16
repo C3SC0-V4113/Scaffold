@@ -10,7 +10,7 @@ import type { CreateOptions, Executor } from '../types.js';
 
 export async function installTestingFiles(
   projectRoot: string,
-  options: Pick<CreateOptions, 'framework' | 'packageManager' | 'unit' | 'e2e' | 'motion'>,
+  options: Pick<CreateOptions, 'framework' | 'packageManager' | 'unit' | 'e2e' | 'motion' | 'router'>,
   executor: Executor
 ) {
   const adapter = getFrameworkAdapter(options.framework);
@@ -36,6 +36,9 @@ export async function installTestingFiles(
       path.join(projectRoot, 'playwright.config.ts'),
       renderPlaywrightConfig(options.packageManager, adapter.playwrightServer)
     );
-    await executor.writeFile(path.join(projectRoot, 'tests', 'e2e', 'home.spec.ts'), e2eSmokeTest);
+    await executor.writeFile(
+      path.join(projectRoot, 'tests', 'e2e', 'home.spec.ts'),
+      adapter.templates.e2eSmokeTest?.(options) ?? e2eSmokeTest,
+    );
   }
 }

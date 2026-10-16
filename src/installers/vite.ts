@@ -159,6 +159,10 @@ export async function createViteApp(
     viteStarterDependencies.map((name) => pinnedSpecifier(name, 'vite')),
   );
   await executor.run(install.command, install.args, { cwd: projectRoot });
+  if (options.router !== 'none') {
+    const routerInstall = commands.add([pinnedSpecifier('react-router')]);
+    await executor.run(routerInstall.command, routerInstall.args, { cwd: projectRoot });
+  }
   await configureViteProject(projectRoot, options, executor);
 
   return projectRoot;

@@ -10,13 +10,16 @@ import {
 } from '../../installers/config-model.js';
 import { renderViteEslintConfig } from '../../templates/eslint.js';
 import {
+  renderViteRouterE2ESmokeTest,
+  renderViteRouterFiles,
+  renderViteRouterUnitSmokeTest,
+} from '../../templates/vite-router.js';
+import {
   humanizeProjectName,
   motionMainComponent,
   renderPrettierConfig,
   renderReactDoctorConfig,
   renderVitestConfig,
-  renderViteHomePage,
-  viteUnitSmokeTest,
 } from '../../templates/files.js';
 import type { Executor, IconLibrary } from '../../types.js';
 import type { FrameworkAdapter } from '../types.js';
@@ -51,7 +54,8 @@ export const viteAdapter: FrameworkAdapter = {
   description: 'React app with Vite, Tailwind CSS, and shadcn UI.',
   capabilities: {
     packageManagers: ['npm', 'pnpm', 'bun'],
-    routers: [],
+    routers: ['none', 'react-router-data', 'react-router-declarative'],
+    defaultRouter: 'react-router-data',
   },
   layout: {
     sourceRoot: 'src/',
@@ -77,10 +81,10 @@ export const viteAdapter: FrameworkAdapter = {
     projectRoot: string,
     executor: Executor,
     iconLibrary: IconLibrary,
-    motion: boolean,
+    options,
   ) {
     const name = path.basename(projectRoot);
-    if (motion) {
+    if (options.motion) {
       await executor.writeFile(
         path.join(projectRoot, viteAdapter.layout.motionMainPath),
         motionMainComponent,
@@ -90,10 +94,11 @@ export const viteAdapter: FrameworkAdapter = {
     await executor.remove(path.join(projectRoot, 'src', 'App.css'));
     await executor.remove(path.join(projectRoot, 'src', 'assets', 'react.svg'));
     await executor.remove(path.join(projectRoot, 'public', 'vite.svg'));
-    await executor.writeFile(
-      path.join(projectRoot, 'src', 'App.tsx'),
-      renderViteHomePage(name, iconLibrary, motion),
-    );
+    for (const [relativePath, content] of Object.entries(
+      renderViteRouterFiles(options.router, name, iconLibrary, options.motion),
+    )) {
+      await executor.writeFile(path.join(projectRoot, relativePath), content);
+    }
 
     if (executor instanceof DryRunExecutor) {
       await executor.writeFile(path.join(projectRoot, 'index.html'));
@@ -105,7 +110,8 @@ export const viteAdapter: FrameworkAdapter = {
     eslint: (options) => renderViteEslintConfig(options),
     prettier: () => renderPrettierConfig(viteAdapter.prettierConfig),
     vitest: () => renderVitestConfig(viteAdapter.vitestConfig),
-    unitSmokeTest: () => viteUnitSmokeTest,
+    unitSmokeTest: (options) => renderViteRouterUnitSmokeTest(options.router),
+    e2eSmokeTest: (options) => renderViteRouterE2ESmokeTest(options.router),
     doctorConfig: (options) =>
       renderReactDoctorConfig(viteAdapter.layout, options.motion, false),
   },
@@ -130,5 +136,11 @@ export const viteAdapter: FrameworkAdapter = {
       '- Vite renders React on the client; use Motion components without a server/client boundary.',
     doctorIgnoreMotionRule: false,
     agentsRules: '',
+    routerGuidance: (router) => {
+      if (router === 'none') return '';
+      return router === 'react-router-data'
+        ? 'React Router data mode is enabled. Define routes in `src/router.tsx`; the index route renders `src/App.tsx`. `src/NotFound.tsx` handles unknown paths, and `src/RouterLayout.tsx` provides the `ErrorBoundary`. Configure your static host to rewrite application paths to `/index.html` so direct navigation works.'
+        : 'React Router declarative mode is enabled. Routes are declared in `src/App.tsx` (`<Routes>`); `HomePage` renders `/` and `src/NotFound.tsx` handles unknown paths. Configure your static host to rewrite application paths to `/index.html` so direct navigation works.';
+    },
   },
 };

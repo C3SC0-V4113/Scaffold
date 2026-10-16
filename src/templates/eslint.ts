@@ -3,7 +3,7 @@ import { agentStateDirs, testReportDirs, usesCloudflareAdapter } from './ignores
 
 interface EslintConfigOptions
   extends Pick<CreateOptions, 'framework' | 'unit' | 'e2e'>,
-    Partial<Pick<CreateOptions, 'ssr' | 'astroAdapter'>> {
+    Partial<Pick<CreateOptions, 'ssr' | 'astroAdapter' | 'router'>> {
   registerImportPlugin?: boolean;
   motion?: boolean;
 }
@@ -368,6 +368,15 @@ export function renderViteEslintConfig(options: EslintConfigOptions) {
     "    ...reactYouMightNotNeedAnEffect.configs.recommended,",
     "    files: ['**/*.{jsx,tsx}'],",
     '  },',
+    ...(options.router && options.router !== 'none'
+      ? [
+          '  {',
+          "    files: ['**/*.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],",
+          '    plugins: reactDoctor.configs.recommended.plugins,',
+          '    rules: Object.fromEntries(Object.entries(reactDoctor.configs.all.rules).filter(([rule]) => rule.startsWith(\'react-doctor/react-router-\'))),',
+          '  },',
+        ]
+      : []),
     '  {',
     "    files: ['**/*.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],",
     '    plugins: { import: importPlugin },',

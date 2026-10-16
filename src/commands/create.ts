@@ -13,13 +13,15 @@ import { initializeShadcn } from '../installers/shadcn.js';
 import { installSkills } from '../installers/skills.js';
 import { installTestingFiles } from '../installers/testing.js';
 import { supportedIconLibraries } from '../templates/icons.js';
-import type { AstroServerAdapter, CreateOptions, IconLibrary, PackageManager } from '../types.js';
+import { routerCatalog } from '../routers.js';
+import type { AstroServerAdapter, CreateOptions, IconLibrary, PackageManager, RouterChoice } from '../types.js';
 
 export interface RawCreateFlags {
   pm?: PackageManager;
   framework?: string;
   ssr?: boolean;
   adapter?: string;
+  router?: string;
   unit?: boolean;
   e2e?: boolean;
   commitlint?: boolean;
@@ -129,6 +131,28 @@ async function resolveFramework(flags: RawCreateFlags): Promise<CreateOptions['f
   });
 }
 
+async function resolveRouter(
+  adapter: ReturnType<typeof getFrameworkAdapter>,
+  value: string | undefined,
+  yes: boolean,
+): Promise<RouterChoice> {
+  const { routers, defaultRouter } = adapter.capabilities;
+  if (routers.length === 0) return 'none';
+  if (value !== undefined) return value as RouterChoice;
+
+  const fallback = defaultRouter ?? routers[0] ?? 'none';
+  if (yes) return fallback;
+
+  return select<RouterChoice>({
+    message: 'Router',
+    default: fallback,
+    choices: routers.map((router) => ({
+      name: routerCatalog[router].label,
+      value: router,
+    })),
+  });
+}
+
 export async function resolveCreateOptions(
   targetDir: string,
   flags: RawCreateFlags
@@ -139,6 +163,7 @@ export async function resolveCreateOptions(
 
   const frameworkAdapter = getFrameworkAdapter(framework);
   validateFrameworkOptions(frameworkAdapter, packageManager, flags);
+  const router = await resolveRouter(frameworkAdapter, flags.router, yes);
   const rendering = frameworkAdapter.capabilities.rendering;
   const ssrEnabled = Boolean(
     rendering?.ssr && (flags.adapter !== undefined || (await resolveBoolean(flags.ssr, yes, false, 'Enable Astro SSR?')))
@@ -157,6 +182,7 @@ export async function resolveCreateOptions(
   return {
     targetDir,
     framework,
+    router,
     packageManager,
     ssr: ssrEnabled,
     astroAdapter,

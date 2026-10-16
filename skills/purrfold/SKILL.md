@@ -27,6 +27,7 @@ npx purrfold@latest <target-dir> [options]
 
 - `--pm <npm|pnpm|bun>` — package manager (default: npm with `--yes`).
 - `--framework <next|astro|vite>` — framework to scaffold (default: Next.js).
+- `--router <none|react-router-data|react-router-declarative>` — Vite router mode (default: React Router data mode); Next.js and Astro accept only `none`.
 - `--ssr` — enable Astro SSR instead of a static build (default: off).
 - `--adapter <node|vercel|netlify|cloudflare>` — Astro SSR adapter (default: cloudflare when SSR is enabled).
 - `--unit` / `--no-unit` — Vitest + React Testing Library (default: included).
@@ -50,6 +51,8 @@ To fetch the canonical option schema at runtime: `npx purrfold@latest info --jso
 | "scaffold/create a new app" (defaults) | `npx purrfold@latest <dir> --yes` |
 | "use Astro" / "scaffold Astro" | `npx purrfold@latest <dir> --framework astro --yes` |
 | "use Vite" / "scaffold Vite" | `npx purrfold@latest <dir> --framework vite --yes` |
+| "Vite with React Router declarative mode" | `npx purrfold@latest <dir> --framework vite --router react-router-declarative --yes` |
+| "Vite without a router" | `npx purrfold@latest <dir> --framework vite --router none --yes` |
 | "use Astro SSR" / "scaffold Astro SSR" | `npx purrfold@latest <dir> --framework astro --ssr --adapter cloudflare --yes` |
 | "without testing" / "no tests" | `npx purrfold@latest <dir> --no-unit --no-e2e --yes` |
 | "with e2e" / "add Playwright" | `npx purrfold@latest <dir> --e2e --yes` |

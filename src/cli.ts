@@ -4,6 +4,7 @@ import { Command } from 'commander';
 
 import { cliOptions, cliScenarios, installCommand } from './cli-metadata.js';
 import { runCreate } from './commands/create.js';
+import { frameworkRegistry } from './frameworks/registry.js';
 import type { Framework, PackageManager } from './types.js';
 
 const require = createRequire(import.meta.url);
@@ -25,6 +26,7 @@ export function buildProgram(): Command {
     .argument('<target-dir>', 'Directory for the generated app')
     .option('--pm <pm>', 'Package manager: npm, pnpm, or bun')
     .option('--framework <framework>', 'Framework: next, astro, or vite')
+    .option('--router <none|react-router-data|react-router-declarative>', 'Vite router mode')
     .option('--ssr', 'Enable Astro SSR')
     .option('--adapter <node|vercel|netlify|cloudflare>', 'Astro SSR adapter')
     .option('--unit', 'Install Vitest and React Testing Library')
@@ -47,6 +49,7 @@ export function buildProgram(): Command {
       await runCreate(targetDir, {
         pm: rawOptions.pm as PackageManager | undefined,
         framework: rawOptions.framework as Framework | undefined,
+        router: rawOptions.router as string | undefined,
         ssr: rawOptions.ssr as boolean | undefined,
         adapter: rawOptions.adapter as string | undefined,
         unit: rawOptions.unit as boolean | undefined,
@@ -78,6 +81,11 @@ export function buildProgram(): Command {
           install: installCommand,
           options: cliOptions,
           scenarios: cliScenarios,
+          frameworks: frameworkRegistry.map((adapter) => ({
+            id: adapter.id,
+            routers: adapter.capabilities.routers,
+            defaultRouter: adapter.capabilities.defaultRouter ?? 'none',
+          })),
         };
         console.log(JSON.stringify(schema, null, 2));
         return;
