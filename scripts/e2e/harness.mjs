@@ -22,6 +22,28 @@ import { frameworkLayouts, generatedVersions, pinnedDependency, readFlag, readLi
 
 export { generatedVersions, pinnedDependency, readFlag, readListFlag, rootDir };
 
+export function assertAstroClaudeFile(projectRoot, agents, claude, platform = process.platform) {
+  const claudePath = path.join(projectRoot, 'CLAUDE.md');
+  const isSymlink = lstatSync(claudePath).isSymbolicLink();
+
+  if (isSymlink) {
+    if (platform !== 'win32' && readlinkSync(claudePath) !== 'AGENTS.md') {
+      throw new Error('Astro CLAUDE.md should be a relative symlink to AGENTS.md.');
+    }
+    if (claude !== agents) {
+      throw new Error('Astro CLAUDE.md symlink should resolve to the updated AGENTS.md content.');
+    }
+    return;
+  }
+
+  if (claude === '@AGENTS.md\n') return;
+  if (platform === 'win32' && claude === agents) return;
+
+  throw new Error(
+    'Astro CLAUDE.md should be a relative symlink to AGENTS.md or a regular file containing exactly "@AGENTS.md\\n".'
+  );
+}
+
 export function hasCommand(command) {
   const lookup = process.platform === 'win32' ? 'where' : 'command';
   const args = process.platform === 'win32' ? [command] : ['-v', command];
@@ -756,15 +778,10 @@ export function assertGeneratedApp(projectRoot, expected) {
     ) {
       throw new Error('Astro Markdown files should contain exactly one Purrfold managed block');
     }
-    if (process.platform !== 'win32') {
-      const claudePath = path.join(projectRoot, 'CLAUDE.md');
-      if (!lstatSync(claudePath).isSymbolicLink() || readlinkSync(claudePath) !== 'AGENTS.md') {
-        throw new Error('Astro CLAUDE.md should remain a relative symlink to AGENTS.md');
-      }
-    }
-    if (claude !== agents) {
-      throw new Error('Astro CLAUDE.md should resolve to the updated AGENTS.md content');
-    }
+    // create-astro 5.3.0 stopped creating CLAUDE.md itself; the docs installer
+    // then writes the standard pointer. Keep accepting the older scaffold shape.
+    // https://github.com/withastro/astro/pull/18218
+    assertAstroClaudeFile(projectRoot, agents, claude);
 
     if (expected.ssrAdapter) {
       assertIncludes(astroConfig, "output: 'server'", 'astro.config.mjs');
