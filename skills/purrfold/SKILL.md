@@ -1,12 +1,12 @@
 ---
 name: purrfold
-description: Scaffold a new production-ready frontend app (Next.js, Astro, or Vite + shadcn + strict quality tooling, including @shadcn/lint design system rules) using the purrfold CLI. Use when the user wants to create/bootstrap/scaffold a new web app or project, or asks to "install/run purrfold" with or without testing, e2e, commitlint, or a specific package manager.
+description: Scaffold a new production-ready frontend app (Next.js, Astro, Vite, or React Router framework mode + shadcn + strict quality tooling, including @shadcn/lint design system rules) using the purrfold CLI. Use when the user wants to create/bootstrap/scaffold a new web app or project, or asks to "install/run purrfold" with or without testing, e2e, commitlint, or a specific package manager.
 ---
 
 # purrfold — scaffold a frontend app
 
 `purrfold` is a CLI that creates a new app from `create-next-app@latest`,
-`create-astro@latest`, or `create-vite@latest` and applies a production-oriented quality baseline: shadcn,
+`create-astro@latest`, `create-vite@latest`, or `create-react-router@latest` and applies a production-oriented quality baseline: shadcn,
 strict ESLint with `@shadcn/lint` design system rules, Prettier, Husky, React Doctor, React Scan, agent docs, Claude
 hooks, and optional unit (Vitest), e2e (Playwright), commitlint, and GitHub
 Actions CI. The
@@ -26,9 +26,9 @@ npx purrfold@latest <target-dir> [options]
 ## Options
 
 - `--pm <npm|pnpm|bun>` — package manager (default: npm with `--yes`).
-- `--framework <next|astro|vite>` — framework to scaffold (default: Next.js).
-- `--router <none|react-router-data|react-router-declarative>` — Vite router mode (default: React Router data mode); Next.js and Astro accept only `none`.
-- `--ssr` — enable Astro SSR instead of a static build (default: off).
+- `--framework <next|astro|vite|react-router>` — framework to scaffold (default: Next.js).
+- `--router <none|react-router-data|react-router-declarative>` — Vite router mode (default: React Router data mode); Next.js, Astro, and React Router framework mode accept only `none`.
+- `--ssr` / `--no-ssr` — choose SSR for Astro or React Router framework mode; React Router defaults to SSR and prerenders `/` when disabled.
 - `--adapter <node|vercel|netlify|cloudflare>` — Astro SSR adapter (default: cloudflare when SSR is enabled).
 - `--unit` / `--no-unit` — Vitest + React Testing Library (default: included).
 - `--e2e` / `--no-e2e` — Playwright e2e (default: skipped).
@@ -51,6 +51,7 @@ To fetch the canonical option schema at runtime: `npx purrfold@latest info --jso
 | "scaffold/create a new app" (defaults) | `npx purrfold@latest <dir> --yes` |
 | "use Astro" / "scaffold Astro" | `npx purrfold@latest <dir> --framework astro --yes` |
 | "use Vite" / "scaffold Vite" | `npx purrfold@latest <dir> --framework vite --yes` |
+| "use React Router framework mode" | `npx purrfold@latest <dir> --framework react-router --yes` |
 | "Vite with React Router declarative mode" | `npx purrfold@latest <dir> --framework vite --router react-router-declarative --yes` |
 | "Vite without a router" | `npx purrfold@latest <dir> --framework vite --router none --yes` |
 | "use Astro SSR" / "scaffold Astro SSR" | `npx purrfold@latest <dir> --framework astro --ssr --adapter cloudflare --yes` |

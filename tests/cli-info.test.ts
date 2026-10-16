@@ -34,7 +34,8 @@ describe('purrfold info command', () => {
     expect(flagText).toContain('--no-unit');
     expect(flagText).toContain('--no-e2e');
     expect(flagText).toContain('--motion');
-    expect(flagText).toContain('<next|astro|vite>');
+    expect(flagText).toContain('<next|astro|vite|react-router>');
+    expect(flagText).toContain('--no-ssr');
 
     const commands = schema.scenarios.map((scenario) => scenario.command);
     expect(
