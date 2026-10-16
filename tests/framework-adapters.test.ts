@@ -1,3 +1,4 @@
+import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import { frameworkAdapters, frameworkRegistry, getFrameworkAdapter } from '../src/frameworks/registry.js';
@@ -62,8 +63,8 @@ describe('React Router starter cleanup', () => {
     };
     await reactRouterAdapter.writeAppShell('my-app', executor, 'lucide', options);
 
-    expect(executor.operations).toContain('remove my-app/Dockerfile');
-    expect(executor.operations).toContain('remove my-app/.dockerignore');
+    expect(executor.operations).toContain(`remove ${path.join('my-app', 'Dockerfile')}`);
+    expect(executor.operations).toContain(`remove ${path.join('my-app', '.dockerignore')}`);
   });
 });
 

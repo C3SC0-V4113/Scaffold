@@ -1,4 +1,5 @@
 import path from 'node:path';
+import { tmpdir } from 'node:os';
 
 import { describe, expect, it } from 'vitest';
 
@@ -307,7 +308,7 @@ describe('Astro React integration guard', () => {
 });
 
 describe('Astro pnpm build allowlist', () => {
-  const projectRoot = path.join('/tmp', 'my-app');
+  const projectRoot = path.join(tmpdir(), 'my-app');
   const workspacePath = path.join(projectRoot, 'pnpm-workspace.yaml');
 
   class RecordingExecutor implements Executor {
