@@ -204,7 +204,13 @@ describe('CLI E2E harness', () => {
           pnpmExecutable: selectedPnpm,
         }
       );
-      const toolchainDir = path.join(workDir, '_purrfold-e2e', 'toolchain', 'node_modules', '.bin');
+      const toolchainDir = path.join(
+        context.workDir,
+        '_purrfold-e2e',
+        'toolchain',
+        'node_modules',
+        '.bin',
+      );
       const pnpmForwarder = path.join(toolchainDir, process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm');
       const pathKey = Object.keys(context.env).find((key) => key.toLowerCase() === 'path');
       const inheritedPathKey = Object.keys(process.env).find((key) => key.toLowerCase() === 'path') ?? 'PATH';
