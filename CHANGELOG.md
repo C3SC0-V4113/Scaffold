@@ -1,5 +1,16 @@
 # purrfold
 
+## 0.9.0
+
+### Minor Changes
+
+- a261a1d: Add React Router data and declarative modes to Vite scaffolds, with a plain SPA option.
+- 58c078f: Add `--framework vite` for scaffolding React apps with Vite.
+
+### Patch Changes
+
+- 7e7561f: Update the `@vitejs/plugin-react` pin for Astro apps to v6, matching what `@astrojs/react` requires.
+
 ## 0.8.3
 
 ### Patch Changes
