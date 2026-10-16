@@ -122,6 +122,9 @@ export const viteAdapter: FrameworkAdapter = {
     agentsTemplate: 'vite',
     mergeStrategy: 'replace',
     frameworkName: 'Vite',
+    promptLabel: 'Vite',
+    frameworkGuidance: 'This project uses Vite with React and TypeScript. Read the current Vite and React docs before changing framework APIs or project structure.',
+    referenceDocsUrl: 'https://vite.dev/guide/',
     readmeTitle: 'Vite Quality App',
     toolingLines: [
       '- React with Vite, TypeScript, and Tailwind CSS.',

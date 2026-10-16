@@ -17,6 +17,7 @@ export interface FrameworkAdapter {
     packageManagers: readonly PackageManager[];
     rendering?: {
       ssr: boolean;
+      defaultSsr: boolean;
       adapters?: readonly AstroServerAdapter[];
       defaultAdapter?: AstroServerAdapter;
     };
@@ -24,10 +25,12 @@ export interface FrameworkAdapter {
     defaultRouter?: RouterChoice;
   };
   layout: {
-    sourceRoot: '' | 'src/';
+    sourceRoot: '' | 'src/' | 'app/';
     globalStylesheet: string;
     utilsPath: string;
     uiDir: string;
+    importAlias?: string;
+    editHint?: string;
     motionMainPath: string;
     eslintConfigPath: 'eslint.config.js' | 'eslint.config.mjs';
     vitestConfigPath: 'vitest.config.ts' | 'vitest.config.mts';
@@ -44,7 +47,11 @@ export interface FrameworkAdapter {
     scan?: string;
     typecheck: string;
   };
-  playwrightServer: { hostFlag: '--hostname' | '--host'; port: number };
+  playwrightServer: {
+    hostFlag: '--hostname' | '--host';
+    port: number;
+    forwardArgsSeparator?: boolean;
+  };
   prettierConfig: {
     tailwindStylesheet: string;
     extraPlugins: readonly string[];
@@ -91,6 +98,9 @@ export interface FrameworkAdapter {
     mergeStrategy: 'replace' | 'merge';
     agentsTemplate: 'next' | 'astro' | 'vite';
     frameworkName: string;
+    promptLabel: string;
+    frameworkGuidance?: string;
+    referenceDocsUrl?: string;
     readmeTitle: string;
     toolingLines: readonly string[];
     motionGuidance: string;

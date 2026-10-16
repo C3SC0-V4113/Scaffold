@@ -94,6 +94,9 @@ export const nextAdapter: FrameworkAdapter = {
     agentsTemplate: 'next',
     mergeStrategy: 'replace',
     frameworkName: 'Next.js',
+    promptLabel: 'Next.js',
+    frameworkGuidance: 'This project uses Next.js with React and TypeScript. Read the current Next.js and React docs before changing framework APIs or project structure.',
+    referenceDocsUrl: 'https://nextjs.org/docs',
     readmeTitle: 'Next Quality App',
     toolingLines: [
       '- Next.js App Router with TypeScript and Tailwind.',

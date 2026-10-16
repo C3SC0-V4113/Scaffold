@@ -49,6 +49,13 @@ describe('create option resolution', () => {
     expect(mockConfirm).not.toHaveBeenCalled();
   });
 
+  it('keeps Astro static when ssr is omitted or explicitly disabled', async () => {
+    const defaults = await resolveCreateOptions('my-app', { framework: 'astro', yes: true });
+    const staticBuild = await resolveCreateOptions('my-app', { framework: 'astro', ssr: false, yes: true });
+    expect(defaults.ssr).toBe(false);
+    expect(staticBuild.ssr).toBe(false);
+  });
+
   it('enables Astro SSR and defaults to cloudflare when requested with yes', async () => {
     const options = await resolveCreateOptions('my-app', { framework: 'astro', ssr: true, yes: true });
 

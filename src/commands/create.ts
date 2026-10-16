@@ -166,9 +166,9 @@ export async function resolveCreateOptions(
   const router = await resolveRouter(frameworkAdapter, flags.router, yes);
   const rendering = frameworkAdapter.capabilities.rendering;
   const ssrEnabled = Boolean(
-    rendering?.ssr && (flags.adapter !== undefined || (await resolveBoolean(flags.ssr, yes, false, 'Enable Astro SSR?')))
+    rendering?.ssr && (flags.adapter !== undefined || (await resolveBoolean(flags.ssr, yes, rendering.defaultSsr, `Enable ${frameworkAdapter.docs.promptLabel} SSR?`)))
   );
-  const astroAdapter = ssrEnabled
+  const astroAdapter = ssrEnabled && (rendering?.adapters?.length ?? 0) > 0
     ? resolveServerAdapter(frameworkAdapter, flags.adapter) ??
       (yes
         ? rendering?.defaultAdapter

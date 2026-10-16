@@ -25,6 +25,12 @@ describe('framework capability validation', () => {
     );
   });
 
+  it('preserves the combined SSR and adapter error for frameworks without rendering', () => {
+    expect(() => validateFrameworkOptions(frameworkAdapters.next, 'npm', { adapter: 'node' })).toThrow(
+      '--ssr and --adapter are only available when --framework astro is selected.',
+    );
+  });
+
   it('preserves the Astro package manager validation message', () => {
     expect(() => validateFrameworkOptions(frameworkAdapters.astro, 'bun', {})).toThrowError(
       new Error('Astro scaffolding is not available with bun yet. Use npm or pnpm.')
