@@ -52,6 +52,8 @@ export const astroAdapter: FrameworkAdapter = {
     globalStylesheet: 'src/styles/global.css',
     utilsPath: 'src/lib/utils.ts',
     uiDir: 'src/components/ui',
+    importAlias: '@/',
+    editHint: 'src/pages/index.astro',
     motionMainPath: 'src/components/common/motion-main.tsx',
     eslintConfigPath: 'eslint.config.mjs',
     vitestConfigPath: 'vitest.config.mts',

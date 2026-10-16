@@ -21,7 +21,10 @@ export function renderViteDeclarativeApp(
   iconLibrary: IconLibrary,
   motionEnabled: boolean,
 ) {
-  const home = renderViteHomePage(projectName, iconLibrary, motionEnabled, 'HomePage', false);
+  const home = renderViteHomePage(projectName, iconLibrary, motionEnabled, {
+    componentName: 'HomePage',
+    defaultExport: false,
+  });
   return `import { Route, Routes } from 'react-router';
 
 import NotFound from '@/NotFound';

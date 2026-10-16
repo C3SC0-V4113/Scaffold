@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { frameworkAdapters, frameworkRegistry, getFrameworkAdapter } from '../src/frameworks/registry.js';
 import { resolveServerAdapter, validateFrameworkOptions } from '../src/frameworks/validate.js';
+import { playwrightConfig, renderPlaywrightConfig } from '../src/templates/files.js';
 import type { Framework } from '../src/types.js';
 
 describe('framework adapter registry', () => {
@@ -15,6 +16,24 @@ describe('framework adapter registry', () => {
     expect(getFrameworkAdapter('next')).toBe(frameworkAdapters.next);
     expect(getFrameworkAdapter('astro')).toBe(frameworkAdapters.astro);
     expect(getFrameworkAdapter('vite')).toBe(frameworkAdapters.vite);
+  });
+});
+
+describe('framework Playwright config', () => {
+  it('preserves the pre-PR Next, Astro, and Vite server commands', () => {
+    expect(renderPlaywrightConfig('npm', frameworkAdapters.next.playwrightServer)).toBe(
+      playwrightConfig,
+    );
+    expect(renderPlaywrightConfig('npm', frameworkAdapters.astro.playwrightServer)).toBe(
+      playwrightConfig,
+    );
+    expect(renderPlaywrightConfig('npm', frameworkAdapters.vite.playwrightServer)).toBe(
+      playwrightConfig.replace(
+        'npm run dev -- --hostname 127.0.0.1 --port 3000',
+        'npm run dev -- --host 127.0.0.1 --port 3000',
+      ),
+    );
+    expect(playwrightConfig).not.toContain('PURRFOLD_E2E_SERVER_COMMAND');
   });
 });
 

@@ -112,7 +112,9 @@ describe('CLI E2E catalog boundary', () => {
 
   it('keeps the plain JavaScript harness layouts aligned with framework adapters', () => {
     for (const [framework, adapter] of Object.entries(frameworkAdapters)) {
-      expect(frameworkLayouts[framework as keyof typeof frameworkLayouts]).toEqual(adapter.layout);
+      expect(adapter.layout).toMatchObject(
+        frameworkLayouts[framework as keyof typeof frameworkLayouts],
+      );
     }
   });
 

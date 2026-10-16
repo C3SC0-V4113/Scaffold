@@ -32,6 +32,8 @@ export const nextAdapter: FrameworkAdapter = {
     globalStylesheet: 'app/globals.css',
     utilsPath: 'lib/utils.ts',
     uiDir: 'components/ui',
+    importAlias: '@/',
+    editHint: 'app/page.tsx',
     motionMainPath: 'components/common/motion-main.tsx',
     eslintConfigPath: 'eslint.config.mjs',
     vitestConfigPath: 'vitest.config.mts',

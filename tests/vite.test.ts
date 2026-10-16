@@ -46,6 +46,8 @@ describe('Vite adapter', () => {
       globalStylesheet: 'src/index.css',
       utilsPath: 'src/lib/utils.ts',
       uiDir: 'src/components/ui',
+      importAlias: '@/',
+      editHint: 'src/App.tsx',
       motionMainPath: 'src/components/common/motion-main.tsx',
       eslintConfigPath: 'eslint.config.js',
       vitestConfigPath: 'vitest.config.ts',

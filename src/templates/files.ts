@@ -262,13 +262,23 @@ export function renderViteHomePage(
   projectName: string,
   iconLibrary: IconLibrary = 'lucide',
   motionEnabled = false,
-  componentName = 'App',
-  defaultExport = true,
+  options: {
+    componentName?: string;
+    defaultExport?: boolean;
+    importAlias?: string;
+    editHint?: string;
+  } = {},
 ) {
+  const {
+    componentName = 'App',
+    defaultExport = true,
+    importAlias = '@/',
+    editHint = 'src/App.tsx',
+  } = options;
   const appName = humanizeProjectName(projectName);
   const { importLine, markup } = getCatRender(iconLibrary);
   const motionImport = motionEnabled
-    ? "import { MotionMain } from '@/components/common/motion-main';\n"
+    ? `import { MotionMain } from '${importAlias}components/common/motion-main';\n`
     : '';
   const mainTag = motionEnabled ? 'MotionMain' : 'main';
 
@@ -276,14 +286,14 @@ export function renderViteHomePage(
 
   return `${importLine}
 
-${motionImport}import { Button } from '@/components/ui/button';
+${motionImport}import { Button } from '${importAlias}components/ui/button';
 
 ${componentExport} ${componentName}() {
   return (
     <${mainTag} className="bg-background text-foreground flex min-h-dvh flex-col items-center justify-center gap-4 p-8 text-center">
       ${markup}
       <h1 className="text-2xl font-semibold tracking-tight">${appName}</h1>
-      <p className="text-muted-foreground text-sm">Edit src/App.tsx to start building.</p>
+      <p className="text-muted-foreground text-sm">Edit ${editHint} to start building.</p>
       <Button type="button">Start building</Button>
     </${mainTag}>
   );
@@ -461,6 +471,8 @@ export const reactDoctorConfig = renderReactDoctorConfig(
     globalStylesheet: 'app/globals.css',
     utilsPath: 'lib/utils.ts',
     uiDir: 'components/ui',
+    importAlias: '@/',
+    editHint: 'app/page.tsx',
     motionMainPath: 'components/common/motion-main.tsx',
     eslintConfigPath: 'eslint.config.mjs',
     vitestConfigPath: 'vitest.config.mts',
@@ -776,7 +788,8 @@ describe('Home page smoke test', () => {
 });
 `;
 
-export const motionMainUnitTest = `import { render } from '@testing-library/react';
+export function renderMotionMainUnitTest(importAlias = '@/') {
+  return `import { render } from '@testing-library/react';
 import { createElement, type ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -802,7 +815,7 @@ vi.mock('motion/react', () => ({
   useReducedMotion: () => motionState.reduced,
 }));
 
-import { MotionMain } from '@/components/common/motion-main';
+import { MotionMain } from '${importAlias}components/common/motion-main';
 
 describe('MotionMain', () => {
   beforeEach(() => {
@@ -834,6 +847,7 @@ describe('MotionMain', () => {
   });
 });
 `;
+}
 
 export const playwrightConfig = `import { defineConfig, devices } from '@playwright/test';
 
@@ -866,18 +880,26 @@ export default defineConfig({
 
 export function renderPlaywrightConfig(
   packageManager: string,
-  server: { hostFlag: '--hostname' | '--host'; port: number } = {
+  server: FrameworkAdapter['playwrightServer'] = {
     hostFlag: '--hostname',
     port: 3000,
   },
+  options: {
+    ssr?: boolean;
+    staticBuild?: { buildScript: string; startScript: string };
+  } = {},
 ) {
   const run = packageManager === 'npm' ? 'npm run' : `${packageManager} run`;
-  const devCommand = `${run} dev -- ${server.hostFlag} 127.0.0.1 --port ${server.port}`;
+  const hostArgs = `${server.hostFlag} 127.0.0.1 --port ${server.port}`;
+  const ssr = options.ssr ?? true;
+  const command =
+    !ssr && options.staticBuild
+      ? `${run} ${options.staticBuild.buildScript} && ${run} ${options.staticBuild.startScript} -- ${hostArgs}`
+      : `${run} dev -- ${hostArgs}`;
 
-  return playwrightConfig.replace(
-    "npm run dev -- --hostname 127.0.0.1 --port 3000",
-    devCommand
-  );
+  return playwrightConfig
+    .replace("const baseUrl = 'http://127.0.0.1:3000';", `const baseUrl = 'http://127.0.0.1:${server.port}';`)
+    .replace("npm run dev -- --hostname 127.0.0.1 --port 3000", command);
 }
 
 export const e2eSmokeTest = `import { expect, test } from '@playwright/test';
@@ -1124,11 +1146,13 @@ shadcn presets are supported through \`--shadcn-args --preset <id>\`.
 `;
 }
 
-function renderViteAgents(options: AgentsOptions, docs: FrameworkAdapter['docs']) {
+function renderViteBasedAgents(options: AgentsOptions, docs: FrameworkAdapter['docs']) {
   const run = agentsRunCommand(options.packageManager);
-  return `# Vite scaffold
+  const frameworkGuidance = docs.frameworkGuidance ?? 'This project uses React with TypeScript.';
+  const frameworkDocsUrl = docs.referenceDocsUrl ?? 'https://react.dev/';
+  return `# ${docs.frameworkName} scaffold
 
-This project uses Vite with React and TypeScript. Read the current Vite and React docs before changing framework APIs or project structure.
+${frameworkGuidance}
 
 ## Quality Gates
 
@@ -1146,7 +1170,7 @@ ${options.unit ? `4. \`${run} test\`\n` : ''}${options.e2e ? `- Run \`${run} tes
 
 - Architecture and scripts: \`README.md\`
 - Design rules: \`DESIGN.md\`
-- Vite reference docs: \`https://vite.dev/guide/\`
+- ${docs.frameworkName} reference docs: \`${frameworkDocsUrl}\`
 - React guidance: \`.agents/skills/vercel-react-best-practices/SKILL.md\`
 - If any agent skill is missing, rerun \`sh skills.sh\`.
 - Component placement rules: \`.agents/skills/shadcn-component-boundaries/SKILL.md\`
@@ -1224,7 +1248,7 @@ export function renderAgents(options: AgentsOptions, docs: FrameworkAdapter['doc
   const renderers: Record<FrameworkAdapter['docs']['agentsTemplate'], (options: AgentsOptions, docs: FrameworkAdapter['docs']) => string> = {
     next: renderNextAgents,
     astro: renderAstroAgents,
-    vite: renderViteAgents,
+    vite: renderViteBasedAgents,
   };
 
   return renderers[docs.agentsTemplate](options, docs);
