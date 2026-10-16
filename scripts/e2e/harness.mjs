@@ -1403,6 +1403,21 @@ export function isPnpmCacheOutsideWorkDir(context) {
   return relativePnpmCache === '..' || relativePnpmCache.startsWith(`..${path.sep}`) || path.isAbsolute(relativePnpmCache);
 }
 
+export function isInsideTempDir(dir, { tempDir = tmpdir(), realpath = realpathSync.native, platform = process.platform } = {}) {
+  const tempRoot = realpath(tempDir);
+  const pathApi = platform === 'win32' ? path.win32 : path;
+  const normalizedDir = platform === 'win32' ? dir.toLowerCase() : dir;
+  const normalizedTempRoot = platform === 'win32' ? tempRoot.toLowerCase() : tempRoot;
+  const relative = pathApi.relative(normalizedTempRoot, normalizedDir);
+
+  return (
+    relative !== '' &&
+    relative !== '..' &&
+    !relative.startsWith(`..${pathApi.sep}`) &&
+    !pathApi.isAbsolute(relative)
+  );
+}
+
 export function cleanupContext(context) {
   if (context.keep) {
     return;
@@ -1410,7 +1425,7 @@ export function cleanupContext(context) {
   if (isPnpmCacheOutsideWorkDir(context)) {
     rmSync(context.pnpmCacheDir, { recursive: true, force: true });
   }
-  if (context.workDir.includes(tmpdir())) {
+  if (isInsideTempDir(context.workDir)) {
     rmSync(context.workDir, { recursive: true, force: true });
   }
 }
