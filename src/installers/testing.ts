@@ -36,6 +36,7 @@ export async function installTestingFiles(
       path.join(projectRoot, 'playwright.config.ts'),
       renderPlaywrightConfig(options.packageManager, adapter.playwrightServer, {
         ssr: options.ssr,
+        staticBuild: adapter.playwrightServer.staticBuild,
       })
     );
     await executor.writeFile(

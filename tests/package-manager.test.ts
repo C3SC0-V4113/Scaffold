@@ -7,6 +7,16 @@ describe('package manager command mapping', () => {
     expect(args.filter((arg) => arg === '--disable-git')).toHaveLength(1);
   }
 
+  it('uses a branch-qualified React Router template URL for all managers', () => {
+    for (const manager of ['npm', 'pnpm', 'bun'] as const) {
+      const command = getPackageManagerCommands(manager).createReactRouterApp('my-app');
+      expect(command.args).toContain('create-react-router@latest');
+      expect(command.args).toContain(
+        'https://github.com/remix-run/react-router-templates/tree/main/default',
+      );
+    }
+  });
+
   it('maps npm commands', () => {
     const commands = getPackageManagerCommands('npm');
     const create = commands.createNextApp('my-app', true);

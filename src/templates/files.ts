@@ -1249,6 +1249,7 @@ export function renderAgents(options: AgentsOptions, docs: FrameworkAdapter['doc
     next: renderNextAgents,
     astro: renderAstroAgents,
     vite: renderViteBasedAgents,
+    'react-router': renderViteBasedAgents,
   };
 
   return renderers[docs.agentsTemplate](options, docs);

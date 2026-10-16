@@ -1,7 +1,7 @@
 import type { RouterChoice } from './routers.js';
 export type { RouterChoice } from './routers.js';
 
-export type Framework = 'next' | 'astro' | 'vite';
+export type Framework = 'next' | 'astro' | 'vite' | 'react-router';
 
 export type PackageManager = 'npm' | 'pnpm' | 'bun';
 

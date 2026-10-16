@@ -169,7 +169,7 @@ describe('Vite adapter', () => {
       validateFrameworkOptions(viteAdapter, 'npm', { ssr: true }),
     ).toThrowError(
       new Error(
-        '--ssr and --adapter are only available when --framework astro is selected.',
+        '--ssr and --adapter are only available when --framework astro or react-router is selected.',
       ),
     );
     expect(() => resolveServerAdapter(viteAdapter, 'node')).toThrowError(

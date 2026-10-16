@@ -80,6 +80,7 @@ describe('cli metadata', () => {
           routers: ['none', 'react-router-data', 'react-router-declarative'],
           defaultRouter: 'react-router-data',
         },
+        { id: 'react-router', routers: [], defaultRouter: 'none' },
       ]);
     } finally {
       log.mockRestore();

@@ -40,6 +40,8 @@ export const ASTRO_DEPENDENCY_VERSION_OVERRIDES: Record<string, string> =
   versions.astroOverrides;
 export const VITE_DEPENDENCY_VERSION_OVERRIDES: Record<string, string> =
   versions.viteOverrides;
+export const REACT_ROUTER_DEPENDENCY_VERSION_OVERRIDES: Record<string, string> =
+  versions.reactRouterOverrides;
 export const FRAMEWORK_DEPENDENCY_OVERRIDES: Record<
   Framework,
   Readonly<Record<string, string>>
@@ -47,6 +49,7 @@ export const FRAMEWORK_DEPENDENCY_OVERRIDES: Record<
   next: {},
   astro: ASTRO_DEPENDENCY_VERSION_OVERRIDES,
   vite: VITE_DEPENDENCY_VERSION_OVERRIDES,
+  'react-router': REACT_ROUTER_DEPENDENCY_VERSION_OVERRIDES,
 };
 
 /**
@@ -124,6 +127,10 @@ export const viteCoreDevDependencies = [
   '@shadcn/lint',
 ];
 
+export const reactRouterCoreDevDependencies = viteCoreDevDependencies.filter(
+  (dependency) => dependency !== 'eslint-plugin-react-refresh',
+);
+
 export const unitDevDependencies = [
   'vitest',
   'vite',
@@ -169,6 +176,10 @@ export const FRAMEWORK_DEVELOPMENT_DEPENDENCIES: Record<
     core: viteCoreDevDependencies,
     unitExclusions: VITE_UNIT_DEPENDENCY_EXCLUSIONS,
   },
+  'react-router': {
+    core: reactRouterCoreDevDependencies,
+    unitExclusions: ['vite', 'vite-tsconfig-paths'],
+  },
 };
 
 export const e2eDevDependencies = [
@@ -212,6 +223,13 @@ export const FRAMEWORK_PACKAGE_SCRIPT_CONFIG: Record<
     scanInit: 'react-scan init -y --skip-install',
     scan: 'vite',
     typecheck: 'tsc -b',
+  },
+  'react-router': {
+    doctor: 'react-doctor . --yes --blocking warning',
+    doctorStaged: 'react-doctor . --staged --blocking warning',
+    scanInit: 'react-scan init -y --skip-install',
+    scan: 'react-router dev',
+    typecheck: 'react-router typegen && tsc',
   },
 };
 

@@ -29,8 +29,8 @@ export interface FrameworkAdapter {
     globalStylesheet: string;
     utilsPath: string;
     uiDir: string;
-    importAlias?: string;
-    editHint?: string;
+    importAlias: string;
+    editHint: string;
     motionMainPath: string;
     eslintConfigPath: 'eslint.config.js' | 'eslint.config.mjs';
     vitestConfigPath: 'vitest.config.ts' | 'vitest.config.mts';
@@ -50,7 +50,10 @@ export interface FrameworkAdapter {
   playwrightServer: {
     hostFlag: '--hostname' | '--host';
     port: number;
-    forwardArgsSeparator?: boolean;
+    staticBuild?: {
+      buildScript: string;
+      startScript: string;
+    };
   };
   prettierConfig: {
     tailwindStylesheet: string;
@@ -96,7 +99,7 @@ export interface FrameworkAdapter {
   ): string[];
   docs: {
     mergeStrategy: 'replace' | 'merge';
-    agentsTemplate: 'next' | 'astro' | 'vite';
+    agentsTemplate: 'next' | 'astro' | 'vite' | 'react-router';
     frameworkName: string;
     promptLabel: string;
     frameworkGuidance?: string;
