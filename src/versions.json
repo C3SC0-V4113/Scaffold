@@ -48,7 +48,7 @@
     "motion": "14.1.0"
   },
   "astroOverrides": {
-    "@vitejs/plugin-react": "5.2.0"
+    "@vitejs/plugin-react": "6.1.2"
   },
   "viteOverrides": {
     "vite": "8.3.4",
