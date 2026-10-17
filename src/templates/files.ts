@@ -3,6 +3,7 @@ import versions from '../versions.json' with { type: 'json' };
 import { routerCatalog } from '../routers.js';
 import type { CreateOptions, IconLibrary, PackageManager } from '../types.js';
 import type { FrameworkAdapter } from '../frameworks/types.js';
+import { featureDocs, featureDoctorIgnoredRules } from '../features/registry.js';
 import { getCatRender } from './icons.js';
 import { testReportDirs } from './ignores.js';
 
@@ -386,8 +387,8 @@ import '../styles/global.css';
 
 export function renderReactDoctorConfig(
   layout: FrameworkAdapter['layout'],
-  motion: boolean,
-  ignoreMotionRule: boolean
+  options: Pick<CreateOptions, 'framework' | 'motion'>,
+  adapter: FrameworkAdapter
 ) {
   // React Doctor already skips build output and most dot directories, but not
   // test reports: Playwright's bundles minified trace-viewer scripts.
@@ -401,10 +402,10 @@ export function renderReactDoctorConfig(
   // even when app/globals.css contains the media query and the Motion wrapper
   // calls useReducedMotion(). Keep both real safeguards and suppress only
   // that verified false positive until the detector recognizes them.
-  const ignoredRules =
-    ignoreMotionRule && motion
-      ? '    "rules": ["react-doctor/require-reduced-motion"],\n'
-      : '';
+  const rules = featureDoctorIgnoredRules(options, adapter);
+  const ignoredRules = rules.length
+    ? `    "rules": [${rules.map((rule) => JSON.stringify(rule)).join(', ')}],\n`
+    : '';
 
   return `{
   "ignore": {
@@ -434,8 +435,8 @@ export const reactDoctorConfig = renderReactDoctorConfig(
     eslintConfigPath: 'eslint.config.mjs',
     vitestConfigPath: 'vitest.config.mts',
   },
-  false,
-  true
+  { framework: 'next', motion: false },
+  { id: 'next' } as FrameworkAdapter
 );
 
 // .mjs + ESM syntax on purpose: Astro apps set "type": "module", so a
@@ -893,7 +894,7 @@ ${run} check
 
 ${docs.toolingLines.join('\n')}
 ${(options.router ?? 'none') !== 'none' ? `- ${routerCatalog[options.router ?? 'none'].label}.\n` : ''}${options.unit ? '- Vitest and React Testing Library.\n' : ''}${options.e2e ? '- Playwright E2E testing.\n' : ''}${options.commitlint ? '- Conventional commit linting.\n' : ''}${options.motion ? '- Motion for React animations.\n' : ''}
-${docs.routerGuidance?.(options.router ?? 'none') ? `## Router\n\n${docs.routerGuidance(options.router ?? 'none')}\n\n` : ''}${renderMotionGuide(options, docs)}${renderShadcnMcpGuide(options)}
+${docs.routerGuidance?.(options.router ?? 'none') ? `## Router\n\n${docs.routerGuidance(options.router ?? 'none')}\n\n` : ''}${renderMotionGuide(options)}${renderShadcnMcpGuide(options)}
 ## shadcn Presets
 
 purrfold forwards additional shadcn CLI arguments, including official presets:
@@ -959,12 +960,15 @@ Fix a violation with a token, variant, or size from the design system, and add o
 `;
 }
 
-function renderMotionGuide(options: Pick<CreateOptions, 'motion'>, docs: FrameworkAdapter['docs']) {
+function renderMotionGuide(options: Pick<CreateOptions, 'framework' | 'motion'>) {
   if (!options.motion) {
     return '';
   }
 
-  const frameworkGuidance = docs.motionGuidance;
+  const frameworkGuidance = featureDocs(options.framework, options)
+    .map((docs) => docs.readme)
+    .filter(Boolean)
+    .join(' ');
 
   return `## Motion
 
@@ -1018,7 +1022,7 @@ ${options.unit ? `4. \`${run} test\`\n` : ''}${options.e2e ? `- Run \`${run} tes
 - Component placement rules: \`.agents/skills/shadcn-component-boundaries/SKILL.md\`
 - Minimum evaluation: \`.agents/skills/project-min-evaluation/SKILL.md\`
 ${options.unit ? '- Vitest guidance: `.agents/skills/vitest/SKILL.md`\n' : ''}${options.e2e ? '- Playwright guidance: `.agents/skills/playwright-best-practices/SKILL.md`\n' : ''}${options.commitlint ? '- Commit messages are checked with commitlint.\n' : ''}
-${renderMotionAgentRules(options, docs)}## shadcn MCP
+${renderMotionAgentRules(options)}## shadcn MCP
 
 ${options.mcp ? 'shadcn MCP setup was requested during scaffold.' : 'shadcn MCP setup is optional and was not run by default.'}
 
@@ -1072,7 +1076,7 @@ ${options.unit ? `4. \`${run} test\`\n` : ''}${options.e2e ? `- Run \`${run} tes
 - Component placement rules: \`.agents/skills/shadcn-component-boundaries/SKILL.md\`
 - Minimum evaluation: \`.agents/skills/project-min-evaluation/SKILL.md\`
 ${options.unit ? '- Vitest guidance: `.agents/skills/vitest/SKILL.md`\n' : ''}${options.e2e ? '- Playwright guidance: `.agents/skills/playwright-best-practices/SKILL.md`\n' : ''}${options.commitlint ? '- Commit messages are checked with commitlint.\n' : ''}
-${docs.routerGuidance?.(options.router ?? 'none') ? `## Router\n\n${docs.routerGuidance(options.router ?? 'none')}\n\n` : ''}${renderMotionAgentRules(options, docs)}## shadcn MCP
+${docs.routerGuidance?.(options.router ?? 'none') ? `## Router\n\n${docs.routerGuidance(options.router ?? 'none')}\n\n` : ''}${renderMotionAgentRules(options)}## shadcn MCP
 
 ${options.mcp ? 'shadcn MCP setup was requested during scaffold.' : 'shadcn MCP setup is optional and was not run by default.'}
 
@@ -1116,7 +1120,7 @@ Do not use \`next lint\`; use the ESLint CLI.
 - Component placement rules: \`.agents/skills/shadcn-component-boundaries/SKILL.md\`
 - Minimum evaluation: \`.agents/skills/project-min-evaluation/SKILL.md\`
 ${options.unit ? '- Vitest guidance: `.agents/skills/vitest/SKILL.md`\n' : ''}${options.e2e ? '- Playwright guidance: `.agents/skills/playwright-best-practices/SKILL.md`\n' : ''}${options.commitlint ? '- Commit messages are checked with commitlint.\n' : ''}
-${renderMotionAgentRules(options, docs)}## shadcn MCP
+${renderMotionAgentRules(options)}## shadcn MCP
 
 ${options.mcp ? 'shadcn MCP setup was requested during scaffold.' : 'shadcn MCP setup is optional and was not run by default.'}
 
@@ -1151,12 +1155,15 @@ export function renderAgents(options: AgentsOptions, docs: FrameworkAdapter['doc
   return renderers[docs.agentsTemplate](options, docs);
 }
 
-function renderMotionAgentRules(options: Pick<CreateOptions, 'motion'>, docs: FrameworkAdapter['docs']) {
+function renderMotionAgentRules(options: Pick<CreateOptions, 'framework' | 'motion'>) {
   if (!options.motion) {
     return '';
   }
 
-  const frameworkGuidance = docs.motionAgentGuidance;
+  const frameworkGuidance = featureDocs(options.framework, options)
+    .map((docs) => docs.agents)
+    .filter(Boolean)
+    .join('\n');
 
   return `## Motion Rules
 

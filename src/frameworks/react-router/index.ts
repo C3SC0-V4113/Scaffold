@@ -117,7 +117,7 @@ test('renders the not found boundary for unknown routes', async ({ page }) => {
 });
 `,
     doctorConfig: (options) =>
-      renderReactDoctorConfig(reactRouterAdapter.layout, options.motion, false),
+      renderReactDoctorConfig(reactRouterAdapter.layout, options, reactRouterAdapter),
   },
   packageScripts: (options) =>
     buildScripts(options, reactRouterAdapter.packageScriptConfig),

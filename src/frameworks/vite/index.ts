@@ -110,7 +110,7 @@ export const viteAdapter: FrameworkAdapter = {
     unitSmokeTest: (options) => renderViteRouterUnitSmokeTest(options.router),
     e2eSmokeTest: (options) => renderViteRouterE2ESmokeTest(options.router),
     doctorConfig: (options) =>
-      renderReactDoctorConfig(viteAdapter.layout, options.motion, false),
+      renderReactDoctorConfig(viteAdapter.layout, options, viteAdapter),
   },
   packageScripts: (options) =>
     buildScripts(options, viteAdapter.packageScriptConfig),

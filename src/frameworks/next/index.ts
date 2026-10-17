@@ -77,8 +77,8 @@ export const nextAdapter: FrameworkAdapter = {
     doctorConfig: (o) =>
       renderReactDoctorConfig(
         nextAdapter.layout,
-        o.motion,
-        nextAdapter.docs.doctorIgnoreMotionRule,
+        o,
+        nextAdapter,
       ),
   },
   packageScripts: (o) => buildScripts(o, nextAdapter.packageScriptConfig),

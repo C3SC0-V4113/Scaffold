@@ -124,8 +124,8 @@ export const astroAdapter: FrameworkAdapter = {
     doctorConfig: (o) =>
       renderReactDoctorConfig(
         astroAdapter.layout,
-        o.motion,
-        astroAdapter.docs.doctorIgnoreMotionRule,
+        o,
+        astroAdapter,
       ),
   },
   packageScripts: (o) => buildScripts(o, astroAdapter.packageScriptConfig),

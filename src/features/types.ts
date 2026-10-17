@@ -1,6 +1,8 @@
 import type { FrameworkAdapter } from '../frameworks/types.js';
 import type { CreateOptions, Executor, Framework } from '../types.js';
 
+export type FeatureOptions = Pick<CreateOptions, 'motion'>;
+
 export interface EslintFragment {
   files: string;
   rules: Readonly<Record<string, string>>;
@@ -8,15 +10,15 @@ export interface EslintFragment {
 
 export interface FeatureFileContext {
   adapter: FrameworkAdapter;
-  options: CreateOptions;
+  options: Pick<CreateOptions, 'motion' | 'unit'>;
   projectRoot: string;
   stage: 'app-shell' | 'unit-tests';
 }
 
 export interface FeatureModule {
   id: string;
-  enabled(options: CreateOptions): boolean;
-  skills(options: CreateOptions): readonly string[];
+  enabled(options: FeatureOptions): boolean;
+  skills(options: FeatureOptions): readonly string[];
   docs: Record<Framework, { readme: string; agents: string }>;
   install(context: {
     adapter: FrameworkAdapter;
@@ -25,6 +27,6 @@ export interface FeatureModule {
     projectRoot: string;
   }): Promise<void>;
   files?(context: FeatureFileContext): readonly { path: string; content: string }[];
-  lint?(options: CreateOptions, adapter: FrameworkAdapter): EslintFragment | undefined;
-  doctorIgnoredRules?(options: CreateOptions, adapter: FrameworkAdapter): readonly string[];
+  lint?(options: FeatureOptions, framework: Framework): EslintFragment | undefined;
+  doctorIgnoredRules?(options: FeatureOptions, adapter: FrameworkAdapter): readonly string[];
 }

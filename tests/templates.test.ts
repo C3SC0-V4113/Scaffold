@@ -39,7 +39,11 @@ const adapterFor = (framework: Framework) => getFrameworkAdapter(framework);
 const renderPrettierConfig = (framework: Framework) => adapterFor(framework).templates.prettier({ framework } as CreateOptions);
 const renderVitestConfig = (framework: Framework) => adapterFor(framework).templates.vitest({ framework } as CreateOptions);
 const renderReactDoctorConfig = (framework: Framework, motion = false) =>
-  renderReactDoctorConfigTemplate(adapterFor(framework).layout, motion, adapterFor(framework).docs.doctorIgnoreMotionRule);
+  renderReactDoctorConfigTemplate(
+    adapterFor(framework).layout,
+    { framework, motion },
+    adapterFor(framework),
+  );
 const renderDesignDoc = (framework: Framework) => renderDesignDocTemplate(adapterFor(framework).layout);
 const renderReadme = (options: Parameters<typeof renderReadmeTemplate>[0]) =>
   renderReadmeTemplate(options, adapterFor(options.framework).docs);

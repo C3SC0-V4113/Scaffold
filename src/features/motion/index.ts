@@ -78,8 +78,8 @@ export const motionFeature: FeatureModule = {
     }
     return [];
   },
-  lint(options, adapter) {
-    const files = frameworkFiles[adapter.id].lintFile;
+  lint(options, framework) {
+    const files = frameworkFiles[framework].lintFile;
     if (!options.motion || !files) return undefined;
     return {
       files,

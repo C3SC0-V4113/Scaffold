@@ -1,4 +1,5 @@
 import type { CreateOptions } from '../types.js';
+import { featureLint } from '../features/registry.js';
 import { agentStateDirs, testReportDirs, usesCloudflareAdapter } from './ignores.js';
 
 interface EslintConfigOptions
@@ -42,6 +43,20 @@ const shadcnLintBlock = [
   '  },',
 ];
 
+function renderFeatureLint(options: EslintConfigOptions) {
+  return featureLint(
+    { motion: options.motion ?? false },
+    options.framework,
+  ).flatMap(({ files, rules }) => [
+    '  {',
+    `    files: ['${files}'],`,
+    '    rules: {',
+    ...Object.entries(rules).map(([rule, value]) => `      '${rule}': '${value}',`),
+    '    },',
+    '  },',
+  ]);
+}
+
 export function renderNextEslintConfig(options: EslintConfigOptions) {
   const lines = [
     shadcnLintImport,
@@ -68,16 +83,7 @@ export function renderNextEslintConfig(options: EslintConfigOptions) {
     "      'react-doctor/only-export-components': 'off',",
     '    },',
     '  },',
-    ...(options.motion
-      ? [
-          '  {',
-          "    files: ['components/common/motion-main.tsx'],",
-          '    rules: {',
-          "      'react-doctor/jsx-no-new-object-as-prop': 'off',",
-          '    },',
-          '  },',
-        ]
-      : []),
+    ...renderFeatureLint(options),
     '  {',
     "    files: ['**/*.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],",
     options.registerImportPlugin ? '    plugins: {' : '',
@@ -225,16 +231,7 @@ export function renderAstroEslintConfig(options: EslintConfigOptions) {
     '    ...reactYouMightNotNeedAnEffect.configs.recommended,',
     "    files: ['**/*.{jsx,tsx}'],",
     '  },',
-    ...(options.motion
-      ? [
-          '  {',
-          "    files: ['src/components/common/motion-main.tsx'],",
-          '    rules: {',
-          "      'react-doctor/jsx-no-new-object-as-prop': 'off',",
-          '    },',
-          '  },',
-        ]
-      : []),
+    ...renderFeatureLint(options),
     '  {',
     "    files: ['**/*.{js,mjs,cjs,ts,mts,cts,jsx,tsx,astro}'],",
     options.registerImportPlugin ? '    plugins: {' : '',
@@ -372,6 +369,7 @@ export function renderViteEslintConfig(options: EslintConfigOptions) {
     "    ...reactYouMightNotNeedAnEffect.configs.recommended,",
     "    files: ['**/*.{jsx,tsx}'],",
     '  },',
+    ...renderFeatureLint(options),
     ...(options.reactRouterRules ?? Boolean(options.router && options.router !== 'none')
       ? [
           '  {',
