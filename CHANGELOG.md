@@ -1,5 +1,11 @@
 # purrfold
 
+## 0.10.0
+
+### Minor Changes
+
+- b2c3103: Add React Router framework mode with SSR and static prerendering options.
+
 ## 0.9.0
 
 ### Minor Changes
