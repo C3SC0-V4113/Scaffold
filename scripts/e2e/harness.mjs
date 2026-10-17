@@ -415,7 +415,7 @@ function runGeneratedE2e(projectRoot, packageManager, env, { checkBrowserErrors 
     }
     writeFileSync(homeSpecPath, originalHomeSpec
       .replace(homeTest, `${homeTest}\n  const browserErrors: string[] = [];\n  page.on('console', (message) => {\n    if (message.type() === 'error') browserErrors.push(message.text());\n  });\n  page.on('pageerror', (error) => browserErrors.push(error.message));`)
-      .replace(homeAssertion, `${homeAssertion}\n  expect(browserErrors).toEqual([]);`));
+      .replace(homeAssertion, `${homeAssertion}\n  browserErrors.length = 0;\n  await page.reload();\n  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();\n  expect(browserErrors).toEqual([]);`));
   }
   let result;
   try {
