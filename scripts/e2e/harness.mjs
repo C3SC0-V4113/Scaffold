@@ -814,6 +814,59 @@ export function assertGeneratedApp(projectRoot, expected) {
     );
   }
 
+  if (expected.query) {
+    const queryVersion = generatedVersions.dependencies['@tanstack/react-query'];
+    const devtoolsVersion = generatedVersions.dependencies['@tanstack/react-query-devtools'];
+    const eslintQueryVersion = generatedVersions.dependencies['@tanstack/eslint-plugin-query'];
+    if (!packageJson.dependencies?.['@tanstack/react-query']?.includes(queryVersion)) {
+      throw new Error(`package.json should pin @tanstack/react-query to ${queryVersion}`);
+    }
+    if (!packageJson.dependencies?.['@tanstack/react-query-devtools']?.includes(devtoolsVersion)) {
+      throw new Error(`package.json should pin @tanstack/react-query-devtools to ${devtoolsVersion}`);
+    }
+    if (!packageJson.devDependencies?.['@tanstack/eslint-plugin-query']?.includes(eslintQueryVersion)) {
+      throw new Error(`package.json should pin @tanstack/eslint-plugin-query to ${eslintQueryVersion}`);
+    }
+    assertPath(projectRoot, featureFiles.query[framework]);
+    assertIncludes(skillsScript, '--skill tanstack-query', 'skills.sh');
+    assertIncludes(eslintConfig, "queryPlugin.configs['flat/recommended']", eslintConfigPath);
+    assertIncludes(eslintConfig, "reactDoctor.configs['tanstack-query']", eslintConfigPath);
+    for (const rule of [
+      'react-doctor/query-no-rest-destructuring',
+      'react-doctor/query-stable-query-client',
+      'react-doctor/query-no-void-query-fn',
+    ]) {
+      assertIncludes(eslintConfig, `'${rule}': 'off'`, eslintConfigPath);
+    }
+    const provider = readFileSync(path.join(projectRoot, featureFiles.query[framework]), 'utf8');
+    assertIncludes(provider, '<QueryClientProvider', featureFiles.query[framework]);
+    assertIncludes(provider, '<ReactQueryDevtools', featureFiles.query[framework]);
+    if (framework === 'next' || framework === 'react-router') {
+      assertIncludes(provider, 'useState(() => new QueryClient())', featureFiles.query[framework]);
+    } else if (framework === 'astro') {
+      assertPath(projectRoot, 'src/lib/query-client.ts');
+      assertIncludes(readFileSync(path.join(projectRoot, 'src/lib/query-client.ts'), 'utf8'), 'browserQueryClient', 'src/lib/query-client.ts');
+    } else {
+      assertPath(projectRoot, 'src/query-client.ts');
+      if (router === 'react-router-data') {
+        assertPath(projectRoot, 'src/queries/home.ts');
+        assertIncludes(readFileSync(path.join(projectRoot, 'src/router.tsx'), 'utf8'), 'ensureQueryData', 'src/router.tsx');
+      } else {
+        assertPath(projectRoot, 'src/queries/home.ts', false);
+      }
+    }
+    if (expected.unit) assertPath(projectRoot, 'tests/unit/query-provider.test.tsx');
+    else assertPath(projectRoot, 'tests/unit/query-provider.test.tsx', false);
+  } else {
+    for (const dependency of ['@tanstack/react-query', '@tanstack/react-query-devtools', '@tanstack/eslint-plugin-query']) {
+      if (packageJson.dependencies?.[dependency] || packageJson.devDependencies?.[dependency]) {
+        throw new Error(`${dependency} should not be installed unless --query is selected`);
+      }
+    }
+    assertNotIncludes(skillsScript, '--skill tanstack-query', 'skills.sh');
+    assertPath(projectRoot, featureFiles.query[framework], false);
+  }
+
   if (framework === 'astro') {
     const tsconfig = readJson(path.join(projectRoot, 'tsconfig.json'));
     const astroConfig = readFileSync(path.join(projectRoot, 'astro.config.mjs'), 'utf8');

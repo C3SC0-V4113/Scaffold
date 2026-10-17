@@ -19,6 +19,10 @@ import { featureFiles, frameworkLayouts, frameworkVersionOverrides } from '../sc
 import versions from '../src/versions.json' with { type: 'json' };
 import { frameworkAdapters } from '../src/frameworks/registry.js';
 import { motionFilePaths } from '../src/features/motion/index.js';
+import { queryPaths } from '../src/features/query/files.js';
+import type { Framework } from '../src/types.js';
+
+const queryHarnessPaths = featureFiles as typeof featureFiles & { query: Record<Framework, string> };
 
 function resolveNpmCli(): string {
   if (process.env.npm_execpath && existsSync(process.env.npm_execpath)) {
@@ -123,6 +127,12 @@ describe('CLI E2E catalog boundary', () => {
   it('keeps the plain JavaScript motion paths aligned with the feature module', () => {
     for (const framework of Object.keys(frameworkAdapters) as Array<keyof typeof frameworkAdapters>) {
       expect(featureFiles.motion[framework]).toBe(motionFilePaths[framework]);
+    }
+  });
+
+  it('keeps the plain JavaScript query paths aligned with the feature module', () => {
+    for (const [framework, paths] of Object.entries(queryPaths)) {
+      expect(queryHarnessPaths.query[framework as Framework]).toBe(paths.provider);
     }
   });
 
@@ -271,6 +281,12 @@ describe('CLI E2E catalog boundary', () => {
         'dry-run-react-router-npm',
         'dry-run-react-router-adapter-unsupported',
         'dry-run-react-router-router-unsupported',
+        'dry-run-query-default-off',
+        'dry-run-next-query',
+        'dry-run-astro-query',
+        'dry-run-vite-data-query',
+        'dry-run-vite-none-query',
+        'dry-run-react-router-query',
       ];
 
       try {
