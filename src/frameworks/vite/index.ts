@@ -63,7 +63,6 @@ export const viteAdapter: FrameworkAdapter = {
     uiDir: 'src/components/ui',
     importAlias: '@/',
     editHint: 'src/App.tsx',
-    motionMainPath: 'src/components/common/motion-main.tsx',
     eslintConfigPath: 'eslint.config.js',
     vitestConfigPath: 'vitest.config.ts',
   },
@@ -130,11 +129,6 @@ export const viteAdapter: FrameworkAdapter = {
       '- `@shadcn/lint` enforcing the design system rules in `DESIGN.md`.',
       '- React Doctor and React Scan.',
     ],
-    motionGuidance:
-      'Vite renders React on the client, so Motion components need no server/client boundary.',
-    motionAgentGuidance:
-      '- Vite renders React on the client; use Motion components without a server/client boundary.',
-    doctorIgnoreMotionRule: false,
     agentsRules: '',
     routerGuidance: (router) => {
       if (router === 'none') return '';

@@ -37,7 +37,6 @@ export const reactRouterAdapter: FrameworkAdapter = {
     uiDir: 'app/components/ui',
     importAlias: '~/',
     editHint: 'app/routes/home.tsx',
-    motionMainPath: 'app/components/common/motion-main.tsx',
     eslintConfigPath: 'eslint.config.js',
     vitestConfigPath: 'vitest.config.ts',
   },
@@ -136,11 +135,6 @@ test('renders the not found boundary for unknown routes', async ({ page }) => {
       '- shadcn UI initialized through the shadcn CLI.',
       '- ESLint flat config with TypeScript, React Hooks, React Doctor, and React Router rules.',
     ],
-    motionGuidance:
-      "React Router renders components on the server and hydrates them in the browser. The 'use client' directive has no special effect in this framework mode.",
-    motionAgentGuidance:
-      "- React Router renders Motion components on the server and hydrates them in the browser; 'use client' has no special effect in this framework mode.",
-    doctorIgnoreMotionRule: false,
     agentsRules: '',
   },
 };

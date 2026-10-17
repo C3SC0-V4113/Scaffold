@@ -53,7 +53,6 @@ export const astroAdapter: FrameworkAdapter = {
     uiDir: 'src/components/ui',
     importAlias: '@/',
     editHint: 'src/pages/index.astro',
-    motionMainPath: 'src/components/common/motion-main.tsx',
     eslintConfigPath: 'eslint.config.mjs',
     vitestConfigPath: 'vitest.config.mts',
   },
@@ -145,11 +144,6 @@ export const astroAdapter: FrameworkAdapter = {
       '- `@shadcn/lint` enforcing the design system rules in `DESIGN.md`.',
       '- React Doctor and React Scan.',
     ],
-    motionGuidance:
-      'Astro/Vite requires no additional Motion configuration. Use Motion inside React islands.',
-    motionAgentGuidance:
-      '- Astro/Vite requires no additional Motion configuration; animate within React islands.',
-    doctorIgnoreMotionRule: false,
     agentsRules: `<!-- BEGIN:astro-agent-rules -->\n\n# This is an Astro scaffold\n\nThis project uses Astro. Read the current Astro docs before changing framework APIs or project structure.\n\n<!-- END:astro-agent-rules -->`,
   },
 };

@@ -31,7 +31,6 @@ export interface FrameworkAdapter {
     uiDir: string;
     importAlias: string;
     editHint: string;
-    motionMainPath: string;
     eslintConfigPath: 'eslint.config.js' | 'eslint.config.mjs';
     vitestConfigPath: 'vitest.config.ts' | 'vitest.config.mts';
   };
@@ -107,9 +106,6 @@ export interface FrameworkAdapter {
     referenceDocsUrl?: string;
     readmeTitle: string;
     toolingLines: readonly string[];
-    motionGuidance: string;
-    motionAgentGuidance: string;
-    doctorIgnoreMotionRule: boolean;
     agentsRules: string;
     routerGuidance?(router: RouterChoice): string;
   };

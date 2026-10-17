@@ -50,7 +50,6 @@ describe('Vite adapter', () => {
       uiDir: 'src/components/ui',
       importAlias: '@/',
       editHint: 'src/App.tsx',
-      motionMainPath: 'src/components/common/motion-main.tsx',
       eslintConfigPath: 'eslint.config.js',
       vitestConfigPath: 'vitest.config.ts',
     });

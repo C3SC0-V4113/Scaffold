@@ -44,7 +44,6 @@ describe('React Router framework adapter', () => {
       globalStylesheet: 'app/app.css',
       utilsPath: 'app/lib/utils.ts',
       uiDir: 'app/components/ui',
-      motionMainPath: 'app/components/common/motion-main.tsx',
     });
     expect(reactRouterAdapter.capabilities.rendering).toEqual({
       ssr: true,

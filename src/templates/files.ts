@@ -431,7 +431,6 @@ export const reactDoctorConfig = renderReactDoctorConfig(
     uiDir: 'components/ui',
     importAlias: '@/',
     editHint: 'app/page.tsx',
-    motionMainPath: 'components/common/motion-main.tsx',
     eslintConfigPath: 'eslint.config.mjs',
     vitestConfigPath: 'vitest.config.mts',
   },

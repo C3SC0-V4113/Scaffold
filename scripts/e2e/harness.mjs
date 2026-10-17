@@ -18,7 +18,7 @@ import { createRequire } from 'node:module';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
-import { frameworkLayouts, generatedVersions, pinnedDependency, readFlag, readListFlag, rootDir } from './catalog.mjs';
+import { featureFiles, frameworkLayouts, generatedVersions, pinnedDependency, readFlag, readListFlag, rootDir } from './catalog.mjs';
 
 export { generatedVersions, pinnedDependency, readFlag, readListFlag, rootDir };
 
@@ -795,7 +795,7 @@ export function assertGeneratedApp(projectRoot, expected) {
     }
     assertIncludes(skillsScript, 'freshtechbro/claudedesignskills', 'skills.sh');
     assertIncludes(skillsScript, '--skill motion-framer', 'skills.sh');
-    const motionComponent = layout.motionMainPath;
+    const motionComponent = featureFiles.motion[framework];
     assertPath(projectRoot, motionComponent);
     assertIncludes(
       readFileSync(path.join(projectRoot, globalStylesheet), 'utf8'),
@@ -809,7 +809,7 @@ export function assertGeneratedApp(projectRoot, expected) {
     assertNotIncludes(skillsScript, 'motion-framer', 'skills.sh');
     assertPath(
       projectRoot,
-      layout.motionMainPath,
+      featureFiles.motion[framework],
       false
     );
   }
