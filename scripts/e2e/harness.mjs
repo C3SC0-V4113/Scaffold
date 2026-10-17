@@ -398,9 +398,13 @@ function runGeneratedE2e(projectRoot, packageManager, env, { checkBrowserErrors 
   if (install.status !== 0) {
     throw new Error(`Playwright Chromium install failed in ${projectRoot}\n${install.output}`);
   }
+  const playwrightArgs = [
+    '--project=chromium',
+    ...(checkBrowserErrors ? ['--grep=renders the home route'] : []),
+  ];
   const testArgs = command === 'npm'
-    ? ['run', 'test:e2e', '--', '--project=chromium']
-    : ['run', 'test:e2e', '--project=chromium'];
+    ? ['run', 'test:e2e', '--', ...playwrightArgs]
+    : ['run', 'test:e2e', ...playwrightArgs];
   const homeSpecPath = path.join(projectRoot, 'tests', 'e2e', 'home.spec.ts');
   const originalHomeSpec = checkBrowserErrors ? readFileSync(homeSpecPath, 'utf8') : undefined;
   if (checkBrowserErrors) {
