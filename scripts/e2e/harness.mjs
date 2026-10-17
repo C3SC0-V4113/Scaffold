@@ -22,6 +22,10 @@ import { featureFiles, frameworkLayouts, generatedVersions, pinnedDependency, re
 
 export { generatedVersions, pinnedDependency, readFlag, readListFlag, rootDir };
 
+export function normalizeOutputPaths(output) {
+  return output.replaceAll('\\', '/');
+}
+
 export function assertAstroClaudeFile(projectRoot, agents, claude, platform = process.platform) {
   const claudePath = path.join(projectRoot, 'CLAUDE.md');
   const isSymlink = lstatSync(claudePath).isSymbolicLink();
@@ -384,7 +388,7 @@ function runGeneratedCheck(projectRoot, packageManager, env) {
   return result.output;
 }
 
-function runGeneratedE2e(projectRoot, packageManager, env) {
+function runGeneratedE2e(projectRoot, packageManager, env, { checkBrowserErrors = false } = {}) {
   const command = packageManager ?? 'npm';
   const install = runProcess(
     process.execPath,
@@ -397,11 +401,28 @@ function runGeneratedE2e(projectRoot, packageManager, env) {
   const testArgs = command === 'npm'
     ? ['run', 'test:e2e', '--', '--project=chromium']
     : ['run', 'test:e2e', '--project=chromium'];
-  const result = runProcess(command, testArgs, {
-    cwd: projectRoot,
-    env,
-    timeoutMs: 20 * 60 * 1000,
-  });
+  const homeSpecPath = path.join(projectRoot, 'tests', 'e2e', 'home.spec.ts');
+  const originalHomeSpec = checkBrowserErrors ? readFileSync(homeSpecPath, 'utf8') : undefined;
+  if (checkBrowserErrors) {
+    const homeTest = "test('renders the home route', async ({ page }) => {";
+    const homeAssertion = "  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();";
+    if (!originalHomeSpec.includes(homeTest) || !originalHomeSpec.includes(homeAssertion)) {
+      throw new Error(`Cannot add the browser-error check to ${homeSpecPath}`);
+    }
+    writeFileSync(homeSpecPath, originalHomeSpec
+      .replace(homeTest, `${homeTest}\n  const browserErrors: string[] = [];\n  page.on('console', (message) => {\n    if (message.type() === 'error') browserErrors.push(message.text());\n  });\n  page.on('pageerror', (error) => browserErrors.push(error.message));`)
+      .replace(homeAssertion, `${homeAssertion}\n  expect(browserErrors).toEqual([]);`));
+  }
+  let result;
+  try {
+    result = runProcess(command, testArgs, {
+      cwd: projectRoot,
+      env,
+      timeoutMs: 20 * 60 * 1000,
+    });
+  } finally {
+    if (originalHomeSpec !== undefined) writeFileSync(homeSpecPath, originalHomeSpec);
+  }
   if (result.status !== 0) {
     throw new Error(`Generated app E2E failed in ${projectRoot}\n${result.output}`);
   }
@@ -1243,10 +1264,10 @@ function runInteractivePtyScenario(pty, scenario, context, cliPath, options) {
         const clean = stripAnsi(output);
         try {
           for (const expected of scenario.expectOutput ?? []) {
-            assertIncludes(clean, expected, scenario.name);
+            assertIncludes(normalizeOutputPaths(clean), expected, scenario.name);
           }
           for (const unexpected of scenario.rejectOutput ?? []) {
-            assertNotIncludes(clean, unexpected, scenario.name);
+            assertNotIncludes(normalizeOutputPaths(clean), unexpected, scenario.name);
           }
           if (exitCode !== 0) {
             throw new Error(`${scenario.name} exited with ${exitCode}\n--- output ---\n${clean}`);
@@ -1399,10 +1420,10 @@ export async function runScenario(scenario, context, cliPath, options = {}) {
   }
 
   for (const expected of scenario.expectOutput ?? []) {
-    assertIncludes(result.output, expected, scenario.name);
+    assertIncludes(normalizeOutputPaths(result.output), expected, scenario.name);
   }
   for (const unexpected of scenario.rejectOutput ?? []) {
-    assertNotIncludes(result.output, unexpected, scenario.name);
+    assertNotIncludes(normalizeOutputPaths(result.output), unexpected, scenario.name);
   }
 
   if (scenario.expectExitCode !== undefined) {
@@ -1422,7 +1443,9 @@ export async function runScenario(scenario, context, cliPath, options = {}) {
       : runGeneratedCheck(projectRoot, scenario.packageManager, scenarioContext.env);
     if (scenario.framework === 'react-router' && !scenario.expect.skipInstall) {
       if (scenario.expect.e2e) {
-        runGeneratedE2e(projectRoot, scenario.packageManager, scenarioContext.env);
+        runGeneratedE2e(projectRoot, scenario.packageManager, scenarioContext.env, {
+          checkBrowserErrors: scenario.checkBrowserErrors,
+        });
       }
       if (
         scenario.expect.e2e &&

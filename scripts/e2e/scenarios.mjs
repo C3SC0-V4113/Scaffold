@@ -585,6 +585,7 @@ export const cliE2eScenarios = [
     execution: { requires: ['npm'] },
     args: ['--framework', 'react-router', '--pm', 'npm', '--ssr', '--query', '--unit', '--e2e', '--yes'],
     expect: { query: true, unit: true, e2e: true, commitlint: false, pnpm: false, mcp: false, ssr: true },
+    checkBrowserErrors: true,
     quick: false,
   },
   {
