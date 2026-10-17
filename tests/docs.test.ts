@@ -34,6 +34,7 @@ function options(framework: CreateOptions['framework'], overrides: Partial<Creat
     commitlint: true,
     ci: true,
     motion: true,
+    query: false,
     yes: true,
     dryRun: false,
     skipInstall: true,
@@ -101,6 +102,7 @@ describe('generated documentation installer', () => {
       unit: false,
       e2e: false,
       motion: false,
+    query: false,
       mcp: false,
     });
     await installDocsAndClaude(root, initial, new RealExecutor());

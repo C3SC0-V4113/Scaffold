@@ -32,6 +32,8 @@ export interface CreateOptions {
   ci: boolean;
   /** Whether to install Motion and its agent skill. Opt-in only. */
   motion: boolean;
+  /** Whether to install TanStack Query and its agent skill. Opt-in only. */
+  query: boolean;
   yes: boolean;
   dryRun: boolean;
   skipInstall: boolean;

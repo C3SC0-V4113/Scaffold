@@ -864,6 +864,7 @@ ${shadcnMcpToml(options.packageManager)}
 
 export function renderReadme(
   options: Pick<CreateOptions, 'framework' | 'packageManager' | 'unit' | 'e2e' | 'commitlint' | 'mcp' | 'motion'> &
+    Partial<Pick<CreateOptions, 'query'>> &
     Partial<Pick<CreateOptions, 'router'>>,
   docs: FrameworkAdapter['docs']
 ) {
@@ -892,7 +893,7 @@ ${run} check
 ## Tooling
 
 ${docs.toolingLines.join('\n')}
-${(options.router ?? 'none') !== 'none' ? `- ${routerCatalog[options.router ?? 'none'].label}.\n` : ''}${options.unit ? '- Vitest and React Testing Library.\n' : ''}${options.e2e ? '- Playwright E2E testing.\n' : ''}${options.commitlint ? '- Conventional commit linting.\n' : ''}${options.motion ? '- Motion for React animations.\n' : ''}
+${(options.router ?? 'none') !== 'none' ? `- ${routerCatalog[options.router ?? 'none'].label}.\n` : ''}${options.unit ? '- Vitest and React Testing Library.\n' : ''}${options.e2e ? '- Playwright E2E testing.\n' : ''}${options.commitlint ? '- Conventional commit linting.\n' : ''}${options.motion ? '- Motion for React animations.\n' : ''}${options.query ? '- TanStack Query with React Query Devtools.\n' : ''}
 ${docs.routerGuidance?.(options.router ?? 'none') ? `## Router\n\n${docs.routerGuidance(options.router ?? 'none')}\n\n` : ''}${renderFeatureReadmeSections(options)}${renderShadcnMcpGuide(options)}
 ## shadcn Presets
 
@@ -959,11 +960,12 @@ Fix a violation with a token, variant, or size from the design system, and add o
 `;
 }
 
-function renderFeatureReadmeSections(options: Pick<CreateOptions, 'framework' | 'motion'>) {
+function renderFeatureReadmeSections(options: Pick<CreateOptions, 'framework' | 'motion'> & Partial<Pick<CreateOptions, 'query'>>) {
   return featureDocs(options.framework, options).map((docs) => docs.readme).join('');
 }
 
 type AgentsOptions = Pick<CreateOptions, 'framework' | 'packageManager' | 'unit' | 'e2e' | 'commitlint' | 'mcp' | 'motion'> &
+  Partial<Pick<CreateOptions, 'query'>> &
   Partial<Pick<CreateOptions, 'router'>>;
 
 function agentsRunCommand(packageManager: CreateOptions['packageManager']) {
@@ -1135,6 +1137,6 @@ export function renderAgents(options: AgentsOptions, docs: FrameworkAdapter['doc
   return renderers[docs.agentsTemplate](options, docs);
 }
 
-function renderFeatureAgentSections(options: Pick<CreateOptions, 'framework' | 'motion'>) {
+function renderFeatureAgentSections(options: Pick<CreateOptions, 'framework' | 'motion'> & Partial<Pick<CreateOptions, 'query'>>) {
   return featureDocs(options.framework, options).map((docs) => docs.agents).join('');
 }

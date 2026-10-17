@@ -35,6 +35,7 @@ npx purrfold@latest <target-dir> [options]
 - `--commitlint` / `--no-commitlint` — commitlint + commit-msg hook (default: skipped).
 - `--ci` / `--no-ci` — GitHub Actions workflows: `quality.yml`, plus `playwright.yml` with `--e2e` (default: skipped).
 - `--motion` — install Motion for React and the `motion-framer` skill (default: skipped; opt-in only).
+- `--query` — install TanStack Query, development-only React Query Devtools, and the `tanstack-query` skill (default: skipped; opt-in only).
 - `--yes` — non-interactive defaults (no prompts). **Always include this when running for the user.**
 - `--dry-run` — print operations without writing or installing.
 - `--skip-install` — generate files without installing extra quality deps.
@@ -61,6 +62,7 @@ To fetch the canonical option schema at runtime: `npx purrfold@latest info --jso
 | "with CI" / "add GitHub Actions" | `npx purrfold@latest <dir> --ci --yes` |
 | "use pnpm/bun" | `npx purrfold@latest <dir> --pm pnpm --yes` |
 | "install Motion" / "use Motion for React" | `npx purrfold@latest <dir> --motion --yes` |
+| "add server state caching" / "use TanStack Query" | `npx purrfold@latest <dir> --query --yes` |
 | "use phosphor/tabler icons" | `npx purrfold@latest <dir> --icons phosphor --yes` |
 | "install shadcn MCP" | `npx purrfold@latest <dir> --mcp --yes` |
 | "use a shadcn preset" | `npx purrfold@latest <dir> --shadcn-args --preset b3REw8vwo --yes` |

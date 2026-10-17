@@ -33,6 +33,7 @@ const createOptions: CreateOptions = {
   commitlint: false,
   ci: false,
   motion: false,
+  query: false,
   yes: true,
   dryRun: false,
   skipInstall: false,

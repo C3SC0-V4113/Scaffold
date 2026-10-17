@@ -1,9 +1,10 @@
 import type { FrameworkAdapter } from '../frameworks/types.js';
 import type { CreateOptions, Executor } from '../types.js';
 import { motionFeature } from './motion/index.js';
+import { queryFeature } from './query/index.js';
 import type { FeatureFileContext, FeatureModule, FeatureOptions } from './types.js';
 
-export const featureModules = [motionFeature] satisfies FeatureModule[];
+export const featureModules = [motionFeature, queryFeature] satisfies FeatureModule[];
 
 export function enabledFeatureModules(options: FeatureOptions) {
   return featureModules.filter((feature) => feature.enabled(options));

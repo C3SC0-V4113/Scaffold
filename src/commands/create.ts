@@ -27,6 +27,7 @@ export interface RawCreateFlags {
   commitlint?: boolean;
   ci?: boolean;
   motion?: boolean;
+  query?: boolean;
   yes?: boolean;
   dryRun?: boolean;
   skipInstall?: boolean;
@@ -193,6 +194,9 @@ export async function resolveCreateOptions(
     // Motion is deliberately flag-only: interactive mode and --yes both leave
     // it disabled unless the caller explicitly passes --motion.
     motion: flags.motion ?? false,
+    // TanStack Query is deliberately flag-only: interactive mode and --yes
+    // both leave it disabled unless the caller explicitly passes --query.
+    query: flags.query ?? false,
     yes,
     dryRun: flags.dryRun ?? false,
     skipInstall: flags.skipInstall ?? false,
