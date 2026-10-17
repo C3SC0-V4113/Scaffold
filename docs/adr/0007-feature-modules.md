@@ -1,6 +1,7 @@
 # ADR-0007: Model optional behavior as feature modules
 
-**Status**: Accepted  
+**Status**: Accepted
+
 **Date**: 2026-10-16
 
 ## Context
