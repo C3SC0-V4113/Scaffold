@@ -28,5 +28,5 @@ export interface FeatureModule {
   }): Promise<void>;
   files?(context: FeatureFileContext): readonly { path: string; content: string }[];
   lint?(options: FeatureOptions, framework: Framework): EslintFragment | undefined;
-  doctorIgnoredRules?(options: FeatureOptions, adapter: FrameworkAdapter): readonly string[];
+  doctorIgnoredRules?(options: FeatureOptions, framework: Framework): readonly string[];
 }

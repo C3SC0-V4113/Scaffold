@@ -42,7 +42,7 @@ const renderReactDoctorConfig = (framework: Framework, motion = false) =>
   renderReactDoctorConfigTemplate(
     adapterFor(framework).layout,
     { framework, motion },
-    adapterFor(framework),
+    framework,
   );
 const renderDesignDoc = (framework: Framework) => renderDesignDocTemplate(adapterFor(framework).layout);
 const renderReadme = (options: Parameters<typeof renderReadmeTemplate>[0]) =>

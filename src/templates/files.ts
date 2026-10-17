@@ -388,7 +388,7 @@ import '../styles/global.css';
 export function renderReactDoctorConfig(
   layout: FrameworkAdapter['layout'],
   options: Pick<CreateOptions, 'framework' | 'motion'>,
-  adapter: FrameworkAdapter
+  framework: CreateOptions['framework']
 ) {
   // React Doctor already skips build output and most dot directories, but not
   // test reports: Playwright's bundles minified trace-viewer scripts.
@@ -402,7 +402,7 @@ export function renderReactDoctorConfig(
   // even when app/globals.css contains the media query and the Motion wrapper
   // calls useReducedMotion(). Keep both real safeguards and suppress only
   // that verified false positive until the detector recognizes them.
-  const rules = featureDoctorIgnoredRules(options, adapter);
+  const rules = featureDoctorIgnoredRules(options, framework);
   const ignoredRules = rules.length
     ? `    "rules": [${rules.map((rule) => JSON.stringify(rule)).join(', ')}],\n`
     : '';
@@ -435,7 +435,7 @@ export const reactDoctorConfig = renderReactDoctorConfig(
     vitestConfigPath: 'vitest.config.mts',
   },
   { framework: 'next', motion: false },
-  { id: 'next' } as FrameworkAdapter
+  'next'
 );
 
 // .mjs + ESM syntax on purpose: Astro apps set "type": "module", so a

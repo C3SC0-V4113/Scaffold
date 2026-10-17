@@ -82,10 +82,8 @@ export const viteAdapter: FrameworkAdapter = {
     executor: Executor,
     iconLibrary: IconLibrary,
     options,
-    writeFeatureFiles,
   ) {
     const name = path.basename(projectRoot);
-    await writeFeatureFiles();
 
     await executor.remove(path.join(projectRoot, 'src', 'App.css'));
     await executor.remove(path.join(projectRoot, 'src', 'assets', 'react.svg'));
@@ -109,7 +107,7 @@ export const viteAdapter: FrameworkAdapter = {
     unitSmokeTest: (options) => renderViteRouterUnitSmokeTest(options.router),
     e2eSmokeTest: (options) => renderViteRouterE2ESmokeTest(options.router),
     doctorConfig: (options) =>
-      renderReactDoctorConfig(viteAdapter.layout, options, viteAdapter),
+      renderReactDoctorConfig(viteAdapter.layout, options, 'vite'),
   },
   packageScripts: (options) =>
     buildScripts(options, viteAdapter.packageScriptConfig),

@@ -94,10 +94,8 @@ export const astroAdapter: FrameworkAdapter = {
     executor: Executor,
     iconLibrary: IconLibrary,
     options,
-    writeFeatureFiles,
   ) {
     const name = path.basename(projectRoot);
-    await writeFeatureFiles();
     await executor.remove(
       path.join(projectRoot, 'src/components/Button.astro'),
     );
@@ -124,7 +122,7 @@ export const astroAdapter: FrameworkAdapter = {
       renderReactDoctorConfig(
         astroAdapter.layout,
         o,
-        astroAdapter,
+        'astro',
       ),
   },
   packageScripts: (o) => buildScripts(o, astroAdapter.packageScriptConfig),

@@ -19,9 +19,9 @@ export function featureLint(options: FeatureOptions, framework: CreateOptions['f
     .filter((fragment) => fragment !== undefined);
 }
 
-export function featureDoctorIgnoredRules(options: FeatureOptions, adapter: FrameworkAdapter) {
+export function featureDoctorIgnoredRules(options: FeatureOptions, framework: CreateOptions['framework']) {
   return enabledFeatureModules(options).flatMap(
-    (feature) => feature.doctorIgnoredRules?.(options, adapter) ?? [],
+    (feature) => feature.doctorIgnoredRules?.(options, framework) ?? [],
   );
 }
 

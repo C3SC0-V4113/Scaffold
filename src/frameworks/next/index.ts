@@ -55,10 +55,8 @@ export const nextAdapter: FrameworkAdapter = {
     executor: Executor,
     iconLibrary: IconLibrary,
     options,
-    writeFeatureFiles,
   ) {
     const name = path.basename(projectRoot);
-    await writeFeatureFiles();
     await executor.writeFile(
       path.join(projectRoot, 'app/layout.tsx'),
       renderRootLayout(name),
@@ -77,7 +75,7 @@ export const nextAdapter: FrameworkAdapter = {
       renderReactDoctorConfig(
         nextAdapter.layout,
         o,
-        nextAdapter,
+        'next',
       ),
   },
   packageScripts: (o) => buildScripts(o, nextAdapter.packageScriptConfig),

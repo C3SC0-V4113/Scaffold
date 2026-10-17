@@ -78,7 +78,6 @@ export interface FrameworkAdapter {
     executor: Executor,
     iconLibrary: IconLibrary,
     options: CreateOptions,
-    writeFeatureFiles: () => Promise<void>,
   ): Promise<void>;
   templates: {
     eslint(options: CreateOptions): string;

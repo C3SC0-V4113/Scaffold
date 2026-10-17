@@ -222,9 +222,8 @@ export async function installQualityLayer(
   }
 
   const iconLibrary = await reconcileIconLibrary(projectRoot, options, executor);
-  await adapter.writeAppShell(projectRoot, executor, iconLibrary, options, () =>
-    writeFeatureFiles({ adapter, options, executor, projectRoot, stage: 'app-shell' })
-  );
+  await adapter.writeAppShell(projectRoot, executor, iconLibrary, options);
+  await writeFeatureFiles({ adapter, options, executor, projectRoot, stage: 'app-shell' });
 }
 
 /**

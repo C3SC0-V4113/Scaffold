@@ -61,7 +61,6 @@ export const reactRouterAdapter: FrameworkAdapter = {
     executor: Executor,
     iconLibrary: IconLibrary,
     options: CreateOptions,
-    writeFeatureFiles: () => Promise<void>,
   ) {
     const route = renderViteHomePage(path.basename(projectRoot), iconLibrary, options.motion, {
       componentName: 'Home',
@@ -77,7 +76,6 @@ export const reactRouterAdapter: FrameworkAdapter = {
     await executor.remove(path.join(projectRoot, 'Dockerfile'));
     await executor.remove(path.join(projectRoot, '.dockerignore'));
     await executor.remove(path.join(projectRoot, 'public/favicon.ico'));
-    await writeFeatureFiles();
   },
   templates: {
     eslint: (options) =>
@@ -116,7 +114,7 @@ test('renders the not found boundary for unknown routes', async ({ page }) => {
 });
 `,
     doctorConfig: (options) =>
-      renderReactDoctorConfig(reactRouterAdapter.layout, options, reactRouterAdapter),
+      renderReactDoctorConfig(reactRouterAdapter.layout, options, 'react-router'),
   },
   packageScripts: (options) =>
     buildScripts(options, reactRouterAdapter.packageScriptConfig),

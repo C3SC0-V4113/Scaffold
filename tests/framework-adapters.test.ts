@@ -61,7 +61,7 @@ describe('React Router starter cleanup', () => {
       shadcnArgs: [],
       mcp: false,
     };
-    await reactRouterAdapter.writeAppShell('my-app', executor, 'lucide', options, async () => {});
+    await reactRouterAdapter.writeAppShell('my-app', executor, 'lucide', options);
 
     expect(executor.operations).toContain(`remove ${path.join('my-app', 'Dockerfile')}`);
     expect(executor.operations).toContain(`remove ${path.join('my-app', '.dockerignore')}`);

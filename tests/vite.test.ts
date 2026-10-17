@@ -201,15 +201,14 @@ describe('Vite adapter', () => {
     expect(viteAdapter.templates.unitSmokeTest(options)).toContain("import { routes } from '@/router';");
     const projectRoot = path.join(tmpdir(), 'my-vite-app');
     const motionOptions = { ...options, motion: true };
-    await viteAdapter.writeAppShell(projectRoot, executor, 'lucide', motionOptions, () =>
-      writeFeatureFiles({
-        adapter: viteAdapter,
-        options: motionOptions,
-        executor,
-        projectRoot,
-        stage: 'app-shell',
-      })
-    );
+    await viteAdapter.writeAppShell(projectRoot, executor, 'lucide', motionOptions);
+    await writeFeatureFiles({
+      adapter: viteAdapter,
+      options: motionOptions,
+      executor,
+      projectRoot,
+      stage: 'app-shell',
+    });
     expect(
       executor.operations.filter((operation) => operation === `write ${path.join(projectRoot, 'src', 'App.tsx')}`),
     ).toHaveLength(1);

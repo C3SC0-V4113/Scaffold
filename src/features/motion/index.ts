@@ -5,21 +5,28 @@ import type { FeatureModule } from '../types.js';
 import { motionMainComponent, renderMotionMainUnitTest } from './files.js';
 import { installMotion } from './install.js';
 
+export const motionFilePaths = {
+  next: 'components/common/motion-main.tsx',
+  astro: 'src/components/common/motion-main.tsx',
+  vite: 'src/components/common/motion-main.tsx',
+  'react-router': 'app/components/common/motion-main.tsx',
+} satisfies Record<Framework, string>;
+
 const frameworkFiles = {
   next: {
-    motionMainPath: 'components/common/motion-main.tsx',
+    motionMainPath: motionFilePaths.next,
     lintFile: 'components/common/motion-main.tsx',
   },
   astro: {
-    motionMainPath: 'src/components/common/motion-main.tsx',
+    motionMainPath: motionFilePaths.astro,
     lintFile: 'src/components/common/motion-main.tsx',
   },
   vite: {
-    motionMainPath: 'src/components/common/motion-main.tsx',
+    motionMainPath: motionFilePaths.vite,
     lintFile: undefined,
   },
   'react-router': {
-    motionMainPath: 'app/components/common/motion-main.tsx',
+    motionMainPath: motionFilePaths['react-router'],
     lintFile: undefined,
   },
 } satisfies Record<Framework, { motionMainPath: string; lintFile: string | undefined }>;
@@ -57,13 +64,12 @@ const doctorIgnoredRules = {
 export const motionFeature: FeatureModule = {
   id: 'motion',
   enabled: (options) => options.motion,
-  skills: (options) => (options.motion ? ['motion-framer'] : []),
+  skills: () => ['motion-framer'],
   docs: motionDocs,
   async install(context) {
     await installMotion(context);
   },
   files({ adapter, options, projectRoot, stage }) {
-    if (!options.motion) return [];
     if (stage === 'app-shell') {
       return [{
         path: path.join(projectRoot, frameworkFiles[adapter.id].motionMainPath),
@@ -80,12 +86,11 @@ export const motionFeature: FeatureModule = {
   },
   lint(options, framework) {
     const files = frameworkFiles[framework].lintFile;
-    if (!options.motion || !files) return undefined;
+    if (!files) return undefined;
     return {
       files,
       rules: { 'react-doctor/jsx-no-new-object-as-prop': 'off' },
     };
   },
-  doctorIgnoredRules: (options, adapter) =>
-    options.motion ? doctorIgnoredRules[adapter.id] : [],
+  doctorIgnoredRules: (_options, framework) => doctorIgnoredRules[framework],
 };
