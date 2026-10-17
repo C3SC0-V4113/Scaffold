@@ -22,7 +22,7 @@ On Windows, the harness keeps pnpm's per-run cacheDir under a short root (`RUNNE
 
 `npm run test:pack` (`scripts/pack-smoke.mjs`) is the only test that exercises the artifact users install rather than the local `dist/` bundle: it packs the package, installs the tarball into a throwaway project, and drives the installed CLI. It runs on ubuntu and windows in CI because the executable shim npm links is platform-specific. Run it after touching `files`, `bin`, `prepack`, or the tsup output layout — `src/cli.ts` resolves `../package.json` from the bundle, so `dist/index.js` must stay exactly one directory below the package root.
 
-Required checks on `main`: `check`, `changeset-guard`, `pack-smoke (ubuntu-latest)`, `pack-smoke (windows-latest)`, `e2e-quick (ubuntu-latest)`, `e2e-quick (windows-latest)`, and `e2e-ok`.
+Required checks on `main`: `check`, `unit (windows-latest)`, `unit (macos-latest)`, `changeset-guard`, `pack-smoke (ubuntu-latest)`, `pack-smoke (windows-latest)`, `e2e-quick (ubuntu-latest)`, `e2e-quick (windows-latest)`, and `e2e-ok`.
 
 ## Development Rules
 
