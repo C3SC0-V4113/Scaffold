@@ -893,7 +893,7 @@ ${run} check
 
 ${docs.toolingLines.join('\n')}
 ${(options.router ?? 'none') !== 'none' ? `- ${routerCatalog[options.router ?? 'none'].label}.\n` : ''}${options.unit ? '- Vitest and React Testing Library.\n' : ''}${options.e2e ? '- Playwright E2E testing.\n' : ''}${options.commitlint ? '- Conventional commit linting.\n' : ''}${options.motion ? '- Motion for React animations.\n' : ''}
-${docs.routerGuidance?.(options.router ?? 'none') ? `## Router\n\n${docs.routerGuidance(options.router ?? 'none')}\n\n` : ''}${renderMotionGuide(options)}${renderShadcnMcpGuide(options)}
+${docs.routerGuidance?.(options.router ?? 'none') ? `## Router\n\n${docs.routerGuidance(options.router ?? 'none')}\n\n` : ''}${renderFeatureReadmeSections(options)}${renderShadcnMcpGuide(options)}
 ## shadcn Presets
 
 purrfold forwards additional shadcn CLI arguments, including official presets:
@@ -959,27 +959,8 @@ Fix a violation with a token, variant, or size from the design system, and add o
 `;
 }
 
-function renderMotionGuide(options: Pick<CreateOptions, 'framework' | 'motion'>) {
-  if (!options.motion) {
-    return '';
-  }
-
-  const frameworkGuidance = featureDocs(options.framework, options)
-    .map((docs) => docs.readme)
-    .filter(Boolean)
-    .join(' ');
-
-  return `## Motion
-
-Import React APIs from \`motion/react\`. ${frameworkGuidance}
-
-- Use animation only when it clarifies state or spatial relationships.
-- Prefer \`transform\` and \`opacity\` for smooth rendering.
-- Respect \`prefers-reduced-motion\`; Motion's \`useReducedMotion\` can adapt non-essential movement.
-- Agent guidance: \`.agents/skills/motion-framer/SKILL.md\`.
-- If that external skill recommends \`framer-motion\`, this project's \`motion\` dependency and the current official Motion documentation take precedence.
-
-`;
+function renderFeatureReadmeSections(options: Pick<CreateOptions, 'framework' | 'motion'>) {
+  return featureDocs(options.framework, options).map((docs) => docs.readme).join('');
 }
 
 type AgentsOptions = Pick<CreateOptions, 'framework' | 'packageManager' | 'unit' | 'e2e' | 'commitlint' | 'mcp' | 'motion'> &
@@ -1021,7 +1002,7 @@ ${options.unit ? `4. \`${run} test\`\n` : ''}${options.e2e ? `- Run \`${run} tes
 - Component placement rules: \`.agents/skills/shadcn-component-boundaries/SKILL.md\`
 - Minimum evaluation: \`.agents/skills/project-min-evaluation/SKILL.md\`
 ${options.unit ? '- Vitest guidance: `.agents/skills/vitest/SKILL.md`\n' : ''}${options.e2e ? '- Playwright guidance: `.agents/skills/playwright-best-practices/SKILL.md`\n' : ''}${options.commitlint ? '- Commit messages are checked with commitlint.\n' : ''}
-${renderMotionAgentRules(options)}## shadcn MCP
+${renderFeatureAgentSections(options)}## shadcn MCP
 
 ${options.mcp ? 'shadcn MCP setup was requested during scaffold.' : 'shadcn MCP setup is optional and was not run by default.'}
 
@@ -1075,7 +1056,7 @@ ${options.unit ? `4. \`${run} test\`\n` : ''}${options.e2e ? `- Run \`${run} tes
 - Component placement rules: \`.agents/skills/shadcn-component-boundaries/SKILL.md\`
 - Minimum evaluation: \`.agents/skills/project-min-evaluation/SKILL.md\`
 ${options.unit ? '- Vitest guidance: `.agents/skills/vitest/SKILL.md`\n' : ''}${options.e2e ? '- Playwright guidance: `.agents/skills/playwright-best-practices/SKILL.md`\n' : ''}${options.commitlint ? '- Commit messages are checked with commitlint.\n' : ''}
-${docs.routerGuidance?.(options.router ?? 'none') ? `## Router\n\n${docs.routerGuidance(options.router ?? 'none')}\n\n` : ''}${renderMotionAgentRules(options)}## shadcn MCP
+${docs.routerGuidance?.(options.router ?? 'none') ? `## Router\n\n${docs.routerGuidance(options.router ?? 'none')}\n\n` : ''}${renderFeatureAgentSections(options)}## shadcn MCP
 
 ${options.mcp ? 'shadcn MCP setup was requested during scaffold.' : 'shadcn MCP setup is optional and was not run by default.'}
 
@@ -1119,7 +1100,7 @@ Do not use \`next lint\`; use the ESLint CLI.
 - Component placement rules: \`.agents/skills/shadcn-component-boundaries/SKILL.md\`
 - Minimum evaluation: \`.agents/skills/project-min-evaluation/SKILL.md\`
 ${options.unit ? '- Vitest guidance: `.agents/skills/vitest/SKILL.md`\n' : ''}${options.e2e ? '- Playwright guidance: `.agents/skills/playwright-best-practices/SKILL.md`\n' : ''}${options.commitlint ? '- Commit messages are checked with commitlint.\n' : ''}
-${renderMotionAgentRules(options)}## shadcn MCP
+${renderFeatureAgentSections(options)}## shadcn MCP
 
 ${options.mcp ? 'shadcn MCP setup was requested during scaffold.' : 'shadcn MCP setup is optional and was not run by default.'}
 
@@ -1154,23 +1135,6 @@ export function renderAgents(options: AgentsOptions, docs: FrameworkAdapter['doc
   return renderers[docs.agentsTemplate](options, docs);
 }
 
-function renderMotionAgentRules(options: Pick<CreateOptions, 'framework' | 'motion'>) {
-  if (!options.motion) {
-    return '';
-  }
-
-  const frameworkGuidance = featureDocs(options.framework, options)
-    .map((docs) => docs.agents)
-    .filter(Boolean)
-    .join('\n');
-
-  return `## Motion Rules
-
-${frameworkGuidance}
-- Import current React APIs from \`motion/react\`.
-- Animate purposefully, prefer \`transform\` and \`opacity\`, and respect \`prefers-reduced-motion\`.
-- Read \`.agents/skills/motion-framer/SKILL.md\` for animation guidance.
-- If the external skill recommends \`framer-motion\`, the installed \`motion\` dependency and current official Motion documentation take precedence.
-
-`;
+function renderFeatureAgentSections(options: Pick<CreateOptions, 'framework' | 'motion'>) {
+  return featureDocs(options.framework, options).map((docs) => docs.agents).join('');
 }
