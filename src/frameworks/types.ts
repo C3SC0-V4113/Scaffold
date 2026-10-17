@@ -95,7 +95,7 @@ export interface FrameworkAdapter {
     >,
   ): Record<string, string>;
   skills(
-    options: Pick<CreateOptions, 'framework' | 'unit' | 'e2e' | 'motion'>,
+    options: Pick<CreateOptions, 'framework' | 'unit' | 'e2e'>,
   ): string[];
   docs: {
     mergeStrategy: 'replace' | 'merge';
