@@ -1268,10 +1268,10 @@ function runInteractivePtyScenario(pty, scenario, context, cliPath, options) {
         const clean = stripAnsi(output);
         try {
           for (const expected of scenario.expectOutput ?? []) {
-            assertIncludes(normalizeOutputPaths(clean), expected, scenario.name);
+            assertIncludes(normalizeOutputPaths(clean), normalizeOutputPaths(expected), scenario.name);
           }
           for (const unexpected of scenario.rejectOutput ?? []) {
-            assertNotIncludes(normalizeOutputPaths(clean), unexpected, scenario.name);
+            assertNotIncludes(normalizeOutputPaths(clean), normalizeOutputPaths(unexpected), scenario.name);
           }
           if (exitCode !== 0) {
             throw new Error(`${scenario.name} exited with ${exitCode}\n--- output ---\n${clean}`);
@@ -1424,10 +1424,10 @@ export async function runScenario(scenario, context, cliPath, options = {}) {
   }
 
   for (const expected of scenario.expectOutput ?? []) {
-    assertIncludes(normalizeOutputPaths(result.output), expected, scenario.name);
+    assertIncludes(normalizeOutputPaths(result.output), normalizeOutputPaths(expected), scenario.name);
   }
   for (const unexpected of scenario.rejectOutput ?? []) {
-    assertNotIncludes(normalizeOutputPaths(result.output), unexpected, scenario.name);
+    assertNotIncludes(normalizeOutputPaths(result.output), normalizeOutputPaths(unexpected), scenario.name);
   }
 
   if (scenario.expectExitCode !== undefined) {
