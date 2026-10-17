@@ -39,7 +39,7 @@ describe('TanStack Query feature files', () => {
     ['next', 'components/providers/query-provider.tsx', "'use client'", 'useState(() => new QueryClient())'],
     ['astro', 'src/lib/query-provider.tsx', "'use client'", "from './query-client'"],
     ['vite', 'src/lib/query-provider.tsx', "'use client'", 'import.meta.env.DEV'],
-    ['react-router', 'app/lib/query-provider.tsx', "'use client'", 'useState(() => new QueryClient())'],
+    ['react-router', 'app/lib/query-provider.tsx', 'import.meta.env.DEV', 'useState(() => new QueryClient())'],
   ] as const)('generates target provider for %s', (framework, providerPath, ...needles) => {
     const files = queryFeatureFiles({
       adapter: getFrameworkAdapter(framework), options: options({ framework }), projectRoot: 'project', stage: 'app-shell',
@@ -48,6 +48,10 @@ describe('TanStack Query feature files', () => {
     expect(provider).toBeDefined();
     for (const needle of needles) expect(provider?.content).toContain(needle);
     expect(provider?.content).toContain('<ReactQueryDevtools');
+    if (framework === 'react-router') {
+      expect(provider?.content).not.toContain("'use client'");
+      expect(provider?.content).not.toContain('process.env');
+    }
   });
 
   it.each([

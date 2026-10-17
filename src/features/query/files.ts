@@ -29,7 +29,7 @@ export const queryPaths: Record<Framework, {
   },
 };
 
-function renderRequestScopedProvider() {
+function renderNextRequestScopedProvider() {
   return `'use client';
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -43,6 +43,26 @@ export function QueryProvider({ children }: { children: ReactNode }) {
     <QueryClientProvider client={queryClient}>
       {children}
       {process.env.NODE_ENV === 'development' ? (
+        <ReactQueryDevtools initialIsOpen={false} />
+      ) : null}
+    </QueryClientProvider>
+  );
+}
+`;
+}
+
+function renderReactRouterRequestScopedProvider() {
+  return `import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
+import { useState, type ReactNode } from 'react';
+
+export function QueryProvider({ children }: { children: ReactNode }) {
+  const [queryClient] = useState(() => new QueryClient());
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      {children}
+      {import.meta.env.DEV ? (
         <ReactQueryDevtools initialIsOpen={false} />
       ) : null}
     </QueryClientProvider>
@@ -186,8 +206,10 @@ export function queryFeatureFiles({ adapter, options, projectRoot, stage }: Feat
   }
 
   const target = queryPaths[framework];
-  if (framework === 'next' || framework === 'react-router') {
-    files.push({ path: path.join(projectRoot, target.provider), content: renderRequestScopedProvider() });
+  if (framework === 'next') {
+    files.push({ path: path.join(projectRoot, target.provider), content: renderNextRequestScopedProvider() });
+  } else if (framework === 'react-router') {
+    files.push({ path: path.join(projectRoot, target.provider), content: renderReactRouterRequestScopedProvider() });
   } else if (framework === 'astro') {
     files.push(
       { path: path.join(projectRoot, target.client!), content: astroQueryClient },
