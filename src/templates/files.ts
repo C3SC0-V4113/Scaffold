@@ -387,7 +387,7 @@ import '../styles/global.css';
 
 export function renderReactDoctorConfig(
   layout: FrameworkAdapter['layout'],
-  options: Pick<CreateOptions, 'framework' | 'motion'>,
+  options: Pick<CreateOptions, 'framework' | 'motion' | 'query'>,
   framework: CreateOptions['framework']
 ) {
   // React Doctor already skips build output and most dot directories, but not
@@ -434,7 +434,7 @@ export const reactDoctorConfig = renderReactDoctorConfig(
     eslintConfigPath: 'eslint.config.mjs',
     vitestConfigPath: 'vitest.config.mts',
   },
-  { framework: 'next', motion: false },
+  { framework: 'next', motion: false, query: false },
   'next'
 );
 
@@ -863,8 +863,7 @@ ${shadcnMcpToml(options.packageManager)}
 }
 
 export function renderReadme(
-  options: Pick<CreateOptions, 'framework' | 'packageManager' | 'unit' | 'e2e' | 'commitlint' | 'mcp' | 'motion'> &
-    Partial<Pick<CreateOptions, 'query'>> &
+  options: Pick<CreateOptions, 'framework' | 'packageManager' | 'unit' | 'e2e' | 'commitlint' | 'mcp' | 'motion' | 'query'> &
     Partial<Pick<CreateOptions, 'router'>>,
   docs: FrameworkAdapter['docs']
 ) {
@@ -960,12 +959,11 @@ Fix a violation with a token, variant, or size from the design system, and add o
 `;
 }
 
-function renderFeatureReadmeSections(options: Pick<CreateOptions, 'framework' | 'motion'> & Partial<Pick<CreateOptions, 'query'>>) {
+function renderFeatureReadmeSections(options: Pick<CreateOptions, 'framework' | 'motion' | 'query'>) {
   return featureDocs(options.framework, options).map((docs) => docs.readme).join('');
 }
 
-type AgentsOptions = Pick<CreateOptions, 'framework' | 'packageManager' | 'unit' | 'e2e' | 'commitlint' | 'mcp' | 'motion'> &
-  Partial<Pick<CreateOptions, 'query'>> &
+type AgentsOptions = Pick<CreateOptions, 'framework' | 'packageManager' | 'unit' | 'e2e' | 'commitlint' | 'mcp' | 'motion' | 'query'> &
   Partial<Pick<CreateOptions, 'router'>>;
 
 function agentsRunCommand(packageManager: CreateOptions['packageManager']) {
@@ -1137,6 +1135,6 @@ export function renderAgents(options: AgentsOptions, docs: FrameworkAdapter['doc
   return renderers[docs.agentsTemplate](options, docs);
 }
 
-function renderFeatureAgentSections(options: Pick<CreateOptions, 'framework' | 'motion'> & Partial<Pick<CreateOptions, 'query'>>) {
+function renderFeatureAgentSections(options: Pick<CreateOptions, 'framework' | 'motion' | 'query'>) {
   return featureDocs(options.framework, options).map((docs) => docs.agents).join('');
 }

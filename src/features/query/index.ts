@@ -86,7 +86,7 @@ function insertQueryProvider(sourcePath: string, transform: (source: string) => 
 
 export const queryFeature: FeatureModule = {
   id: 'query',
-  enabled: (options) => Boolean(options.query),
+  enabled: (options) => options.query,
   skills: () => ['tanstack-query'],
   docs: queryDocs,
   files: queryFeatureFiles,

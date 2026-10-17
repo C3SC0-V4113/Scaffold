@@ -19,8 +19,7 @@ const reactExternalSkills = [
   'vercel-react-best-practices',
 ] as const;
 
-type SkillSelectionOptions = Pick<CreateOptions, 'framework' | 'router' | 'unit' | 'e2e' | 'motion'> &
-  Partial<Pick<CreateOptions, 'query'>>;
+type SkillSelectionOptions = Pick<CreateOptions, 'framework' | 'router' | 'unit' | 'e2e' | 'motion' | 'query'>;
 
 export function selectSkillNames(options: SkillSelectionOptions) {
   return [

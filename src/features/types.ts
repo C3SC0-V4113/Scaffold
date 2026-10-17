@@ -1,7 +1,7 @@
 import type { FrameworkAdapter } from '../frameworks/types.js';
 import type { CreateOptions, Executor, Framework } from '../types.js';
 
-export type FeatureOptions = Pick<CreateOptions, 'motion'> & Partial<Pick<CreateOptions, 'query'>>;
+export type FeatureOptions = Pick<CreateOptions, 'motion' | 'query'>;
 
 export interface EslintFragment {
   files: string;

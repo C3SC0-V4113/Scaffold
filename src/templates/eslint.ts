@@ -7,7 +7,7 @@ interface EslintConfigOptions
     Partial<Pick<CreateOptions, 'ssr' | 'astroAdapter' | 'router'>> {
   registerImportPlugin?: boolean;
   motion?: boolean;
-  query?: boolean;
+  query: boolean;
   uiGlob?: string;
   extraIgnores?: readonly string[];
   reactRefresh?: boolean;
@@ -46,7 +46,7 @@ const shadcnLintBlock = [
 
 function featureLintFragments(options: EslintConfigOptions) {
   return featureLint(
-    { motion: options.motion ?? false, query: options.query ?? false },
+    { motion: options.motion ?? false, query: options.query },
     options.framework,
   );
 }

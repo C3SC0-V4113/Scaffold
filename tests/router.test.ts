@@ -111,17 +111,17 @@ describe('router selection', () => {
   });
 
   it('selects the router skill and lint rules only for router modes', () => {
-    expect(selectSkillNames({ framework: 'vite', router: 'react-router-data', unit: false, e2e: false, motion: false }))
+    expect(selectSkillNames({ framework: 'vite', router: 'react-router-data', unit: false, e2e: false, motion: false, query: false }))
       .toContain('react-router');
-    expect(selectSkillNames({ framework: 'vite', router: 'react-router-declarative', unit: false, e2e: false, motion: false }))
+    expect(selectSkillNames({ framework: 'vite', router: 'react-router-declarative', unit: false, e2e: false, motion: false, query: false }))
       .toContain('react-router');
-    expect(selectSkillNames({ framework: 'vite', router: 'none', unit: false, e2e: false, motion: false }))
+    expect(selectSkillNames({ framework: 'vite', router: 'none', unit: false, e2e: false, motion: false, query: false }))
       .not.toContain('react-router');
     expect(renderViteEslintConfig({
-      framework: 'vite', router: 'none', unit: false, e2e: false,
+      framework: 'vite', router: 'none', unit: false, e2e: false, query: false,
     })).not.toContain('reactDoctor.configs.all.rules');
     expect(renderViteEslintConfig({
-      framework: 'vite', router: 'react-router-data', unit: false, e2e: false,
+      framework: 'vite', router: 'react-router-data', unit: false, e2e: false, query: false,
     })).toContain('reactDoctor.configs.all.rules');
   });
 });
