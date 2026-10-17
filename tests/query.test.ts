@@ -79,6 +79,18 @@ describe('TanStack Query feature files', () => {
     expect(queryPaths.vite.router).toBe('src/router.tsx');
   });
 
+  it('waits for the data-router loader in its generated home smoke test', () => {
+    const files = queryFeatureFiles({
+      adapter: getFrameworkAdapter('vite'),
+      options: options({ framework: 'vite', router: 'react-router-data', unit: true }),
+      projectRoot: 'project',
+      stage: 'unit-tests',
+    });
+    const homeTest = files.find((file) => file.path === path.join('project', 'tests', 'unit', 'home.test.tsx'));
+    expect(homeTest?.content).toContain('async () =>');
+    expect(homeTest?.content).toContain("await screen.findByRole('heading'");
+  });
+
   it.each(['next', 'astro', 'vite', 'react-router'] as const)(
     'records generated paths with DryRunExecutor for %s', async (framework) => {
       const executor = new DryRunExecutor();

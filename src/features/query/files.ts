@@ -144,6 +144,22 @@ describe('QueryProvider', () => {
 `;
 }
 
+const dataRouterHomeUnitTest = `import { render, screen } from '@testing-library/react';
+import { createMemoryRouter, RouterProvider } from 'react-router';
+import { describe, expect, it } from 'vitest';
+
+import { routes } from '@/router';
+
+describe('Home page smoke test', () => {
+  it('renders a heading through the data router', async () => {
+    const router = createMemoryRouter(routes, { initialEntries: ['/'] });
+    render(<RouterProvider router={router} />);
+
+    expect(await screen.findByRole('heading', { level: 1 })).toBeDefined();
+  });
+});
+`;
+
 export function queryFeatureFiles({ adapter, options, projectRoot, stage }: FeatureFileContext) {
   const framework = adapter.id;
   const files: Array<{ path: string; content: string }> = [];
@@ -156,10 +172,17 @@ export function queryFeatureFiles({ adapter, options, projectRoot, stage }: Feat
       vite: '@/lib/query-provider',
       'react-router': '~/lib/query-provider',
     };
-    return [{
+    const unitFiles = [{
       path: path.join(projectRoot, 'tests', 'unit', 'query-provider.test.tsx'),
       content: renderUnitTest(importPaths[framework]),
     }];
+    if (framework === 'vite' && options.router === 'react-router-data') {
+      unitFiles.push({
+        path: path.join(projectRoot, 'tests', 'unit', 'home.test.tsx'),
+        content: dataRouterHomeUnitTest,
+      });
+    }
+    return unitFiles;
   }
 
   const target = queryPaths[framework];
