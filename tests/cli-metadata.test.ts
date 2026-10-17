@@ -49,6 +49,7 @@ describe('cli metadata', () => {
     ).toBe(true);
     expect(commands.some((command) => command.includes('--mcp'))).toBe(true);
     expect(commands.some((command) => command.includes('--motion'))).toBe(true);
+    expect(commands.some((command) => command.includes('--query'))).toBe(true);
     expect(commands.some((command) => command.includes('--ci'))).toBe(true);
     expect(commands.some((command) => command.includes('--preset b3REw8vwo'))).toBe(true);
     expect(

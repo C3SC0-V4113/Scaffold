@@ -46,6 +46,7 @@ type HarnessModule = {
     }
   ) => boolean;
   isPnpmCacheOutsideWorkDir: (context: RunContext) => boolean;
+  normalizeOutputPaths: (output: string) => string;
   prepareScenarioContext: (
     scenario: Record<string, unknown>,
     context: RunContext,
@@ -89,6 +90,14 @@ async function loadHarness(): Promise<HarnessModule> {
 }
 
 describe('CLI E2E harness', () => {
+  it('matches output paths consistently across Windows and POSIX separators', async () => {
+    const { normalizeOutputPaths } = await loadHarness();
+
+    expect(normalizeOutputPaths(String.raw`Created src\lib\query-provider.tsx`)).toBe(
+      'Created src/lib/query-provider.tsx'
+    );
+  });
+
   it('checks temp-dir containment after resolving Windows 8.3 temp paths', async () => {
     const { isInsideTempDir } = await loadHarness();
     const shortTempRoot = String.raw`C:\Users\RUNNER~1\AppData\Local\Temp`;

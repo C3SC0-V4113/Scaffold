@@ -279,6 +279,8 @@ describe('CLI E2E scenario definitions', () => {
       'vite-npm-rr-data-unit-e2e',
       'vite-pnpm-rr-declarative-e2e',
       'vite-npm-router-none',
+      'vite-npm-rr-data-query',
+      'vite-pnpm-query-no-router',
     ]);
   });
 

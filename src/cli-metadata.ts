@@ -79,6 +79,11 @@ export const cliOptions: CliOption[] = [
     default: 'skipped (opt-in only)',
   },
   {
+    flags: '--query',
+    description: 'Install TanStack Query, React Query Devtools, and the tanstack-query agent skill.',
+    default: 'skipped (opt-in only)',
+  },
+  {
     flags: '--yes',
     description: 'Use non-interactive defaults (no prompts).',
     default: 'interactive prompts',
@@ -167,6 +172,10 @@ export const cliScenarios: CliScenario[] = [
   {
     intent: 'Install Motion for React and its agent skill',
     command: 'npx purrfold@latest my-app --motion --yes',
+  },
+  {
+    intent: 'Install TanStack Query and its agent skill',
+    command: 'npx purrfold@latest my-app --query --yes',
   },
   {
     intent: 'Pick the icon library for the home page cat',

@@ -1,16 +1,18 @@
 import type { FrameworkAdapter } from '../frameworks/types.js';
 import type { CreateOptions, Executor, Framework } from '../types.js';
 
-export type FeatureOptions = Pick<CreateOptions, 'motion'>;
+export type FeatureOptions = Pick<CreateOptions, 'motion' | 'query'>;
 
 export interface EslintFragment {
   files: string;
   rules: Readonly<Record<string, string>>;
+  imports?: readonly string[];
+  configs?: readonly string[];
 }
 
 export interface FeatureFileContext {
   adapter: FrameworkAdapter;
-  options: Pick<CreateOptions, 'motion' | 'unit'>;
+  options: Pick<CreateOptions, 'motion' | 'query' | 'unit' | 'router'>;
   projectRoot: string;
   stage: 'app-shell' | 'unit-tests';
 }
