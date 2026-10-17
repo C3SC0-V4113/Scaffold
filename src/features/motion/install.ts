@@ -1,9 +1,8 @@
 import path from 'node:path';
 
-import { getPackageManagerCommands } from '../package-manager.js';
-import { getFrameworkAdapter } from '../frameworks/registry.js';
-import type { CreateOptions, Executor } from '../types.js';
-import { pinnedSpecifier } from './config-model.js';
+import { getPackageManagerCommands } from '../../package-manager.js';
+import type { FeatureModule } from '../types.js';
+import { pinnedSpecifier } from '../../installers/config-model.js';
 
 const reducedMotionCss = `
 @media (prefers-reduced-motion: reduce) {
@@ -23,17 +22,12 @@ const reducedMotionCss = `
 }
 `;
 
-/** Install Motion as an application runtime dependency when explicitly selected. */
-export async function installMotion(
-  projectRoot: string,
-  options: CreateOptions,
-  executor: Executor
-) {
+export async function installMotion({ adapter, options, executor, projectRoot }: Parameters<FeatureModule['install']>[0]) {
   if (!options.motion) {
     return;
   }
 
-  const stylesheetPath = path.join(projectRoot, getFrameworkAdapter(options.framework).layout.globalStylesheet);
+  const stylesheetPath = path.join(projectRoot, adapter.layout.globalStylesheet);
   const stylesheet = (await executor.pathExists(stylesheetPath))
     ? await executor.readFile(stylesheetPath)
     : '';

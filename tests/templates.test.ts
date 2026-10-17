@@ -4,14 +4,16 @@ import versions from '../src/versions.json' with { type: 'json' };
 
 import { buildScripts } from '../src/installers/config-model.js';
 import { getFrameworkAdapter } from '../src/frameworks/registry.js';
+import {
+  motionMainComponent,
+  renderMotionMainUnitTest,
+} from '../src/features/motion/files.js';
 import type { CreateOptions, Framework } from '../src/types.js';
 import {
   gitAttributes,
   humanizeProjectName,
   mergePnpmBuildPolicy,
   mergePnpmHardening,
-  motionMainComponent,
-  renderMotionMainUnitTest,
   prettierIgnore,
   reactDoctorConfig,
   renderAgents as renderAgentsTemplate,

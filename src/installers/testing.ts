@@ -1,16 +1,16 @@
 import path from 'node:path';
 
+import { writeFeatureFiles } from '../features/registry.js';
 import { getFrameworkAdapter } from '../frameworks/registry.js';
 import {
   e2eSmokeTest,
   renderPlaywrightConfig,
-  renderMotionMainUnitTest,
 } from '../templates/files.js';
 import type { CreateOptions, Executor } from '../types.js';
 
 export async function installTestingFiles(
   projectRoot: string,
-  options: Pick<CreateOptions, 'framework' | 'packageManager' | 'unit' | 'e2e' | 'motion' | 'router' | 'ssr'>,
+  options: CreateOptions,
   executor: Executor
 ) {
   const adapter = getFrameworkAdapter(options.framework);
@@ -23,12 +23,13 @@ export async function installTestingFiles(
       path.join(projectRoot, 'tests', 'unit', 'home.test.tsx'),
       adapter.templates.unitSmokeTest(options)
     );
-    if (options.motion) {
-      await executor.writeFile(
-        path.join(projectRoot, 'tests', 'unit', 'motion-main.test.tsx'),
-        renderMotionMainUnitTest(adapter.layout.importAlias),
-      );
-    }
+    await writeFeatureFiles({
+      adapter,
+      options,
+      executor,
+      projectRoot,
+      stage: 'unit-tests',
+    });
   }
 
   if (options.e2e) {

@@ -21,7 +21,6 @@ import {
   renderReactDoctorConfig,
   renderVitestConfig,
 } from '../../templates/files.js';
-import { motionMainComponent } from '../../templates/files.js';
 import type { CreateOptions, Executor, IconLibrary } from '../../types.js';
 import type { FrameworkAdapter } from '../types.js';
 
@@ -96,14 +95,10 @@ export const astroAdapter: FrameworkAdapter = {
     executor: Executor,
     iconLibrary: IconLibrary,
     options,
+    writeFeatureFiles,
   ) {
     const name = path.basename(projectRoot);
-    if (options.motion) {
-      await executor.writeFile(
-        path.join(projectRoot, astroAdapter.layout.motionMainPath),
-        motionMainComponent,
-      );
-    }
+    await writeFeatureFiles();
     await executor.remove(
       path.join(projectRoot, 'src/components/Button.astro'),
     );

@@ -1,12 +1,12 @@
 import { confirm, select } from '@inquirer/prompts';
 
 import { DryRunExecutor, RealExecutor } from '../executor.js';
+import { installEnabledFeatures } from '../features/registry.js';
 import { defaultFramework, frameworkRegistry, getFrameworkAdapter, isFramework } from '../frameworks/registry.js';
 import { resolveServerAdapter, validateFrameworkOptions } from '../frameworks/validate.js';
 import { getPackageManagerCommands } from '../package-manager.js';
 import { installCiWorkflows } from '../installers/ci.js';
 import { installDocsAndClaude } from '../installers/docs.js';
-import { installMotion } from '../installers/motion.js';
 import { installPnpmHardening, installQualityLayer } from '../installers/quality.js';
 import { installShadcnMcp } from '../installers/shadcn-mcp.js';
 import { initializeShadcn } from '../installers/shadcn.js';
@@ -214,7 +214,12 @@ export async function runCreate(targetDir: string, flags: RawCreateFlags) {
   const projectRoot = await getFrameworkAdapter(options.framework).scaffold(options, executor);
   await initializeShadcn(projectRoot, options, executor);
   await installQualityLayer(projectRoot, options, executor);
-  await installMotion(projectRoot, options, executor);
+  await installEnabledFeatures({
+    adapter: getFrameworkAdapter(options.framework),
+    options,
+    executor,
+    projectRoot,
+  });
   await installTestingFiles(projectRoot, options, executor);
   await installCiWorkflows(projectRoot, options, executor);
   await installSkills(projectRoot, options, executor);

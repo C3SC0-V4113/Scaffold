@@ -16,7 +16,6 @@ import {
 } from '../../templates/vite-router.js';
 import {
   humanizeProjectName,
-  motionMainComponent,
   renderPrettierConfig,
   renderReactDoctorConfig,
   renderVitestConfig,
@@ -84,14 +83,10 @@ export const viteAdapter: FrameworkAdapter = {
     executor: Executor,
     iconLibrary: IconLibrary,
     options,
+    writeFeatureFiles,
   ) {
     const name = path.basename(projectRoot);
-    if (options.motion) {
-      await executor.writeFile(
-        path.join(projectRoot, viteAdapter.layout.motionMainPath),
-        motionMainComponent,
-      );
-    }
+    await writeFeatureFiles();
 
     await executor.remove(path.join(projectRoot, 'src', 'App.css'));
     await executor.remove(path.join(projectRoot, 'src', 'assets', 'react.svg'));

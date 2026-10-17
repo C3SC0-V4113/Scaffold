@@ -12,7 +12,6 @@ import {
 } from '../../installers/config-model.js';
 import { renderViteEslintConfig } from '../../templates/eslint.js';
 import {
-  motionMainComponent,
   renderPrettierConfig,
   renderReactDoctorConfig,
   renderVitestConfig,
@@ -63,6 +62,7 @@ export const reactRouterAdapter: FrameworkAdapter = {
     executor: Executor,
     iconLibrary: IconLibrary,
     options: CreateOptions,
+    writeFeatureFiles: () => Promise<void>,
   ) {
     const route = renderViteHomePage(path.basename(projectRoot), iconLibrary, options.motion, {
       componentName: 'Home',
@@ -78,12 +78,7 @@ export const reactRouterAdapter: FrameworkAdapter = {
     await executor.remove(path.join(projectRoot, 'Dockerfile'));
     await executor.remove(path.join(projectRoot, '.dockerignore'));
     await executor.remove(path.join(projectRoot, 'public/favicon.ico'));
-    if (options.motion) {
-      await executor.writeFile(
-        path.join(projectRoot, this.layout.motionMainPath),
-        motionMainComponent,
-      );
-    }
+    await writeFeatureFiles();
   },
   templates: {
     eslint: (options) =>
