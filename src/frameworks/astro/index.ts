@@ -21,7 +21,6 @@ import {
   renderReactDoctorConfig,
   renderVitestConfig,
 } from '../../templates/files.js';
-import { motionMainComponent } from '../../templates/files.js';
 import type { CreateOptions, Executor, IconLibrary } from '../../types.js';
 import type { FrameworkAdapter } from '../types.js';
 
@@ -54,7 +53,6 @@ export const astroAdapter: FrameworkAdapter = {
     uiDir: 'src/components/ui',
     importAlias: '@/',
     editHint: 'src/pages/index.astro',
-    motionMainPath: 'src/components/common/motion-main.tsx',
     eslintConfigPath: 'eslint.config.mjs',
     vitestConfigPath: 'vitest.config.mts',
   },
@@ -98,12 +96,6 @@ export const astroAdapter: FrameworkAdapter = {
     options,
   ) {
     const name = path.basename(projectRoot);
-    if (options.motion) {
-      await executor.writeFile(
-        path.join(projectRoot, astroAdapter.layout.motionMainPath),
-        motionMainComponent,
-      );
-    }
     await executor.remove(
       path.join(projectRoot, 'src/components/Button.astro'),
     );
@@ -129,8 +121,8 @@ export const astroAdapter: FrameworkAdapter = {
     doctorConfig: (o) =>
       renderReactDoctorConfig(
         astroAdapter.layout,
-        o.motion,
-        astroAdapter.docs.doctorIgnoreMotionRule,
+        o,
+        'astro',
       ),
   },
   packageScripts: (o) => buildScripts(o, astroAdapter.packageScriptConfig),
@@ -150,11 +142,6 @@ export const astroAdapter: FrameworkAdapter = {
       '- `@shadcn/lint` enforcing the design system rules in `DESIGN.md`.',
       '- React Doctor and React Scan.',
     ],
-    motionGuidance:
-      'Astro/Vite requires no additional Motion configuration. Use Motion inside React islands.',
-    motionAgentGuidance:
-      '- Astro/Vite requires no additional Motion configuration; animate within React islands.',
-    doctorIgnoreMotionRule: false,
     agentsRules: `<!-- BEGIN:astro-agent-rules -->\n\n# This is an Astro scaffold\n\nThis project uses Astro. Read the current Astro docs before changing framework APIs or project structure.\n\n<!-- END:astro-agent-rules -->`,
   },
 };

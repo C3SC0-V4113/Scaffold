@@ -6,10 +6,19 @@ export const rootDir = path.resolve(fileURLToPath(new URL('..', import.meta.url)
 
 // Kept in sync with src/frameworks/*/index.ts by cli-e2e-catalog.test.ts.
 export const frameworkLayouts = {
-  next: { sourceRoot: '', globalStylesheet: 'app/globals.css', utilsPath: 'lib/utils.ts', uiDir: 'components/ui', importAlias: '@/', editHint: 'app/page.tsx', motionMainPath: 'components/common/motion-main.tsx', eslintConfigPath: 'eslint.config.mjs', vitestConfigPath: 'vitest.config.mts' },
-  astro: { sourceRoot: 'src/', globalStylesheet: 'src/styles/global.css', utilsPath: 'src/lib/utils.ts', uiDir: 'src/components/ui', importAlias: '@/', editHint: 'src/pages/index.astro', motionMainPath: 'src/components/common/motion-main.tsx', eslintConfigPath: 'eslint.config.mjs', vitestConfigPath: 'vitest.config.mts' },
-  vite: { sourceRoot: 'src/', globalStylesheet: 'src/index.css', utilsPath: 'src/lib/utils.ts', uiDir: 'src/components/ui', importAlias: '@/', editHint: 'src/App.tsx', motionMainPath: 'src/components/common/motion-main.tsx', eslintConfigPath: 'eslint.config.js', vitestConfigPath: 'vitest.config.ts' },
-  'react-router': { sourceRoot: 'app/', globalStylesheet: 'app/app.css', utilsPath: 'app/lib/utils.ts', uiDir: 'app/components/ui', importAlias: '~/', editHint: 'app/routes/home.tsx', motionMainPath: 'app/components/common/motion-main.tsx', eslintConfigPath: 'eslint.config.js', vitestConfigPath: 'vitest.config.ts' },
+  next: { sourceRoot: '', globalStylesheet: 'app/globals.css', utilsPath: 'lib/utils.ts', uiDir: 'components/ui', importAlias: '@/', editHint: 'app/page.tsx', eslintConfigPath: 'eslint.config.mjs', vitestConfigPath: 'vitest.config.mts' },
+  astro: { sourceRoot: 'src/', globalStylesheet: 'src/styles/global.css', utilsPath: 'src/lib/utils.ts', uiDir: 'src/components/ui', importAlias: '@/', editHint: 'src/pages/index.astro', eslintConfigPath: 'eslint.config.mjs', vitestConfigPath: 'vitest.config.mts' },
+  vite: { sourceRoot: 'src/', globalStylesheet: 'src/index.css', utilsPath: 'src/lib/utils.ts', uiDir: 'src/components/ui', importAlias: '@/', editHint: 'src/App.tsx', eslintConfigPath: 'eslint.config.js', vitestConfigPath: 'vitest.config.ts' },
+  'react-router': { sourceRoot: 'app/', globalStylesheet: 'app/app.css', utilsPath: 'app/lib/utils.ts', uiDir: 'app/components/ui', importAlias: '~/', editHint: 'app/routes/home.tsx', eslintConfigPath: 'eslint.config.js', vitestConfigPath: 'vitest.config.ts' },
+};
+
+export const featureFiles = {
+  motion: {
+    next: 'components/common/motion-main.tsx',
+    astro: 'src/components/common/motion-main.tsx',
+    vite: 'src/components/common/motion-main.tsx',
+    'react-router': 'app/components/common/motion-main.tsx',
+  },
 };
 
 // Keep catalog construction dependency-free so CI can enumerate scenarios

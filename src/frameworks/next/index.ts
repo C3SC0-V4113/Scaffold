@@ -16,7 +16,6 @@ import {
   unitSmokeTest,
 } from '../../templates/files.js';
 import type { CreateOptions, Executor, IconLibrary } from '../../types.js';
-import { motionMainComponent } from '../../templates/files.js';
 import type { FrameworkAdapter } from '../types.js';
 
 export const nextAdapter: FrameworkAdapter = {
@@ -34,7 +33,6 @@ export const nextAdapter: FrameworkAdapter = {
     uiDir: 'components/ui',
     importAlias: '@/',
     editHint: 'app/page.tsx',
-    motionMainPath: 'components/common/motion-main.tsx',
     eslintConfigPath: 'eslint.config.mjs',
     vitestConfigPath: 'vitest.config.mts',
   },
@@ -59,12 +57,6 @@ export const nextAdapter: FrameworkAdapter = {
     options,
   ) {
     const name = path.basename(projectRoot);
-    if (options.motion) {
-      await executor.writeFile(
-        path.join(projectRoot, nextAdapter.layout.motionMainPath),
-        motionMainComponent,
-      );
-    }
     await executor.writeFile(
       path.join(projectRoot, 'app/layout.tsx'),
       renderRootLayout(name),
@@ -82,8 +74,8 @@ export const nextAdapter: FrameworkAdapter = {
     doctorConfig: (o) =>
       renderReactDoctorConfig(
         nextAdapter.layout,
-        o.motion,
-        nextAdapter.docs.doctorIgnoreMotionRule,
+        o,
+        'next',
       ),
   },
   packageScripts: (o) => buildScripts(o, nextAdapter.packageScriptConfig),
@@ -107,11 +99,6 @@ export const nextAdapter: FrameworkAdapter = {
       '- `@shadcn/lint` enforcing the design system rules in `DESIGN.md`.',
       '- React Doctor and React Scan.',
     ],
-    motionGuidance:
-      'In the Next.js App Router, use `motion/react` from a client component or import server-compatible components from `motion/react-client`.',
-    motionAgentGuidance:
-      '- In the Next.js App Router, use `motion/react` in client components or `motion/react-client` for server-compatible components.',
-    doctorIgnoreMotionRule: true,
     agentsRules: `<!-- BEGIN:nextjs-agent-rules -->\n\n# This is NOT the Next.js you know\n\nThis project uses Next.js 16 or newer. APIs and conventions may differ from model memory. Read relevant guides in \`node_modules/next/dist/docs/\` before changing Next.js code.\n\n<!-- END:nextjs-agent-rules -->`,
   },
 };

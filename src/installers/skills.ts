@@ -1,6 +1,7 @@
 import path from 'node:path';
 
 import { getFrameworkAdapter } from '../frameworks/registry.js';
+import { enabledFeatureModules } from '../features/registry.js';
 import { externalSkillManifest } from '../skills/manifest.js';
 import { routerCatalog } from '../routers.js';
 import type { CreateOptions, Executor, SkillInstallEntry } from '../types.js';
@@ -33,7 +34,7 @@ export function selectSkillNames(options: SkillSelectionOptions) {
     'react-doctor',
     ...(options.unit ? ['vitest'] : []),
     ...(options.e2e ? ['playwright-best-practices', 'playwright-cli'] : []),
-    ...(options.motion ? ['motion-framer'] : []),
+    ...enabledFeatureModules(options).flatMap((feature) => feature.skills(options)),
   ];
 }
 

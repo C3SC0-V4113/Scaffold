@@ -3,6 +3,7 @@ import versions from '../versions.json' with { type: 'json' };
 import { routerCatalog } from '../routers.js';
 import type { CreateOptions, IconLibrary, PackageManager } from '../types.js';
 import type { FrameworkAdapter } from '../frameworks/types.js';
+import { featureDocs, featureDoctorIgnoredRules } from '../features/registry.js';
 import { getCatRender } from './icons.js';
 import { testReportDirs } from './ignores.js';
 
@@ -335,49 +336,6 @@ export default function HomeHero() {
 `;
 }
 
-export const motionMainComponent = `'use client';
-
-import { domAnimation, LazyMotion, m, useReducedMotion, type HTMLMotionProps } from 'motion/react';
-
-type MotionMainProps = Omit<
-  HTMLMotionProps<'main'>,
-  | 'animate'
-  | 'exit'
-  | 'initial'
-  | 'layout'
-  | 'layoutId'
-  | 'transition'
-  | 'variants'
-  | 'whileDrag'
-  | 'whileFocus'
-  | 'whileHover'
-  | 'whileInView'
-  | 'whileTap'
->;
-
-export function MotionMain({ children, ...props }: MotionMainProps) {
-  const shouldReduceMotion = useReducedMotion();
-
-  return (
-    <LazyMotion features={domAnimation}>
-      <m.main
-        {...props}
-        data-motion-root=""
-        initial={shouldReduceMotion ? false : { opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={
-          shouldReduceMotion
-            ? { duration: 0 }
-            : { duration: 0.2, ease: 'easeOut' }
-        }
-      >
-        {children}
-      </m.main>
-    </LazyMotion>
-  );
-}
-`;
-
 export function renderAstroHomePage(projectName: string, motionEnabled = false) {
   return `---
 import HomeHero from '../components/home-hero';
@@ -429,8 +387,8 @@ import '../styles/global.css';
 
 export function renderReactDoctorConfig(
   layout: FrameworkAdapter['layout'],
-  motion: boolean,
-  ignoreMotionRule: boolean
+  options: Pick<CreateOptions, 'framework' | 'motion'>,
+  framework: CreateOptions['framework']
 ) {
   // React Doctor already skips build output and most dot directories, but not
   // test reports: Playwright's bundles minified trace-viewer scripts.
@@ -444,10 +402,10 @@ export function renderReactDoctorConfig(
   // even when app/globals.css contains the media query and the Motion wrapper
   // calls useReducedMotion(). Keep both real safeguards and suppress only
   // that verified false positive until the detector recognizes them.
-  const ignoredRules =
-    ignoreMotionRule && motion
-      ? '    "rules": ["react-doctor/require-reduced-motion"],\n'
-      : '';
+  const rules = featureDoctorIgnoredRules(options, framework);
+  const ignoredRules = rules.length
+    ? `    "rules": [${rules.map((rule) => JSON.stringify(rule)).join(', ')}],\n`
+    : '';
 
   return `{
   "ignore": {
@@ -473,12 +431,11 @@ export const reactDoctorConfig = renderReactDoctorConfig(
     uiDir: 'components/ui',
     importAlias: '@/',
     editHint: 'app/page.tsx',
-    motionMainPath: 'components/common/motion-main.tsx',
     eslintConfigPath: 'eslint.config.mjs',
     vitestConfigPath: 'vitest.config.mts',
   },
-  false,
-  true
+  { framework: 'next', motion: false },
+  'next'
 );
 
 // .mjs + ESM syntax on purpose: Astro apps set "type": "module", so a
@@ -788,67 +745,6 @@ describe('Home page smoke test', () => {
 });
 `;
 
-export function renderMotionMainUnitTest(importAlias = '@/') {
-  return `import { render } from '@testing-library/react';
-import { createElement, type ReactNode } from 'react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
-const motionState = vi.hoisted(() => ({
-  reduced: false,
-  props: undefined as Record<string, unknown> | undefined,
-}));
-
-vi.mock('motion/react', () => ({
-  domAnimation: {},
-  LazyMotion: ({ children }: { children: ReactNode }) => createElement('div', null, children),
-  m: {
-    main: ({
-      children,
-      ...props
-    }: {
-      children?: ReactNode;
-    } & Record<string, unknown>) => {
-      motionState.props = props;
-      return createElement('main', null, children);
-    },
-  },
-  useReducedMotion: () => motionState.reduced,
-}));
-
-import { MotionMain } from '${importAlias}components/common/motion-main';
-
-describe('MotionMain', () => {
-  beforeEach(() => {
-    motionState.reduced = false;
-    motionState.props = undefined;
-  });
-
-  it('uses a restrained entrance animation', () => {
-    render(<MotionMain>Content</MotionMain>);
-
-    expect(motionState.props).toMatchObject({
-      'data-motion-root': '',
-      initial: { opacity: 0, y: 8 },
-      animate: { opacity: 1, y: 0 },
-      transition: { duration: 0.2, ease: 'easeOut' },
-    });
-  });
-
-  it('removes movement and duration when reduced motion is requested', () => {
-    motionState.reduced = true;
-
-    render(<MotionMain>Content</MotionMain>);
-
-    expect(motionState.props).toMatchObject({
-      initial: false,
-      animate: { opacity: 1, y: 0 },
-      transition: { duration: 0 },
-    });
-  });
-});
-`;
-}
-
 export const playwrightConfig = `import { defineConfig, devices } from '@playwright/test';
 
 const baseUrl = 'http://127.0.0.1:3000';
@@ -997,7 +893,7 @@ ${run} check
 
 ${docs.toolingLines.join('\n')}
 ${(options.router ?? 'none') !== 'none' ? `- ${routerCatalog[options.router ?? 'none'].label}.\n` : ''}${options.unit ? '- Vitest and React Testing Library.\n' : ''}${options.e2e ? '- Playwright E2E testing.\n' : ''}${options.commitlint ? '- Conventional commit linting.\n' : ''}${options.motion ? '- Motion for React animations.\n' : ''}
-${docs.routerGuidance?.(options.router ?? 'none') ? `## Router\n\n${docs.routerGuidance(options.router ?? 'none')}\n\n` : ''}${renderMotionGuide(options, docs)}${renderShadcnMcpGuide(options)}
+${docs.routerGuidance?.(options.router ?? 'none') ? `## Router\n\n${docs.routerGuidance(options.router ?? 'none')}\n\n` : ''}${renderMotionGuide(options)}${renderShadcnMcpGuide(options)}
 ## shadcn Presets
 
 purrfold forwards additional shadcn CLI arguments, including official presets:
@@ -1063,12 +959,15 @@ Fix a violation with a token, variant, or size from the design system, and add o
 `;
 }
 
-function renderMotionGuide(options: Pick<CreateOptions, 'motion'>, docs: FrameworkAdapter['docs']) {
+function renderMotionGuide(options: Pick<CreateOptions, 'framework' | 'motion'>) {
   if (!options.motion) {
     return '';
   }
 
-  const frameworkGuidance = docs.motionGuidance;
+  const frameworkGuidance = featureDocs(options.framework, options)
+    .map((docs) => docs.readme)
+    .filter(Boolean)
+    .join(' ');
 
   return `## Motion
 
@@ -1122,7 +1021,7 @@ ${options.unit ? `4. \`${run} test\`\n` : ''}${options.e2e ? `- Run \`${run} tes
 - Component placement rules: \`.agents/skills/shadcn-component-boundaries/SKILL.md\`
 - Minimum evaluation: \`.agents/skills/project-min-evaluation/SKILL.md\`
 ${options.unit ? '- Vitest guidance: `.agents/skills/vitest/SKILL.md`\n' : ''}${options.e2e ? '- Playwright guidance: `.agents/skills/playwright-best-practices/SKILL.md`\n' : ''}${options.commitlint ? '- Commit messages are checked with commitlint.\n' : ''}
-${renderMotionAgentRules(options, docs)}## shadcn MCP
+${renderMotionAgentRules(options)}## shadcn MCP
 
 ${options.mcp ? 'shadcn MCP setup was requested during scaffold.' : 'shadcn MCP setup is optional and was not run by default.'}
 
@@ -1176,7 +1075,7 @@ ${options.unit ? `4. \`${run} test\`\n` : ''}${options.e2e ? `- Run \`${run} tes
 - Component placement rules: \`.agents/skills/shadcn-component-boundaries/SKILL.md\`
 - Minimum evaluation: \`.agents/skills/project-min-evaluation/SKILL.md\`
 ${options.unit ? '- Vitest guidance: `.agents/skills/vitest/SKILL.md`\n' : ''}${options.e2e ? '- Playwright guidance: `.agents/skills/playwright-best-practices/SKILL.md`\n' : ''}${options.commitlint ? '- Commit messages are checked with commitlint.\n' : ''}
-${docs.routerGuidance?.(options.router ?? 'none') ? `## Router\n\n${docs.routerGuidance(options.router ?? 'none')}\n\n` : ''}${renderMotionAgentRules(options, docs)}## shadcn MCP
+${docs.routerGuidance?.(options.router ?? 'none') ? `## Router\n\n${docs.routerGuidance(options.router ?? 'none')}\n\n` : ''}${renderMotionAgentRules(options)}## shadcn MCP
 
 ${options.mcp ? 'shadcn MCP setup was requested during scaffold.' : 'shadcn MCP setup is optional and was not run by default.'}
 
@@ -1220,7 +1119,7 @@ Do not use \`next lint\`; use the ESLint CLI.
 - Component placement rules: \`.agents/skills/shadcn-component-boundaries/SKILL.md\`
 - Minimum evaluation: \`.agents/skills/project-min-evaluation/SKILL.md\`
 ${options.unit ? '- Vitest guidance: `.agents/skills/vitest/SKILL.md`\n' : ''}${options.e2e ? '- Playwright guidance: `.agents/skills/playwright-best-practices/SKILL.md`\n' : ''}${options.commitlint ? '- Commit messages are checked with commitlint.\n' : ''}
-${renderMotionAgentRules(options, docs)}## shadcn MCP
+${renderMotionAgentRules(options)}## shadcn MCP
 
 ${options.mcp ? 'shadcn MCP setup was requested during scaffold.' : 'shadcn MCP setup is optional and was not run by default.'}
 
@@ -1255,12 +1154,15 @@ export function renderAgents(options: AgentsOptions, docs: FrameworkAdapter['doc
   return renderers[docs.agentsTemplate](options, docs);
 }
 
-function renderMotionAgentRules(options: Pick<CreateOptions, 'motion'>, docs: FrameworkAdapter['docs']) {
+function renderMotionAgentRules(options: Pick<CreateOptions, 'framework' | 'motion'>) {
   if (!options.motion) {
     return '';
   }
 
-  const frameworkGuidance = docs.motionAgentGuidance;
+  const frameworkGuidance = featureDocs(options.framework, options)
+    .map((docs) => docs.agents)
+    .filter(Boolean)
+    .join('\n');
 
   return `## Motion Rules
 

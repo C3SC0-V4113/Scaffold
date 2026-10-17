@@ -2,8 +2,9 @@ import path from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
+import { getFrameworkAdapter } from '../src/frameworks/registry.js';
 import { pinnedSpecifier } from '../src/installers/config-model.js';
-import { installMotion } from '../src/installers/motion.js';
+import { installMotion } from '../src/features/motion/install.js';
 import type { CreateOptions, Executor } from '../src/types.js';
 
 const motionPin = pinnedSpecifier('motion');
@@ -65,6 +66,19 @@ function options(
   };
 }
 
+async function runMotionInstall(
+  projectRoot: string,
+  createOptions: CreateOptions,
+  executor: Executor,
+) {
+  await installMotion({
+    adapter: getFrameworkAdapter(createOptions.framework),
+    options: createOptions,
+    executor,
+    projectRoot,
+  });
+}
+
 describe('Motion installer', () => {
   it.each([
     ['npm', 'npm', ['install', '--legacy-peer-deps', motionPin]],
@@ -73,7 +87,7 @@ describe('Motion installer', () => {
   ] as const)('installs the pinned runtime package with %s', async (packageManager, command, args) => {
     const executor = new RecordingExecutor();
 
-    await installMotion('my-app', options(packageManager), executor);
+    await runMotionInstall('my-app', options(packageManager), executor);
 
     expect(executor.runs).toEqual([{ command, args: [...args], cwd: 'my-app' }]);
   });
@@ -81,7 +95,7 @@ describe('Motion installer', () => {
   it('does nothing when Motion is not selected', async () => {
     const executor = new RecordingExecutor();
 
-    await installMotion('my-app', options('npm', { motion: false }), executor);
+    await runMotionInstall('my-app', options('npm', { motion: false }), executor);
 
     expect(executor.runs).toEqual([]);
   });
@@ -89,7 +103,7 @@ describe('Motion installer', () => {
   it('does not install packages with --skip-install', async () => {
     const executor = new RecordingExecutor();
 
-    await installMotion('my-app', options('npm', { skipInstall: true }), executor);
+    await runMotionInstall('my-app', options('npm', { skipInstall: true }), executor);
 
     expect(executor.runs).toEqual([]);
     expect([...executor.writes.values()].join('\n')).toContain(
@@ -103,7 +117,7 @@ describe('Motion installer', () => {
   ] as const)('adds reduced-motion handling to the %s stylesheet', async (framework, suffix) => {
     const executor = new RecordingExecutor();
 
-    await installMotion('my-app', options('npm', { framework }), executor);
+    await runMotionInstall('my-app', options('npm', { framework }), executor);
 
     expect(
       [...executor.writes.keys()].some((file) => file.replaceAll('\\', '/').endsWith(suffix))
@@ -125,8 +139,8 @@ describe('Motion installer', () => {
 `;
     const executor = new RecordingExecutor({ [stylesheetPath]: unrelatedCss });
 
-    await installMotion('my-app', options('npm'), executor);
-    await installMotion('my-app', options('npm'), executor);
+    await runMotionInstall('my-app', options('npm'), executor);
+    await runMotionInstall('my-app', options('npm'), executor);
 
     const stylesheet = executor.files.get(stylesheetPath) ?? '';
     expect(stylesheet).toContain(unrelatedCss.trim());

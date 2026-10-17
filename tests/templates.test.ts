@@ -4,14 +4,16 @@ import versions from '../src/versions.json' with { type: 'json' };
 
 import { buildScripts } from '../src/installers/config-model.js';
 import { getFrameworkAdapter } from '../src/frameworks/registry.js';
+import {
+  motionMainComponent,
+  renderMotionMainUnitTest,
+} from '../src/features/motion/files.js';
 import type { CreateOptions, Framework } from '../src/types.js';
 import {
   gitAttributes,
   humanizeProjectName,
   mergePnpmBuildPolicy,
   mergePnpmHardening,
-  motionMainComponent,
-  renderMotionMainUnitTest,
   prettierIgnore,
   reactDoctorConfig,
   renderAgents as renderAgentsTemplate,
@@ -37,7 +39,11 @@ const adapterFor = (framework: Framework) => getFrameworkAdapter(framework);
 const renderPrettierConfig = (framework: Framework) => adapterFor(framework).templates.prettier({ framework } as CreateOptions);
 const renderVitestConfig = (framework: Framework) => adapterFor(framework).templates.vitest({ framework } as CreateOptions);
 const renderReactDoctorConfig = (framework: Framework, motion = false) =>
-  renderReactDoctorConfigTemplate(adapterFor(framework).layout, motion, adapterFor(framework).docs.doctorIgnoreMotionRule);
+  renderReactDoctorConfigTemplate(
+    adapterFor(framework).layout,
+    { framework, motion },
+    framework,
+  );
 const renderDesignDoc = (framework: Framework) => renderDesignDocTemplate(adapterFor(framework).layout);
 const renderReadme = (options: Parameters<typeof renderReadmeTemplate>[0]) =>
   renderReadmeTemplate(options, adapterFor(options.framework).docs);

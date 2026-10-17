@@ -16,7 +16,6 @@ import {
 } from '../../templates/vite-router.js';
 import {
   humanizeProjectName,
-  motionMainComponent,
   renderPrettierConfig,
   renderReactDoctorConfig,
   renderVitestConfig,
@@ -64,7 +63,6 @@ export const viteAdapter: FrameworkAdapter = {
     uiDir: 'src/components/ui',
     importAlias: '@/',
     editHint: 'src/App.tsx',
-    motionMainPath: 'src/components/common/motion-main.tsx',
     eslintConfigPath: 'eslint.config.js',
     vitestConfigPath: 'vitest.config.ts',
   },
@@ -86,12 +84,6 @@ export const viteAdapter: FrameworkAdapter = {
     options,
   ) {
     const name = path.basename(projectRoot);
-    if (options.motion) {
-      await executor.writeFile(
-        path.join(projectRoot, viteAdapter.layout.motionMainPath),
-        motionMainComponent,
-      );
-    }
 
     await executor.remove(path.join(projectRoot, 'src', 'App.css'));
     await executor.remove(path.join(projectRoot, 'src', 'assets', 'react.svg'));
@@ -115,7 +107,7 @@ export const viteAdapter: FrameworkAdapter = {
     unitSmokeTest: (options) => renderViteRouterUnitSmokeTest(options.router),
     e2eSmokeTest: (options) => renderViteRouterE2ESmokeTest(options.router),
     doctorConfig: (options) =>
-      renderReactDoctorConfig(viteAdapter.layout, options.motion, false),
+      renderReactDoctorConfig(viteAdapter.layout, options, 'vite'),
   },
   packageScripts: (options) =>
     buildScripts(options, viteAdapter.packageScriptConfig),
@@ -135,11 +127,6 @@ export const viteAdapter: FrameworkAdapter = {
       '- `@shadcn/lint` enforcing the design system rules in `DESIGN.md`.',
       '- React Doctor and React Scan.',
     ],
-    motionGuidance:
-      'Vite renders React on the client, so Motion components need no server/client boundary.',
-    motionAgentGuidance:
-      '- Vite renders React on the client; use Motion components without a server/client boundary.',
-    doctorIgnoreMotionRule: false,
     agentsRules: '',
     routerGuidance: (router) => {
       if (router === 'none') return '';

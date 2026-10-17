@@ -12,7 +12,6 @@ import {
 } from '../../installers/config-model.js';
 import { renderViteEslintConfig } from '../../templates/eslint.js';
 import {
-  motionMainComponent,
   renderPrettierConfig,
   renderReactDoctorConfig,
   renderVitestConfig,
@@ -38,7 +37,6 @@ export const reactRouterAdapter: FrameworkAdapter = {
     uiDir: 'app/components/ui',
     importAlias: '~/',
     editHint: 'app/routes/home.tsx',
-    motionMainPath: 'app/components/common/motion-main.tsx',
     eslintConfigPath: 'eslint.config.js',
     vitestConfigPath: 'vitest.config.ts',
   },
@@ -78,12 +76,6 @@ export const reactRouterAdapter: FrameworkAdapter = {
     await executor.remove(path.join(projectRoot, 'Dockerfile'));
     await executor.remove(path.join(projectRoot, '.dockerignore'));
     await executor.remove(path.join(projectRoot, 'public/favicon.ico'));
-    if (options.motion) {
-      await executor.writeFile(
-        path.join(projectRoot, this.layout.motionMainPath),
-        motionMainComponent,
-      );
-    }
   },
   templates: {
     eslint: (options) =>
@@ -122,7 +114,7 @@ test('renders the not found boundary for unknown routes', async ({ page }) => {
 });
 `,
     doctorConfig: (options) =>
-      renderReactDoctorConfig(reactRouterAdapter.layout, options.motion, false),
+      renderReactDoctorConfig(reactRouterAdapter.layout, options, 'react-router'),
   },
   packageScripts: (options) =>
     buildScripts(options, reactRouterAdapter.packageScriptConfig),
@@ -141,11 +133,6 @@ test('renders the not found boundary for unknown routes', async ({ page }) => {
       '- shadcn UI initialized through the shadcn CLI.',
       '- ESLint flat config with TypeScript, React Hooks, React Doctor, and React Router rules.',
     ],
-    motionGuidance:
-      "React Router renders components on the server and hydrates them in the browser. The 'use client' directive has no special effect in this framework mode.",
-    motionAgentGuidance:
-      "- React Router renders Motion components on the server and hydrates them in the browser; 'use client' has no special effect in this framework mode.",
-    doctorIgnoreMotionRule: false,
     agentsRules: '',
   },
 };

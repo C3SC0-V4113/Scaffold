@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os';
 
 import { describe, expect, it } from 'vitest';
 
+import { writeFeatureFiles } from '../src/features/registry.js';
 import { DryRunExecutor } from '../src/executor.js';
 import { viteAdapter } from '../src/frameworks/vite/index.js';
 import { resolveServerAdapter, validateFrameworkOptions } from '../src/frameworks/validate.js';
@@ -49,7 +50,6 @@ describe('Vite adapter', () => {
       uiDir: 'src/components/ui',
       importAlias: '@/',
       editHint: 'src/App.tsx',
-      motionMainPath: 'src/components/common/motion-main.tsx',
       eslintConfigPath: 'eslint.config.js',
       vitestConfigPath: 'vitest.config.ts',
     });
@@ -200,7 +200,15 @@ describe('Vite adapter', () => {
     expect(page).toContain('<h1 className="text-2xl font-semibold tracking-tight">My Vite App</h1>');
     expect(viteAdapter.templates.unitSmokeTest(options)).toContain("import { routes } from '@/router';");
     const projectRoot = path.join(tmpdir(), 'my-vite-app');
-    await viteAdapter.writeAppShell(projectRoot, executor, 'lucide', { ...options, motion: true });
+    const motionOptions = { ...options, motion: true };
+    await viteAdapter.writeAppShell(projectRoot, executor, 'lucide', motionOptions);
+    await writeFeatureFiles({
+      adapter: viteAdapter,
+      options: motionOptions,
+      executor,
+      projectRoot,
+      stage: 'app-shell',
+    });
     expect(
       executor.operations.filter((operation) => operation === `write ${path.join(projectRoot, 'src', 'App.tsx')}`),
     ).toHaveLength(1);

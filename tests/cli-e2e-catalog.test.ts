@@ -15,9 +15,10 @@ import path from 'node:path';
 import { tmpdir } from 'node:os';
 
 import { describe, expect, it } from 'vitest';
-import { frameworkLayouts, frameworkVersionOverrides } from '../scripts/e2e/catalog.mjs';
+import { featureFiles, frameworkLayouts, frameworkVersionOverrides } from '../scripts/e2e/catalog.mjs';
 import versions from '../src/versions.json' with { type: 'json' };
 import { frameworkAdapters } from '../src/frameworks/registry.js';
+import { motionFilePaths } from '../src/features/motion/index.js';
 
 function resolveNpmCli(): string {
   if (process.env.npm_execpath && existsSync(process.env.npm_execpath)) {
@@ -116,6 +117,12 @@ describe('CLI E2E catalog boundary', () => {
       expect(adapter.layout).toMatchObject(
         frameworkLayouts[framework as keyof typeof frameworkLayouts],
       );
+    }
+  });
+
+  it('keeps the plain JavaScript motion paths aligned with the feature module', () => {
+    for (const framework of Object.keys(frameworkAdapters) as Array<keyof typeof frameworkAdapters>) {
+      expect(featureFiles.motion[framework]).toBe(motionFilePaths[framework]);
     }
   });
 
@@ -298,7 +305,7 @@ describe('CLI E2E catalog boundary', () => {
         }
         expect(result.stdout.match(/^PASS  /gm)).toHaveLength(expectedQuickScenarios.length);
       } finally {
-        rmSync(fixtureRoot, { recursive: true, force: true });
+        rmSync(fixtureRoot, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 });
       }
     },
     180_000

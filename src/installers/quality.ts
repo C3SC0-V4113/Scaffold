@@ -1,5 +1,6 @@
 import path from 'node:path';
 
+import { writeFeatureFiles } from '../features/registry.js';
 import { getPackageManagerCommands } from '../package-manager.js';
 import { getFrameworkAdapter } from '../frameworks/registry.js';
 import {
@@ -222,6 +223,7 @@ export async function installQualityLayer(
 
   const iconLibrary = await reconcileIconLibrary(projectRoot, options, executor);
   await adapter.writeAppShell(projectRoot, executor, iconLibrary, options);
+  await writeFeatureFiles({ adapter, options, executor, projectRoot, stage: 'app-shell' });
 }
 
 /**
