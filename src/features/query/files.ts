@@ -214,6 +214,22 @@ function addImport(source: string, importLine: string) {
   return `${importLine}\n${source}`;
 }
 
+function addRelativeImport(source: string, importLine: string) {
+  if (source.includes(importLine)) return source;
+  const importedSource = (line: string) =>
+    line.match(/\bfrom\s+['"]([^'"]+)['"]/)?.[1] ?? line.match(/^import\s+['"]([^'"]+)['"]/)?.[1];
+  const newSource = importedSource(importLine)!;
+  const lines = source.split('\n');
+  const relativeImports = lines
+    .map((line, index) => ({ line, index, source: importedSource(line) }))
+    .filter((entry) => entry.source?.startsWith('.'));
+  const nextImport = relativeImports.find((entry) => entry.source!.localeCompare(newSource) > 0);
+  const insertAt = nextImport?.index ?? (relativeImports.at(-1)?.index ?? -1) + 1;
+  if (insertAt === 0) return addImport(source, importLine);
+  lines.splice(insertAt, 0, importLine);
+  return lines.join('\n');
+}
+
 function patchNextLayout(source: string) {
   let result = addImport(source, "import { QueryProvider } from '@/components/providers/query-provider';");
   const wrapped = result.replace(/(<body\b[^>]*>)([\s\S]*?)(<\/body>)/, '$1\n        <QueryProvider>$2\n        </QueryProvider>\n      $3');
@@ -225,7 +241,7 @@ function patchNextLayout(source: string) {
 }
 
 function patchViteMain(source: string) {
-  let result = addImport(source, "import { QueryProvider } from './lib/query-provider';");
+  let result = addRelativeImport(source, "import { QueryProvider } from './lib/query-provider';");
   const wrapped = result.replace(
     /(<StrictMode>\s*)([\s\S]*?)(\s*<\/StrictMode>)/,
     (_match, opening: string, children: string, closing: string) =>

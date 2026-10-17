@@ -167,6 +167,14 @@ describe('TanStack Query installer', () => {
   it('keeps Astro pages untouched and provider patchers reject unknown layouts', () => {
     expect(querySourcePatches.astro).toBeUndefined();
     expect(() => patchViteQueryRouter('<Routes />')).toThrow('Could not find the Vite data router home route');
+    const viteMain = querySourcePatches.vite?.(`import { StrictMode } from 'react';
+import { createRoot } from 'react-dom/client';
+
+import './index.css';
+import App from './App.tsx';
+
+createRoot(document.getElementById('root')!).render(<StrictMode><App /></StrictMode>);`);
+    expect(viteMain?.indexOf("from './App.tsx'")).toBeLessThan(viteMain?.indexOf("from './lib/query-provider'"));
   });
 
   it.each(['next', 'astro', 'vite', 'react-router'] as const)(
