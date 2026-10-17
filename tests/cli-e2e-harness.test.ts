@@ -331,7 +331,7 @@ describe('CLI E2E harness', () => {
 
       cleanupContext(baseContext);
     } finally {
-      rmSync(fixtureRoot, { recursive: true, force: true });
+      rmSync(fixtureRoot, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 });
     }
   }, TOOLCHAIN_TIMEOUT_MS);
 
