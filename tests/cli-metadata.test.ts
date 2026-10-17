@@ -70,15 +70,22 @@ describe('cli metadata', () => {
     try {
       await buildProgram().parseAsync(['node', 'purrfold', 'info', '--json']);
       const schema = JSON.parse(String(log.mock.calls[0]?.[0])) as {
-        frameworks: Array<{ id: string; routers: string[]; defaultRouter: string }>;
+        frameworks: Array<{ id: string; routers: string[]; defaultRouter: string; rendering: { ssr: boolean; defaultSsr: boolean } | null }>;
       };
       expect(schema.frameworks).toEqual([
-        { id: 'next', routers: [], defaultRouter: 'none' },
-        { id: 'astro', routers: [], defaultRouter: 'none' },
+        { id: 'next', routers: [], defaultRouter: 'none', rendering: null },
+        { id: 'astro', routers: [], defaultRouter: 'none', rendering: { ssr: true, defaultSsr: false } },
         {
           id: 'vite',
           routers: ['none', 'react-router-data', 'react-router-declarative'],
           defaultRouter: 'react-router-data',
+          rendering: null,
+        },
+        {
+          id: 'react-router',
+          routers: [],
+          defaultRouter: 'none',
+          rendering: { ssr: true, defaultSsr: true },
         },
       ]);
     } finally {

@@ -57,11 +57,12 @@ describe('CLI E2E catalog boundary', () => {
     const overrideKeys = Object.keys(versions).filter((key) => key.endsWith('Overrides'));
     const versionTables = versions as Record<string, unknown>;
 
-    expect(Object.keys(frameworkVersionOverrides).map((framework) => `${framework}Overrides`).sort()).toEqual(
+    expect(Object.keys(frameworkVersionOverrides).map((framework) => `${framework === 'react-router' ? 'reactRouter' : framework}Overrides`).sort()).toEqual(
       overrideKeys.sort()
     );
-    for (const framework of ['astro', 'vite'] as const) {
-      expect(frameworkVersionOverrides[framework]).toEqual(versionTables[`${framework}Overrides`]);
+    for (const framework of ['astro', 'vite', 'react-router'] as const) {
+      const table = framework === 'react-router' ? 'reactRouterOverrides' : `${framework}Overrides`;
+      expect(frameworkVersionOverrides[framework]).toEqual(versionTables[table]);
     }
   });
 
@@ -71,7 +72,7 @@ describe('CLI E2E catalog boundary', () => {
     };
 
     for (const key of Object.keys(versions).filter((entry) => entry.endsWith('Overrides'))) {
-      const framework = key.replace(/Overrides$/, '');
+      const framework = key.replace(/Overrides$/, '').replace(/^reactRouter$/, 'react-router');
       const manager = renovate.customManagers.find((candidate) =>
         candidate.matchStrings.some((match) => match.includes(`$each(${key},`))
       );
@@ -112,7 +113,9 @@ describe('CLI E2E catalog boundary', () => {
 
   it('keeps the plain JavaScript harness layouts aligned with framework adapters', () => {
     for (const [framework, adapter] of Object.entries(frameworkAdapters)) {
-      expect(frameworkLayouts[framework as keyof typeof frameworkLayouts]).toEqual(adapter.layout);
+      expect(adapter.layout).toMatchObject(
+        frameworkLayouts[framework as keyof typeof frameworkLayouts],
+      );
     }
   });
 
@@ -258,6 +261,9 @@ describe('CLI E2E catalog boundary', () => {
         'dry-run-vite-rr-data-pnpm',
         'dry-run-next-router-unsupported',
         'dry-run-vite-router-unknown',
+        'dry-run-react-router-npm',
+        'dry-run-react-router-adapter-unsupported',
+        'dry-run-react-router-router-unsupported',
       ];
 
       try {

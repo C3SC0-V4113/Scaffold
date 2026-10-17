@@ -62,6 +62,8 @@ export const viteAdapter: FrameworkAdapter = {
     globalStylesheet: 'src/index.css',
     utilsPath: 'src/lib/utils.ts',
     uiDir: 'src/components/ui',
+    importAlias: '@/',
+    editHint: 'src/App.tsx',
     motionMainPath: 'src/components/common/motion-main.tsx',
     eslintConfigPath: 'eslint.config.js',
     vitestConfigPath: 'vitest.config.ts',
@@ -122,6 +124,9 @@ export const viteAdapter: FrameworkAdapter = {
     agentsTemplate: 'vite',
     mergeStrategy: 'replace',
     frameworkName: 'Vite',
+    promptLabel: 'Vite',
+    frameworkGuidance: 'This project uses Vite with React and TypeScript. Read the current Vite and React docs before changing framework APIs or project structure.',
+    referenceDocsUrl: 'https://vite.dev/guide/',
     readmeTitle: 'Vite Quality App',
     toolingLines: [
       '- React with Vite, TypeScript, and Tailwind CSS.',

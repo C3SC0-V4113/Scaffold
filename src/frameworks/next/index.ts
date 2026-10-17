@@ -32,6 +32,8 @@ export const nextAdapter: FrameworkAdapter = {
     globalStylesheet: 'app/globals.css',
     utilsPath: 'lib/utils.ts',
     uiDir: 'components/ui',
+    importAlias: '@/',
+    editHint: 'app/page.tsx',
     motionMainPath: 'components/common/motion-main.tsx',
     eslintConfigPath: 'eslint.config.mjs',
     vitestConfigPath: 'vitest.config.mts',
@@ -94,6 +96,9 @@ export const nextAdapter: FrameworkAdapter = {
     agentsTemplate: 'next',
     mergeStrategy: 'replace',
     frameworkName: 'Next.js',
+    promptLabel: 'Next.js',
+    frameworkGuidance: 'This project uses Next.js with React and TypeScript. Read the current Next.js and React docs before changing framework APIs or project structure.',
+    referenceDocsUrl: 'https://nextjs.org/docs',
     readmeTitle: 'Next Quality App',
     toolingLines: [
       '- Next.js App Router with TypeScript and Tailwind.',

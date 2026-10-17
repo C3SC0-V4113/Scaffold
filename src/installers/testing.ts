@@ -4,13 +4,13 @@ import { getFrameworkAdapter } from '../frameworks/registry.js';
 import {
   e2eSmokeTest,
   renderPlaywrightConfig,
-  motionMainUnitTest,
+  renderMotionMainUnitTest,
 } from '../templates/files.js';
 import type { CreateOptions, Executor } from '../types.js';
 
 export async function installTestingFiles(
   projectRoot: string,
-  options: Pick<CreateOptions, 'framework' | 'packageManager' | 'unit' | 'e2e' | 'motion' | 'router'>,
+  options: Pick<CreateOptions, 'framework' | 'packageManager' | 'unit' | 'e2e' | 'motion' | 'router' | 'ssr'>,
   executor: Executor
 ) {
   const adapter = getFrameworkAdapter(options.framework);
@@ -26,7 +26,7 @@ export async function installTestingFiles(
     if (options.motion) {
       await executor.writeFile(
         path.join(projectRoot, 'tests', 'unit', 'motion-main.test.tsx'),
-        motionMainUnitTest
+        renderMotionMainUnitTest(adapter.layout.importAlias),
       );
     }
   }
@@ -34,7 +34,10 @@ export async function installTestingFiles(
   if (options.e2e) {
     await executor.writeFile(
       path.join(projectRoot, 'playwright.config.ts'),
-      renderPlaywrightConfig(options.packageManager, adapter.playwrightServer)
+      renderPlaywrightConfig(options.packageManager, adapter.playwrightServer, {
+        ssr: options.ssr,
+        staticBuild: adapter.playwrightServer.staticBuild,
+      })
     );
     await executor.writeFile(
       path.join(projectRoot, 'tests', 'e2e', 'home.spec.ts'),

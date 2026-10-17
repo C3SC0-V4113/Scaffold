@@ -54,6 +54,9 @@
     "vite": "8.3.4",
     "@vitejs/plugin-react": "6.1.2"
   },
+  "reactRouterOverrides": {
+    "@vitejs/plugin-react": "6.1.2"
+  },
   "actions": {
     "actions/checkout": "v7.0.1",
     "actions/setup-node": "v7.1.0",

@@ -1,4 +1,5 @@
 import path from 'node:path';
+import { tmpdir } from 'node:os';
 
 import { describe, expect, it } from 'vitest';
 
@@ -46,6 +47,8 @@ describe('Vite adapter', () => {
       globalStylesheet: 'src/index.css',
       utilsPath: 'src/lib/utils.ts',
       uiDir: 'src/components/ui',
+      importAlias: '@/',
+      editHint: 'src/App.tsx',
       motionMainPath: 'src/components/common/motion-main.tsx',
       eslintConfigPath: 'eslint.config.js',
       vitestConfigPath: 'vitest.config.ts',
@@ -103,7 +106,7 @@ describe('Vite adapter', () => {
   );
 
   it('runs create-vite from the target parent when given an absolute target', async () => {
-    const targetDir = path.resolve('/tmp/purrfold-vite-target');
+    const targetDir = path.resolve(tmpdir(), 'purrfold-vite-target');
     const executor = new DryRunExecutor();
     await createViteApp({ ...options, targetDir }, executor);
 
@@ -114,7 +117,7 @@ describe('Vite adapter', () => {
   it('keeps interactive preset selection and forwards a user preset once', async () => {
     const interactiveExecutor = new DryRunExecutor();
     await initializeShadcn(
-      '/tmp/vite-interactive',
+      path.join(tmpdir(), 'vite-interactive'),
       { ...options, yes: false, shadcnArgs: [] },
       interactiveExecutor,
     );
@@ -122,7 +125,7 @@ describe('Vite adapter', () => {
 
     const presetExecutor = new DryRunExecutor();
     await initializeShadcn(
-      '/tmp/vite-preset',
+      path.join(tmpdir(), 'vite-preset'),
       { ...options, shadcnArgs: ['--preset', 'user-preset'] },
       presetExecutor,
     );
@@ -167,7 +170,7 @@ describe('Vite adapter', () => {
       validateFrameworkOptions(viteAdapter, 'npm', { ssr: true }),
     ).toThrowError(
       new Error(
-        '--ssr and --adapter are only available when --framework astro is selected.',
+        '--ssr and --adapter are only available when --framework astro or react-router is selected.',
       ),
     );
     expect(() => resolveServerAdapter(viteAdapter, 'node')).toThrowError(
@@ -196,16 +199,15 @@ describe('Vite adapter', () => {
     expect(page).toContain("import { MotionMain } from '@/components/common/motion-main';");
     expect(page).toContain('<h1 className="text-2xl font-semibold tracking-tight">My Vite App</h1>');
     expect(viteAdapter.templates.unitSmokeTest(options)).toContain("import { routes } from '@/router';");
-    await viteAdapter.writeAppShell('/tmp/my-vite-app', executor, 'lucide', { ...options, motion: true });
+    const projectRoot = path.join(tmpdir(), 'my-vite-app');
+    await viteAdapter.writeAppShell(projectRoot, executor, 'lucide', { ...options, motion: true });
     expect(
-      executor.operations.filter((operation) => operation === 'write /tmp/my-vite-app/src/App.tsx'),
+      executor.operations.filter((operation) => operation === `write ${path.join(projectRoot, 'src', 'App.tsx')}`),
     ).toHaveLength(1);
-    expect(executor.operations).toContain('remove /tmp/my-vite-app/src/App.css');
-    expect(executor.operations).toContain('remove /tmp/my-vite-app/src/assets/react.svg');
-    expect(executor.operations).toContain('remove /tmp/my-vite-app/public/vite.svg');
-    expect(executor.operations).toContain(
-      'write /tmp/my-vite-app/src/components/common/motion-main.tsx',
-    );
-    expect(executor.operations).toContain('write /tmp/my-vite-app/index.html');
+    expect(executor.operations).toContain(`remove ${path.join(projectRoot, 'src', 'App.css')}`);
+    expect(executor.operations).toContain(`remove ${path.join(projectRoot, 'src', 'assets', 'react.svg')}`);
+    expect(executor.operations).toContain(`remove ${path.join(projectRoot, 'public', 'vite.svg')}`);
+    expect(executor.operations).toContain(`write ${path.join(projectRoot, 'src', 'components', 'common', 'motion-main.tsx')}`);
+    expect(executor.operations).toContain(`write ${path.join(projectRoot, 'index.html')}`);
   });
 });

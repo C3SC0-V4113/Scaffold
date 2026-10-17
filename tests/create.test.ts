@@ -49,6 +49,21 @@ describe('create option resolution', () => {
     expect(mockConfirm).not.toHaveBeenCalled();
   });
 
+  it('defaults React Router to SSR and supports an explicit no-ssr choice', async () => {
+    const defaults = await resolveCreateOptions('my-app', { framework: 'react-router', yes: true });
+    const staticBuild = await resolveCreateOptions('my-app', { framework: 'react-router', ssr: false, yes: true });
+    expect(defaults.ssr).toBe(true);
+    expect(defaults.astroAdapter).toBeUndefined();
+    expect(staticBuild.ssr).toBe(false);
+  });
+
+  it('keeps Astro static when ssr is omitted or explicitly disabled', async () => {
+    const defaults = await resolveCreateOptions('my-app', { framework: 'astro', yes: true });
+    const staticBuild = await resolveCreateOptions('my-app', { framework: 'astro', ssr: false, yes: true });
+    expect(defaults.ssr).toBe(false);
+    expect(staticBuild.ssr).toBe(false);
+  });
+
   it('enables Astro SSR and defaults to cloudflare when requested with yes', async () => {
     const options = await resolveCreateOptions('my-app', { framework: 'astro', ssr: true, yes: true });
 
@@ -85,7 +100,7 @@ describe('create option resolution', () => {
   it('rejects Astro SSR flags when Next.js is selected', async () => {
     await expect(
       resolveCreateOptions('my-app', { framework: 'next', ssr: true, yes: true })
-    ).rejects.toThrow('--ssr and --adapter are only available when --framework astro is selected.');
+    ).rejects.toThrow('--ssr and --adapter are only available when --framework astro or react-router is selected.');
   });
 
   it('rejects bun when Astro is selected', async () => {

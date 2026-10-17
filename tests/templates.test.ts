@@ -11,7 +11,7 @@ import {
   mergePnpmBuildPolicy,
   mergePnpmHardening,
   motionMainComponent,
-  motionMainUnitTest,
+  renderMotionMainUnitTest,
   prettierIgnore,
   reactDoctorConfig,
   renderAgents as renderAgentsTemplate,
@@ -534,12 +534,15 @@ allowBuilds:
   });
 
   it('generates behavioral coverage for normal and reduced Motion preferences', () => {
-    expect(motionMainUnitTest).toContain("it('uses a restrained entrance animation'");
-    expect(motionMainUnitTest).toContain(
+    expect(renderMotionMainUnitTest()).toContain("it('uses a restrained entrance animation'");
+    expect(renderMotionMainUnitTest()).toContain(
       "it('removes movement and duration when reduced motion is requested'"
     );
-    expect(motionMainUnitTest).toContain("transition: { duration: 0.2, ease: 'easeOut' }");
-    expect(motionMainUnitTest).toContain('transition: { duration: 0 }');
+    expect(renderMotionMainUnitTest()).toContain("transition: { duration: 0.2, ease: 'easeOut' }");
+    expect(renderMotionMainUnitTest()).toContain('transition: { duration: 0 }');
+    expect(renderMotionMainUnitTest('~/')).toContain(
+      "import { MotionMain } from '~/components/common/motion-main';",
+    );
   });
 
   it('documents shadcn MCP setup and preset compatibility', () => {

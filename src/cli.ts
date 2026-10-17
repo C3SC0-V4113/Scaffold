@@ -25,9 +25,10 @@ export function buildProgram(): Command {
     .description('Create a new app in <target-dir>')
     .argument('<target-dir>', 'Directory for the generated app')
     .option('--pm <pm>', 'Package manager: npm, pnpm, or bun')
-    .option('--framework <framework>', 'Framework: next, astro, or vite')
+    .option('--framework <framework>', 'Framework: next, astro, vite, or react-router')
     .option('--router <none|react-router-data|react-router-declarative>', 'Vite router mode')
-    .option('--ssr', 'Enable Astro SSR')
+    .option('--ssr', 'Enable server-side rendering when supported')
+    .option('--no-ssr', 'Disable server-side rendering when supported')
     .option('--adapter <node|vercel|netlify|cloudflare>', 'Astro SSR adapter')
     .option('--unit', 'Install Vitest and React Testing Library')
     .option('--no-unit', 'Skip Vitest and React Testing Library')
@@ -85,6 +86,9 @@ export function buildProgram(): Command {
             id: adapter.id,
             routers: adapter.capabilities.routers,
             defaultRouter: adapter.capabilities.defaultRouter ?? 'none',
+            rendering: adapter.capabilities.rendering
+              ? { ssr: adapter.capabilities.rendering.ssr, defaultSsr: adapter.capabilities.rendering.defaultSsr }
+              : null,
           })),
         };
         console.log(JSON.stringify(schema, null, 2));

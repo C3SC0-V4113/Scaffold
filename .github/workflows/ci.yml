@@ -34,6 +34,31 @@ jobs:
       - name: Run quality gate
         run: npm run check
 
+  unit:
+    name: unit (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7.0.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run unit tests
+        run: npm test
+
   # src/versions.json lands inside every generated app, so a bump there is
   # user-visible and needs a changeset. renovate.json already asked for one in
   # prose; across seven pin-bump commits that never once happened. The decision

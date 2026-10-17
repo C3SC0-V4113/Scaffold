@@ -23,14 +23,19 @@ export const installCommand = 'npx purrfold@latest <target-dir>';
 
 export const cliOptions: CliOption[] = [
   {
-    flags: '--framework <next|astro|vite>',
+    flags: '--framework <next|astro|vite|react-router>',
     description: 'Select the framework to scaffold.',
     default: 'next (or prompts, with Next as the default)',
   },
   {
     flags: '--ssr',
-    description: 'Enable Astro SSR instead of a static build.',
-    default: 'off',
+    description: 'Enable server-side rendering for frameworks that support it.',
+    default: 'framework default (React Router on; Astro off)',
+  },
+  {
+    flags: '--no-ssr',
+    description: 'Disable server-side rendering; React Router prerenders the home route.',
+    default: 'framework default',
   },
   {
     flags: '--router <none|react-router-data|react-router-declarative>',
@@ -107,6 +112,14 @@ export const cliOptions: CliOption[] = [
 ];
 
 export const cliScenarios: CliScenario[] = [
+  {
+    intent: 'Scaffold a React Router framework app with SSR',
+    command: 'npx purrfold@latest my-app --framework react-router --ssr --yes',
+  },
+  {
+    intent: 'Scaffold a statically prerendered React Router app',
+    command: 'npx purrfold@latest my-app --framework react-router --no-ssr --yes',
+  },
   {
     intent: 'Scaffold a Vite app with React Router data mode',
     command: 'npx purrfold@latest my-app --framework vite --router react-router-data --yes',

@@ -14,7 +14,10 @@ export function validateFrameworkOptions(
   packageManager: PackageManager,
   flags: { ssr?: boolean; adapter?: string; router?: string },
 ) {
-  if (flags.router !== undefined && !routerChoices.includes(flags.router as RouterChoice)) {
+  if (
+    flags.router !== undefined &&
+    !routerChoices.includes(flags.router as RouterChoice)
+  ) {
     throw new Error(
       `Unsupported router "${flags.router}". Use ${formatChoices(routerChoices)}.`,
     );
@@ -25,7 +28,9 @@ export function validateFrameworkOptions(
     !adapter.capabilities.routers.includes(flags.router as RouterChoice)
   ) {
     const frameworks = frameworkRegistry
-      .filter((item) => item.capabilities.routers.includes(flags.router as RouterChoice))
+      .filter((item) =>
+        item.capabilities.routers.includes(flags.router as RouterChoice),
+      )
       .map((item) => item.id);
     throw new Error(
       `--router is only available when --framework ${formatChoices(frameworks)} is selected.`,
@@ -39,7 +44,21 @@ export function validateFrameworkOptions(
       .filter((item) => item.capabilities.rendering?.ssr)
       .map((item) => item.id);
     throw new Error(
-      `--ssr and --adapter are only available when --framework ${frameworks.join(', ')} is selected.`,
+      `--ssr and --adapter are only available when --framework ${formatChoices(frameworks)} is selected.`,
+    );
+  }
+  if (
+    adapter.capabilities.rendering?.ssr &&
+    flags.adapter !== undefined &&
+    (adapter.capabilities.rendering.adapters?.length ?? 0) === 0
+  ) {
+    const frameworks = frameworkRegistry
+      .filter(
+        (item) => (item.capabilities.rendering?.adapters?.length ?? 0) > 0,
+      )
+      .map((item) => item.id);
+    throw new Error(
+      `--adapter is only available when --framework ${formatChoices(frameworks)} is selected.`,
     );
   }
   if (!adapter.capabilities.packageManagers.includes(packageManager)) {

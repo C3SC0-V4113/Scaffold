@@ -3,6 +3,7 @@ import type { PackageManager, ShadcnMcpClient } from './types.js';
 export interface PackageManagerCommands {
   createNextApp: (targetDir: string, yes: boolean) => { command: string; args: string[] };
   createViteApp: (targetDir: string) => { command: string; args: string[] };
+  createReactRouterApp: (targetDir: string) => { command: string; args: string[] };
   shadcn: (args: string[]) => { command: string; args: string[] };
   shadcnMcp: (client: ShadcnMcpClient) => { command: string; args: string[] };
   addDev: (packages: string[]) => { command: string; args: string[] };
@@ -30,6 +31,18 @@ const createViteBaseArgs = [
   '--no-immediate',
 ];
 
+// The branch-qualified URL uses codeload directly and avoids the rate-limited GitHub API.
+const REACT_ROUTER_TEMPLATE_URL =
+  'https://github.com/remix-run/react-router-templates/tree/main/default';
+const createReactRouterBaseArgs = [
+  '--template',
+  REACT_ROUTER_TEMPLATE_URL,
+  '--yes',
+  '--no-install',
+  '--no-git-init',
+  '--no-agent-skills',
+];
+
 export function getPackageManagerCommands(packageManager: PackageManager): PackageManagerCommands {
   if (packageManager === 'pnpm') {
     return {
@@ -47,6 +60,10 @@ export function getPackageManagerCommands(packageManager: PackageManager): Packa
       createViteApp: (targetDir) => ({
         command: 'pnpm',
         args: ['create', 'vite@latest', targetDir, ...createViteBaseArgs],
+      }),
+      createReactRouterApp: (targetDir) => ({
+        command: 'pnpm',
+        args: ['dlx', 'create-react-router@latest', targetDir, ...createReactRouterBaseArgs],
       }),
       shadcn: (args) => ({ command: 'pnpm', args: ['dlx', 'shadcn@latest', ...args] }),
       shadcnMcp: (client) => ({
@@ -78,6 +95,10 @@ export function getPackageManagerCommands(packageManager: PackageManager): Packa
         command: 'bun',
         args: ['create', 'vite@latest', targetDir, ...createViteBaseArgs],
       }),
+      createReactRouterApp: (targetDir) => ({
+        command: 'bunx',
+        args: ['--bun', 'create-react-router@latest', targetDir, ...createReactRouterBaseArgs],
+      }),
       shadcn: (args) => ({ command: 'bunx', args: ['--bun', 'shadcn@latest', ...args] }),
       shadcnMcp: (client) => ({
         command: 'bunx',
@@ -105,6 +126,10 @@ export function getPackageManagerCommands(packageManager: PackageManager): Packa
     createViteApp: (targetDir) => ({
       command: 'npm',
       args: ['create', 'vite@latest', targetDir, '--', ...createViteBaseArgs],
+    }),
+    createReactRouterApp: (targetDir) => ({
+      command: 'npx',
+      args: ['--yes', 'create-react-router@latest', targetDir, ...createReactRouterBaseArgs],
     }),
     shadcn: (args) => ({ command: 'npx', args: ['shadcn@latest', ...args] }),
     shadcnMcp: (client) => ({

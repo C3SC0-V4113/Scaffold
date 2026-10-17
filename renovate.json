@@ -37,6 +37,16 @@
     {
       "customType": "jsonata",
       "fileFormat": "json",
+      "description": "React Router-specific dependency overrides in src/versions.json.",
+      "managerFilePatterns": ["src/versions.json"],
+      "matchStrings": [
+        "$each(reactRouterOverrides, function($v, $k) { { \"depName\": $k, \"currentValue\": $v, \"depType\": \"generated-react-router\" } })"
+      ],
+      "datasourceTemplate": "npm"
+    },
+    {
+      "customType": "jsonata",
+      "fileFormat": "json",
       "description": "GitHub-owned action tags purrfold pins into generated .github/workflows/. Without this manager the generated pipelines rot silently: every app scaffolded before an action's major bump keeps running a deprecated runner (the actions/checkout@v4 node20 deprecation is exactly how this was found).",
       "managerFilePatterns": ["src/versions.json"],
       "matchStrings": [

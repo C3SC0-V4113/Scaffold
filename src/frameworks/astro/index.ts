@@ -41,6 +41,7 @@ export const astroAdapter: FrameworkAdapter = {
     packageManagers: ['npm', 'pnpm'],
     rendering: {
       ssr: true,
+      defaultSsr: false,
       adapters: ['node', 'vercel', 'netlify', 'cloudflare'],
       defaultAdapter: 'cloudflare',
     },
@@ -51,6 +52,8 @@ export const astroAdapter: FrameworkAdapter = {
     globalStylesheet: 'src/styles/global.css',
     utilsPath: 'src/lib/utils.ts',
     uiDir: 'src/components/ui',
+    importAlias: '@/',
+    editHint: 'src/pages/index.astro',
     motionMainPath: 'src/components/common/motion-main.tsx',
     eslintConfigPath: 'eslint.config.mjs',
     vitestConfigPath: 'vitest.config.mts',
@@ -136,6 +139,9 @@ export const astroAdapter: FrameworkAdapter = {
     agentsTemplate: 'astro',
     mergeStrategy: 'merge',
     frameworkName: 'Astro',
+    promptLabel: 'Astro',
+    frameworkGuidance: 'This project uses Astro with React and TypeScript. Read the current Astro and React docs before changing framework APIs or project structure.',
+    referenceDocsUrl: 'https://docs.astro.build/',
     readmeTitle: 'Astro Quality App',
     toolingLines: [
       '- Astro project with TypeScript, Tailwind, and React islands.',

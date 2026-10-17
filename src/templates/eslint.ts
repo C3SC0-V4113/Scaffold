@@ -6,6 +6,10 @@ interface EslintConfigOptions
     Partial<Pick<CreateOptions, 'ssr' | 'astroAdapter' | 'router'>> {
   registerImportPlugin?: boolean;
   motion?: boolean;
+  uiGlob?: string;
+  extraIgnores?: readonly string[];
+  reactRefresh?: boolean;
+  reactRouterRules?: boolean;
 }
 
 // ESLint reads no .gitignore. `.claude/**` is ignored whole, which already
@@ -351,7 +355,7 @@ export function renderViteEslintConfig(options: EslintConfigOptions) {
     options.e2e ? "import playwrightPlugin from 'eslint-plugin-playwright';" : '',
     "import reactDoctor from 'eslint-plugin-react-doctor';",
     "import reactHooks from 'eslint-plugin-react-hooks';",
-    "import reactRefresh from 'eslint-plugin-react-refresh';",
+    options.reactRefresh === false ? '' : "import reactRefresh from 'eslint-plugin-react-refresh';",
     "import reactYouMightNotNeedAnEffect from 'eslint-plugin-react-you-might-not-need-an-effect';",
     options.unit ? "import testingLibraryPlugin from 'eslint-plugin-testing-library';" : '',
     "import tseslint from 'typescript-eslint';",
@@ -359,7 +363,7 @@ export function renderViteEslintConfig(options: EslintConfigOptions) {
     'const eslintConfig = defineConfig([',
     '  ...tseslint.configs.recommended,',
     '  reactHooks.configs.flat.recommended,',
-    '  reactRefresh.configs.vite,',
+    options.reactRefresh === false ? '' : '  reactRefresh.configs.vite,',
     '  {',
     '    ...reactDoctor.configs.recommended,',
     "    files: ['**/*.{jsx,tsx}'],",
@@ -368,7 +372,7 @@ export function renderViteEslintConfig(options: EslintConfigOptions) {
     "    ...reactYouMightNotNeedAnEffect.configs.recommended,",
     "    files: ['**/*.{jsx,tsx}'],",
     '  },',
-    ...(options.router && options.router !== 'none'
+    ...(options.reactRouterRules ?? Boolean(options.router && options.router !== 'none')
       ? [
           '  {',
           "    files: ['**/*.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],",
@@ -447,7 +451,8 @@ export function renderViteEslintConfig(options: EslintConfigOptions) {
     "    '.claude/**',",
     ...toolingIgnores,
     "    '.vite/**',",
-    "    'src/components/ui/**',",
+    `    '${options.uiGlob ?? 'src/components/ui/**'}',`,
+    ...(options.extraIgnores ?? []).map((ignore) => `    '${ignore}',`),
     '  ]),',
     ']);',
     '',

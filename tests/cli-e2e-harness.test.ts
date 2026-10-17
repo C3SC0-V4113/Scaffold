@@ -37,6 +37,14 @@ type HarnessModule = {
   assertExternalSkillsFetched: (projectRoot: string) => void;
   cleanupContext: (context: RunContext) => void;
   createRunContext: (argv: string[], prefix?: string) => RunContext;
+  isInsideTempDir: (
+    dir: string,
+    options?: {
+      tempDir?: string;
+      realpath?: (dir: string) => string;
+      platform?: string;
+    }
+  ) => boolean;
   isPnpmCacheOutsideWorkDir: (context: RunContext) => boolean;
   prepareScenarioContext: (
     scenario: Record<string, unknown>,
@@ -81,6 +89,28 @@ async function loadHarness(): Promise<HarnessModule> {
 }
 
 describe('CLI E2E harness', () => {
+  it('checks temp-dir containment after resolving Windows 8.3 temp paths', async () => {
+    const { isInsideTempDir } = await loadHarness();
+    const shortTempRoot = String.raw`C:\Users\RUNNER~1\AppData\Local\Temp`;
+    const canonicalTempRoot = String.raw`C:\Users\runneradmin\AppData\Local\Temp`;
+    const workDir = path.win32.join(canonicalTempRoot, 'purrfold-run');
+
+    expect(
+      isInsideTempDir(workDir, {
+        tempDir: shortTempRoot,
+        realpath: () => canonicalTempRoot,
+        platform: 'win32',
+      }),
+    ).toBe(true);
+    expect(
+      isInsideTempDir(path.win32.join(canonicalTempRoot, '..', 'outside'), {
+        tempDir: shortTempRoot,
+        realpath: () => canonicalTempRoot,
+        platform: 'win32',
+      }),
+    ).toBe(false);
+  });
+
   it('accepts legacy Astro CLAUDE symlinks and the create-astro 5.3 pointer file', async () => {
     const { assertAstroClaudeFile } = await loadHarness();
     const projectRoot = mkdtempSync(path.join(tmpdir(), 'purrfold-astro-claude-'));
@@ -204,7 +234,13 @@ describe('CLI E2E harness', () => {
           pnpmExecutable: selectedPnpm,
         }
       );
-      const toolchainDir = path.join(workDir, '_purrfold-e2e', 'toolchain', 'node_modules', '.bin');
+      const toolchainDir = path.join(
+        context.workDir,
+        '_purrfold-e2e',
+        'toolchain',
+        'node_modules',
+        '.bin',
+      );
       const pnpmForwarder = path.join(toolchainDir, process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm');
       const pathKey = Object.keys(context.env).find((key) => key.toLowerCase() === 'path');
       const inheritedPathKey = Object.keys(process.env).find((key) => key.toLowerCase() === 'path') ?? 'PATH';
@@ -319,7 +355,7 @@ describe('CLI E2E harness', () => {
           [pathKey]: [brokenDir, validDir].join(path.delimiter),
         });
 
-        expect(path.resolve(resolved)).toBe(path.resolve(validPnpm));
+        expect(path.resolve(resolved)).toBe(path.resolve(realpathSync.native(validPnpm)));
       } finally {
         rmSync(fixtureRoot, { recursive: true, force: true });
       }
@@ -418,7 +454,12 @@ describe('CLI E2E harness', () => {
       expect(context.env.pnpm_config_cache_dir).toBe(pnpmCacheDir);
       expect(context.env.PNPM_CONFIG_CACHE_DIR).toBe(pnpmCacheDir);
       expect(context.pnpmCacheDir).toBe(pnpmCacheDir);
-      expect(path.relative(context.cacheRoot, pnpmCacheDir!).startsWith('..')).toBe(true);
+      const relativePnpmCache = path.relative(context.cacheRoot, pnpmCacheDir!);
+      expect(
+        relativePnpmCache === '..' ||
+          relativePnpmCache.startsWith(`..${path.sep}`) ||
+          path.isAbsolute(relativePnpmCache),
+      ).toBe(true);
       expect(isPnpmCacheOutsideWorkDir(context)).toBe(process.platform === 'win32');
       expect(path.basename(pnpmCacheDir!)).toMatch(process.platform === 'win32' ? /^pe-[\w]{6}$/ : /^pnpm-cache$/);
       expect(existsSync(pnpmCacheDir!)).toBe(true);

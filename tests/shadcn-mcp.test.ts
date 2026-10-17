@@ -1,3 +1,5 @@
+import path from 'node:path';
+import { tmpdir } from 'node:os';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { installShadcnMcp, shadcnMcpClients } from '../src/installers/shadcn-mcp.js';
@@ -39,12 +41,13 @@ const options = { packageManager: 'pnpm', mcp: true } as Pick<
   CreateOptions,
   'packageManager' | 'mcp'
 >;
+const projectRoot = path.join(tmpdir(), 'my-app');
 
 describe('shadcn MCP setup', () => {
   it('wires every client when the CLI cooperates', async () => {
     const executor = new FlakyExecutor();
 
-    await installShadcnMcp('/tmp/my-app', options, executor);
+    await installShadcnMcp(projectRoot, options, executor);
 
     expect(executor.runs).toHaveLength(shadcnMcpClients.length);
   });
@@ -57,7 +60,7 @@ describe('shadcn MCP setup', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     const executor = new FlakyExecutor((rendered) => rendered.includes('--client claude'));
 
-    await expect(installShadcnMcp('/tmp/my-app', options, executor)).resolves.toBeUndefined();
+    await expect(installShadcnMcp(projectRoot, options, executor)).resolves.toBeUndefined();
 
     expect(executor.runs).toHaveLength(shadcnMcpClients.length);
     expect(warn).toHaveBeenCalledTimes(1);
@@ -68,7 +71,7 @@ describe('shadcn MCP setup', () => {
   it('does nothing when MCP was not requested', async () => {
     const executor = new FlakyExecutor();
 
-    await installShadcnMcp('/tmp/my-app', { ...options, mcp: false }, executor);
+    await installShadcnMcp(projectRoot, { ...options, mcp: false }, executor);
 
     expect(executor.runs).toEqual([]);
   });
