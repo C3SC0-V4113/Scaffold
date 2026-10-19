@@ -88,6 +88,20 @@ describe('quality config model', () => {
     expect(viteAdapter.dependencyOverrides).toEqual(versions.viteOverrides);
   });
 
+  it('re-pins TypeScript for Vite apps only', () => {
+    const typescript = pinnedSpecifier('typescript', 'vite');
+
+    expect(typescript).toBe(`typescript@${versions.viteOverrides.typescript}`);
+    expect(buildDevDependencies({ framework: 'vite', unit: false, e2e: false, commitlint: false })).toContain(typescript);
+    for (const framework of ['next', 'astro', 'react-router'] as const) {
+      expect(
+        buildDevDependencies({ framework, unit: false, e2e: false, commitlint: false }).some((dep) =>
+          dep.startsWith('typescript@')
+        )
+      ).toBe(false);
+    }
+  });
+
   it('omits optional dependency groups when disabled', () => {
     expect(buildDevDependencies({ framework: 'next', unit: false, e2e: false, commitlint: false })).not.toEqual(
       expect.arrayContaining(
