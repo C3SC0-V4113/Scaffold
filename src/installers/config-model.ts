@@ -173,7 +173,11 @@ export const FRAMEWORK_DEVELOPMENT_DEPENDENCIES: Record<
     unitExclusions: ASTRO_UNIT_DEPENDENCY_EXCLUSIONS,
   },
   vite: {
-    core: viteCoreDevDependencies,
+    // create-vite's react-ts template floats `typescript` (~7.0.x since
+    // create-vite 9.3.0), but typescript-eslint only supports TS < 6.1 until
+    // TS 7.1 ships a JS API. Re-pinning it here keeps `lint` working; drop it
+    // once the Renovate TS 7 major PR goes green.
+    core: [...viteCoreDevDependencies, 'typescript'],
     unitExclusions: VITE_UNIT_DEPENDENCY_EXCLUSIONS,
   },
   'react-router': {
