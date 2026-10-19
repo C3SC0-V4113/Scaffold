@@ -77,13 +77,15 @@ describe('quality config model', () => {
   it('uses the Vite 8 framework pins without installing a second Vite toolchain', () => {
     const deps = buildDevDependencies({ framework: 'vite', unit: true, e2e: false, commitlint: false });
 
-    expect(pinnedSpecifier('vite', 'vite')).toBe('vite@8.3.4');
-    expect(pinnedSpecifier('@vitejs/plugin-react', 'vite')).toBe('@vitejs/plugin-react@6.1.2');
-    expect(deps).toContain('vitest@5.0.3');
-    expect(deps).not.toContain('vite@8.3.4');
-    expect(deps).not.toContain('@vitejs/plugin-react@6.1.2');
-    expect(deps).not.toContain('vite-tsconfig-paths@6.1.1');
-    expect(viteAdapter.dependencyOverrides).toEqual({ vite: '8.3.4', '@vitejs/plugin-react': '6.1.2' });
+    const { vite, '@vitejs/plugin-react': pluginReact } = versions.viteOverrides;
+
+    expect(pinnedSpecifier('vite', 'vite')).toBe(`vite@${vite}`);
+    expect(pinnedSpecifier('@vitejs/plugin-react', 'vite')).toBe(`@vitejs/plugin-react@${pluginReact}`);
+    expect(deps).toContain(pinnedSpecifier('vitest'));
+    expect(deps).not.toContain(`vite@${vite}`);
+    expect(deps).not.toContain(`@vitejs/plugin-react@${pluginReact}`);
+    expect(deps).not.toContain(pinnedSpecifier('vite-tsconfig-paths'));
+    expect(viteAdapter.dependencyOverrides).toEqual(versions.viteOverrides);
   });
 
   it('omits optional dependency groups when disabled', () => {
