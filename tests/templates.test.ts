@@ -41,7 +41,7 @@ const renderVitestConfig = (framework: Framework) => adapterFor(framework).templ
 const renderReactDoctorConfig = (framework: Framework, motion = false) =>
   renderReactDoctorConfigTemplate(
     adapterFor(framework).layout,
-    { framework, motion },
+    { framework, motion, query: false },
     framework,
   );
 const renderDesignDoc = (framework: Framework) => renderDesignDocTemplate(adapterFor(framework).layout);
@@ -263,6 +263,7 @@ allowBuilds:
     e2e: true,
     commitlint: true,
     motion: false,
+    query: false,
     yes: true,
     dryRun: false,
     skipInstall: false,

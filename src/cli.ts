@@ -39,6 +39,7 @@ export function buildProgram(): Command {
     .option('--ci', 'Install GitHub Actions workflows')
     .option('--no-ci', 'Skip GitHub Actions workflows')
     .option('--motion', 'Install Motion for React and the motion-framer agent skill')
+    .option('--query', 'Install TanStack Query and the tanstack-query agent skill')
     .option('--yes', 'Use non-interactive defaults')
     .option('--dry-run', 'Print operations without writing files or installing packages')
     .option('--skip-install', 'Generate quality files without installing additional packages')
@@ -58,6 +59,7 @@ export function buildProgram(): Command {
         commitlint: rawOptions.commitlint as boolean | undefined,
         ci: rawOptions.ci as boolean | undefined,
         motion: rawOptions.motion as boolean | undefined,
+        query: rawOptions.query as boolean | undefined,
         yes: rawOptions.yes as boolean | undefined,
         dryRun: rawOptions.dryRun as boolean | undefined,
         skipInstall: rawOptions.skipInstall as boolean | undefined,

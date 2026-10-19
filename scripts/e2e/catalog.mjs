@@ -19,6 +19,12 @@ export const featureFiles = {
     vite: 'src/components/common/motion-main.tsx',
     'react-router': 'app/components/common/motion-main.tsx',
   },
+  query: {
+    next: 'components/providers/query-provider.tsx',
+    astro: 'src/lib/query-provider.tsx',
+    vite: 'src/lib/query-provider.tsx',
+    'react-router': 'app/lib/query-provider.tsx',
+  },
 };
 
 // Keep catalog construction dependency-free so CI can enumerate scenarios

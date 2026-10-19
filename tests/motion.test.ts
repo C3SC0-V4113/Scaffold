@@ -57,6 +57,7 @@ function options(
     commitlint: false,
     ci: false,
     motion: true,
+    query: false,
     yes: true,
     dryRun: false,
     skipInstall: false,

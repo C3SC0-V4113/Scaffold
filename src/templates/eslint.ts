@@ -7,6 +7,7 @@ interface EslintConfigOptions
     Partial<Pick<CreateOptions, 'ssr' | 'astroAdapter' | 'router'>> {
   registerImportPlugin?: boolean;
   motion?: boolean;
+  query: boolean;
   uiGlob?: string;
   extraIgnores?: readonly string[];
   reactRefresh?: boolean;
@@ -43,11 +44,20 @@ const shadcnLintBlock = [
   '  },',
 ];
 
-function renderFeatureLint(options: EslintConfigOptions) {
+function featureLintFragments(options: EslintConfigOptions) {
   return featureLint(
-    { motion: options.motion ?? false },
+    { motion: options.motion ?? false, query: options.query },
     options.framework,
-  ).flatMap(({ files, rules }) => [
+  );
+}
+
+function renderFeatureLintImports(options: EslintConfigOptions) {
+  return [...new Set(featureLintFragments(options).flatMap((fragment) => fragment.imports ?? []))];
+}
+
+function renderFeatureLint(options: EslintConfigOptions) {
+  return featureLintFragments(options).flatMap(({ files, rules, configs }) => [
+    ...(configs ?? []).map((config) => `  ${config},`),
     '  {',
     `    files: ['${files}'],`,
     '    rules: {',
@@ -60,6 +70,7 @@ function renderFeatureLint(options: EslintConfigOptions) {
 export function renderNextEslintConfig(options: EslintConfigOptions) {
   const lines = [
     shadcnLintImport,
+    ...renderFeatureLintImports(options),
     options.unit ? "import vitest from '@vitest/eslint-plugin';" : '',
     "import { defineConfig, globalIgnores } from 'eslint/config';",
     "import nextVitals from 'eslint-config-next/core-web-vitals';",
@@ -209,6 +220,7 @@ export function renderNextEslintConfig(options: EslintConfigOptions) {
 export function renderAstroEslintConfig(options: EslintConfigOptions) {
   const lines = [
     shadcnLintImport,
+    ...renderFeatureLintImports(options),
     options.unit ? "import vitest from '@vitest/eslint-plugin';" : '',
     "import { defineConfig, globalIgnores } from 'eslint/config';",
     "import eslintConfigPrettier from 'eslint-config-prettier/flat';",
@@ -345,6 +357,7 @@ export function renderAstroEslintConfig(options: EslintConfigOptions) {
 export function renderViteEslintConfig(options: EslintConfigOptions) {
   const lines = [
     shadcnLintImport,
+    ...renderFeatureLintImports(options),
     options.unit ? "import vitest from '@vitest/eslint-plugin';" : '',
     "import { defineConfig, globalIgnores } from 'eslint/config';",
     "import eslintConfigPrettier from 'eslint-config-prettier/flat';",

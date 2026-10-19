@@ -6,6 +6,7 @@ import type { CreateOptions } from '../src/types.js';
 const options = {
   framework: 'react-router',
   motion: false,
+  query: false,
 } as CreateOptions;
 
 describe('React Router quality tooling', () => {

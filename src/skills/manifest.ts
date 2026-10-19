@@ -87,5 +87,9 @@ export const externalSkillManifest: SkillInstallManifest = {
       source: 'pproenca/dot-skills',
       skill: 'vitest',
     },
+    'tanstack-query': {
+      source: 'pproenca/dot-skills',
+      skill: 'tanstack-query',
+    },
   },
 };

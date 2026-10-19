@@ -22,6 +22,10 @@ import { featureFiles, frameworkLayouts, generatedVersions, pinnedDependency, re
 
 export { generatedVersions, pinnedDependency, readFlag, readListFlag, rootDir };
 
+export function normalizeOutputPaths(output) {
+  return output.replaceAll('\\', '/');
+}
+
 export function assertAstroClaudeFile(projectRoot, agents, claude, platform = process.platform) {
   const claudePath = path.join(projectRoot, 'CLAUDE.md');
   const isSymlink = lstatSync(claudePath).isSymbolicLink();
@@ -384,7 +388,7 @@ function runGeneratedCheck(projectRoot, packageManager, env) {
   return result.output;
 }
 
-function runGeneratedE2e(projectRoot, packageManager, env) {
+function runGeneratedE2e(projectRoot, packageManager, env, { checkBrowserErrors = false } = {}) {
   const command = packageManager ?? 'npm';
   const install = runProcess(
     process.execPath,
@@ -394,14 +398,35 @@ function runGeneratedE2e(projectRoot, packageManager, env) {
   if (install.status !== 0) {
     throw new Error(`Playwright Chromium install failed in ${projectRoot}\n${install.output}`);
   }
+  const playwrightArgs = [
+    '--project=chromium',
+    ...(checkBrowserErrors ? ['--grep=renders the home route'] : []),
+  ];
   const testArgs = command === 'npm'
-    ? ['run', 'test:e2e', '--', '--project=chromium']
-    : ['run', 'test:e2e', '--project=chromium'];
-  const result = runProcess(command, testArgs, {
-    cwd: projectRoot,
-    env,
-    timeoutMs: 20 * 60 * 1000,
-  });
+    ? ['run', 'test:e2e', '--', ...playwrightArgs]
+    : ['run', 'test:e2e', ...playwrightArgs];
+  const homeSpecPath = path.join(projectRoot, 'tests', 'e2e', 'home.spec.ts');
+  const originalHomeSpec = checkBrowserErrors ? readFileSync(homeSpecPath, 'utf8') : undefined;
+  if (checkBrowserErrors) {
+    const homeTest = "test('renders the home route', async ({ page }) => {";
+    const homeAssertion = "  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();";
+    if (!originalHomeSpec.includes(homeTest) || !originalHomeSpec.includes(homeAssertion)) {
+      throw new Error(`Cannot add the browser-error check to ${homeSpecPath}`);
+    }
+    writeFileSync(homeSpecPath, originalHomeSpec
+      .replace(homeTest, `${homeTest}\n  const browserErrors: string[] = [];\n  page.on('console', (message) => {\n    if (message.type() === 'error') browserErrors.push(message.text());\n  });\n  page.on('pageerror', (error) => browserErrors.push(error.message));`)
+      .replace(homeAssertion, `${homeAssertion}\n  browserErrors.length = 0;\n  await page.reload();\n  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();\n  expect(browserErrors).toEqual([]);`));
+  }
+  let result;
+  try {
+    result = runProcess(command, testArgs, {
+      cwd: projectRoot,
+      env,
+      timeoutMs: 20 * 60 * 1000,
+    });
+  } finally {
+    if (originalHomeSpec !== undefined) writeFileSync(homeSpecPath, originalHomeSpec);
+  }
   if (result.status !== 0) {
     throw new Error(`Generated app E2E failed in ${projectRoot}\n${result.output}`);
   }
@@ -814,6 +839,59 @@ export function assertGeneratedApp(projectRoot, expected) {
     );
   }
 
+  if (expected.query) {
+    const queryVersion = generatedVersions.dependencies['@tanstack/react-query'];
+    const devtoolsVersion = generatedVersions.dependencies['@tanstack/react-query-devtools'];
+    const eslintQueryVersion = generatedVersions.dependencies['@tanstack/eslint-plugin-query'];
+    if (!packageJson.dependencies?.['@tanstack/react-query']?.includes(queryVersion)) {
+      throw new Error(`package.json should pin @tanstack/react-query to ${queryVersion}`);
+    }
+    if (!packageJson.dependencies?.['@tanstack/react-query-devtools']?.includes(devtoolsVersion)) {
+      throw new Error(`package.json should pin @tanstack/react-query-devtools to ${devtoolsVersion}`);
+    }
+    if (!packageJson.devDependencies?.['@tanstack/eslint-plugin-query']?.includes(eslintQueryVersion)) {
+      throw new Error(`package.json should pin @tanstack/eslint-plugin-query to ${eslintQueryVersion}`);
+    }
+    assertPath(projectRoot, featureFiles.query[framework]);
+    assertIncludes(skillsScript, '--skill tanstack-query', 'skills.sh');
+    assertIncludes(eslintConfig, "queryPlugin.configs['flat/recommended']", eslintConfigPath);
+    assertIncludes(eslintConfig, "reactDoctor.configs['tanstack-query']", eslintConfigPath);
+    for (const rule of [
+      'react-doctor/query-no-rest-destructuring',
+      'react-doctor/query-stable-query-client',
+      'react-doctor/query-no-void-query-fn',
+    ]) {
+      assertIncludes(eslintConfig, `'${rule}': 'off'`, eslintConfigPath);
+    }
+    const provider = readFileSync(path.join(projectRoot, featureFiles.query[framework]), 'utf8');
+    assertIncludes(provider, '<QueryClientProvider', featureFiles.query[framework]);
+    assertIncludes(provider, '<ReactQueryDevtools', featureFiles.query[framework]);
+    if (framework === 'next' || framework === 'react-router') {
+      assertIncludes(provider, 'useState(() => new QueryClient())', featureFiles.query[framework]);
+    } else if (framework === 'astro') {
+      assertPath(projectRoot, 'src/lib/query-client.ts');
+      assertIncludes(readFileSync(path.join(projectRoot, 'src/lib/query-client.ts'), 'utf8'), 'browserQueryClient', 'src/lib/query-client.ts');
+    } else {
+      assertPath(projectRoot, 'src/query-client.ts');
+      if (router === 'react-router-data') {
+        assertPath(projectRoot, 'src/queries/home.ts');
+        assertIncludes(readFileSync(path.join(projectRoot, 'src/router.tsx'), 'utf8'), 'ensureQueryData', 'src/router.tsx');
+      } else {
+        assertPath(projectRoot, 'src/queries/home.ts', false);
+      }
+    }
+    if (expected.unit) assertPath(projectRoot, 'tests/unit/query-provider.test.tsx');
+    else assertPath(projectRoot, 'tests/unit/query-provider.test.tsx', false);
+  } else {
+    for (const dependency of ['@tanstack/react-query', '@tanstack/react-query-devtools', '@tanstack/eslint-plugin-query']) {
+      if (packageJson.dependencies?.[dependency] || packageJson.devDependencies?.[dependency]) {
+        throw new Error(`${dependency} should not be installed unless --query is selected`);
+      }
+    }
+    assertNotIncludes(skillsScript, '--skill tanstack-query', 'skills.sh');
+    assertPath(projectRoot, featureFiles.query[framework], false);
+  }
+
   if (framework === 'astro') {
     const tsconfig = readJson(path.join(projectRoot, 'tsconfig.json'));
     const astroConfig = readFileSync(path.join(projectRoot, 'astro.config.mjs'), 'utf8');
@@ -1190,10 +1268,10 @@ function runInteractivePtyScenario(pty, scenario, context, cliPath, options) {
         const clean = stripAnsi(output);
         try {
           for (const expected of scenario.expectOutput ?? []) {
-            assertIncludes(clean, expected, scenario.name);
+            assertIncludes(normalizeOutputPaths(clean), normalizeOutputPaths(expected), scenario.name);
           }
           for (const unexpected of scenario.rejectOutput ?? []) {
-            assertNotIncludes(clean, unexpected, scenario.name);
+            assertNotIncludes(normalizeOutputPaths(clean), normalizeOutputPaths(unexpected), scenario.name);
           }
           if (exitCode !== 0) {
             throw new Error(`${scenario.name} exited with ${exitCode}\n--- output ---\n${clean}`);
@@ -1346,10 +1424,10 @@ export async function runScenario(scenario, context, cliPath, options = {}) {
   }
 
   for (const expected of scenario.expectOutput ?? []) {
-    assertIncludes(result.output, expected, scenario.name);
+    assertIncludes(normalizeOutputPaths(result.output), normalizeOutputPaths(expected), scenario.name);
   }
   for (const unexpected of scenario.rejectOutput ?? []) {
-    assertNotIncludes(result.output, unexpected, scenario.name);
+    assertNotIncludes(normalizeOutputPaths(result.output), normalizeOutputPaths(unexpected), scenario.name);
   }
 
   if (scenario.expectExitCode !== undefined) {
@@ -1369,7 +1447,9 @@ export async function runScenario(scenario, context, cliPath, options = {}) {
       : runGeneratedCheck(projectRoot, scenario.packageManager, scenarioContext.env);
     if (scenario.framework === 'react-router' && !scenario.expect.skipInstall) {
       if (scenario.expect.e2e) {
-        runGeneratedE2e(projectRoot, scenario.packageManager, scenarioContext.env);
+        runGeneratedE2e(projectRoot, scenario.packageManager, scenarioContext.env, {
+          checkBrowserErrors: scenario.checkBrowserErrors,
+        });
       }
       if (
         scenario.expect.e2e &&

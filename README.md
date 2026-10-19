@@ -26,6 +26,7 @@ V1 supports new projects created with `create-next-app@latest`, `create-astro@la
 - Optional commitlint + Husky commit-msg hook.
 - Optional GitHub Actions workflows: `.github/workflows/quality.yml`, plus `playwright.yml` when E2E is enabled.
 - Optional Motion for React plus the `motion-framer` agent skill.
+- Optional TanStack Query with React Query Devtools and the `tanstack-query` agent skill.
 - Generic `README.md`, `DESIGN.md`, `AGENTS.md`, `CLAUDE.md`, `.agents/skills`, and Claude hooks in generated apps.
 - Agent skills downloaded with `npx skills add` into `.agents/skills`, including purrfold's own skills (published from [`skills/`](./skills), such as the component-boundary skill that reserves the shadcn `ui` path for registry primitives) and React Doctor's official skill. A generated `skills.sh` retries any download that failed.
 
@@ -47,6 +48,7 @@ Options:
 - `--commitlint` / `--no-commitlint`: include or skip commitlint.
 - `--ci` / `--no-ci`: include or skip GitHub Actions workflows. Defaults to off. Writes `.github/workflows/quality.yml`, and `playwright.yml` as well when `--e2e` is on.
 - `--motion`: install `motion@12.42.2` and the `motion-framer` agent skill. Opt-in only; `--yes` does not enable it.
+- `--query`: install TanStack Query, development-only React Query Devtools, and the `tanstack-query` agent skill. Opt-in only; `--yes` does not enable it.
 - `--yes`: use non-interactive defaults.
 - `--dry-run`: print operations without writing files or installing packages.
 - `--skip-install`: generate quality files without installing additional quality dependencies.
@@ -89,6 +91,7 @@ Map a user's intent to the right command:
 | Full setup (unit + e2e + commitlint) | `npx purrfold@latest my-app --unit --e2e --commitlint --yes` |
 | A specific package manager | `npx purrfold@latest my-app --pm pnpm --yes` |
 | Motion for React | `npx purrfold@latest my-app --motion --yes` |
+| TanStack Query | `npx purrfold@latest my-app --query --yes` |
 | A specific icon library for the cat | `npx purrfold@latest my-app --icons phosphor --yes` |
 | shadcn MCP for Claude/Codex/OpenCode | `npx purrfold@latest my-app --mcp --yes` |
 | A shadcn preset | `npx purrfold@latest my-app --shadcn-args --preset b3REw8vwo --yes` |
