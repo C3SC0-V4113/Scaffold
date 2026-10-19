@@ -1,5 +1,11 @@
 # purrfold
 
+## 0.11.1
+
+### Patch Changes
+
+- a4476cb: Pin TypeScript 6 in generated Vite apps. `create-vite` now scaffolds TypeScript 7, which typescript-eslint does not support yet, so linting failed in every new Vite app.
+
 ## 0.11.0
 
 ### Minor Changes
