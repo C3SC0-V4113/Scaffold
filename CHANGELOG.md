@@ -1,5 +1,15 @@
 # purrfold
 
+## 0.11.0
+
+### Minor Changes
+
+- f672f84: Add opt-in TanStack Query scaffolding with target-aware providers, ESLint rules, and an agent skill.
+
+### Patch Changes
+
+- 3d750e2: Update the dependency pins for generated apps: Astro 7.4, the Astro adapters, React Doctor 0.9.18, Vitest 5.0.5, TanStack Query 5.104.4, Motion 14.3, typescript-eslint, Playwright, commitlint, jsdom, lucide-react, eslint-config-next, and the pnpm fallback 12.14.0.
+
 ## 0.10.0
 
 ### Minor Changes
