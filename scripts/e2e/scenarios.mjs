@@ -649,7 +649,7 @@ export const cliE2eScenarios = [
     framework: 'vite',
     packageManager: 'pnpm',
     args: ['--framework', 'vite', '--pm', 'pnpm', '--router', 'react-router-data', '--yes', '--dry-run'],
-    expectOutput: ['react-router@8.4.0'],
+    expectOutput: [pinnedDependency('react-router', 'vite')],
     quick: true,
   },
   {
