@@ -721,10 +721,19 @@ export function assertGeneratedApp(projectRoot, expected) {
     assertIncludes(skillsScript, 'remix-run/react-router --skill react-router', 'skills.sh');
     assertPath(projectRoot, '.agents/skills/react-router/SKILL.md');
     if (!packageJson.dependencies?.['react-router']) {
-      throw new Error('package.json should pin react-router for a router-enabled Vite app');
+      throw new Error('package.json should include react-router for a router-enabled app');
     }
-    if (!packageJson.dependencies['react-router'].includes(generatedVersions.dependencies['react-router'])) {
-      throw new Error(`react-router should be pinned to ${generatedVersions.dependencies['react-router']}`);
+    if (framework === 'vite') {
+      if (!packageJson.dependencies['react-router'].includes(generatedVersions.dependencies['react-router'])) {
+        throw new Error(`react-router should be pinned to ${generatedVersions.dependencies['react-router']}`);
+      }
+    } else if (packageJson.dependencies['react-router'] !== packageJson.devDependencies?.['@react-router/dev']) {
+      // Framework mode takes react-router from create-react-router, which
+      // resolves the template's "*" to @latest; purrfold's pin only applies to
+      // Vite. What must hold is that the runtime and the dev toolchain agree.
+      throw new Error(
+        `react-router (${packageJson.dependencies['react-router']}) should match @react-router/dev (${packageJson.devDependencies?.['@react-router/dev']})`
+      );
     }
   }
   assertIncludes(eslintConfig, "import { plugin as shadcn } from '@shadcn/lint';", eslintConfigPath);
