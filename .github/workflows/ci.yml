@@ -26,6 +26,7 @@ jobs:
         uses: actions/setup-node@v7.1.0
         with:
           node-version: 22
+          check-latest: true
           cache: npm
 
       - name: Install dependencies
@@ -51,6 +52,7 @@ jobs:
         uses: actions/setup-node@v7.1.0
         with:
           node-version: 22
+          check-latest: true
           cache: npm
 
       - name: Install dependencies
@@ -77,6 +79,7 @@ jobs:
         uses: actions/setup-node@v7.1.0
         with:
           node-version: 22
+          check-latest: true
 
       # No npm ci: the guard uses Node builtins only.
       - name: Require a changeset for generated-app pin bumps
@@ -106,6 +109,7 @@ jobs:
         uses: actions/setup-node@v7.1.0
         with:
           node-version: 22
+          check-latest: true
           cache: npm
 
       - name: Install dependencies
@@ -131,6 +135,7 @@ jobs:
         uses: actions/setup-node@v7.1.0
         with:
           node-version: 22
+          check-latest: true
           cache: npm
 
       - name: Install dependencies
