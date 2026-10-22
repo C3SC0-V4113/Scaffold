@@ -93,8 +93,6 @@ jobs:
         uses: actions/setup-node@v7.1.0
         with:
           node-version: 22
-          # The nightly tests upstream @latest, whose engines minimum can outpace the runner image by a patch.
-          # Astro required >=22.23.4 while the runner image still provided 22.23.3.
           check-latest: true
 
       # scripts/cli-e2e.mjs --list-matrix only uses Node builtins, so no npm ci
@@ -144,6 +142,8 @@ jobs:
         uses: actions/setup-node@v7.1.0
         with:
           node-version: 22
+          # The nightly tests upstream @latest, whose engines minimum can outpace the runner image by a patch.
+          # Astro required >=22.23.4 while the runner image still provided 22.23.3.
           check-latest: true
           cache: npm
 
