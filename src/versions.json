@@ -1,8 +1,8 @@
 {
   "dependencies": {
-    "react-router": "8.4.0",
+    "react-router": "8.5.1",
     "eslint": "9.39.5",
-    "eslint-config-next": "16.4.2",
+    "eslint-config-next": "16.4.3",
     "eslint-config-prettier": "10.1.8",
     "eslint-plugin-import": "2.32.0",
     "eslint-import-resolver-typescript": "4.4.5",
@@ -27,34 +27,34 @@
     "@testing-library/react": "16.3.3",
     "@testing-library/dom": "10.4.2",
     "eslint-plugin-testing-library": "7.16.2",
-    "@vitest/eslint-plugin": "1.6.27",
+    "@vitest/eslint-plugin": "1.6.28",
     "@playwright/test": "1.64.1",
     "@types/node": "26.6.5",
     "eslint-plugin-playwright": "2.12.1",
     "@commitlint/cli": "21.2.4",
     "@commitlint/config-conventional": "21.2.4",
-    "lucide-react": "1.59.0",
+    "lucide-react": "1.63.0",
     "@phosphor-icons/react": "2.1.10",
-    "@tabler/icons-react": "3.49.0",
-    "astro": "7.4.0",
-    "@tanstack/react-query": "5.104.4",
-    "@tanstack/react-query-devtools": "5.104.4",
-    "@tanstack/eslint-plugin-query": "5.104.4",
-    "@astrojs/check": "0.9.10",
-    "@astrojs/node": "11.1.8",
-    "@astrojs/vercel": "11.0.15",
+    "@tabler/icons-react": "3.50.0",
+    "astro": "7.4.3",
+    "@tanstack/react-query": "5.105.0",
+    "@tanstack/react-query-devtools": "5.105.0",
+    "@tanstack/eslint-plugin-query": "5.105.0",
+    "@astrojs/check": "0.9.12",
+    "@astrojs/node": "11.1.9",
+    "@astrojs/vercel": "11.0.17",
     "@astrojs/netlify": "8.2.10",
-    "@astrojs/cloudflare": "14.4.0",
+    "@astrojs/cloudflare": "14.4.3",
     "eslint-plugin-astro": "1.7.0",
-    "typescript-eslint": "8.71.2",
-    "prettier-plugin-astro": "1.1.1",
-    "motion": "14.3.0"
+    "typescript-eslint": "8.72.1",
+    "prettier-plugin-astro": "1.1.2",
+    "motion": "14.7.1"
   },
   "astroOverrides": {
     "@vitejs/plugin-react": "6.1.2"
   },
   "viteOverrides": {
-    "vite": "8.3.4",
+    "vite": "8.3.5",
     "@vitejs/plugin-react": "6.1.2",
     "typescript": "6.0.3"
   },
@@ -79,6 +79,6 @@
   },
   "toolchain": {
     "node": "22",
-    "pnpm": "12.14.0"
+    "pnpm": "12.16.1"
   }
 }
