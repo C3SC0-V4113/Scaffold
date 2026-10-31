@@ -1463,9 +1463,7 @@ export async function runScenario(scenario, context, cliPath, options = {}) {
       ? ''
       : runGeneratedCheck(projectRoot, scenario.packageManager, scenarioContext.env);
     if (scenario.expect.e2e && !scenario.expect.skipInstall) {
-      const e2eEnv = scenario.name === 'astro-pnpm-ssg-e2e'
-        ? { ...scenarioContext.env, CLAUDECODE: '1' }
-        : scenarioContext.env;
+      const e2eEnv = { ...scenarioContext.env, ...scenario.e2eEnv };
       runGeneratedE2e(projectRoot, scenario.packageManager, e2eEnv, {
         checkBrowserErrors: scenario.checkBrowserErrors,
       });
