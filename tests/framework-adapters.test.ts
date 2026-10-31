@@ -24,12 +24,15 @@ describe('framework adapter registry', () => {
 });
 
 describe('framework Playwright config', () => {
-  it('preserves the pre-PR Next, Astro, and Vite server commands', () => {
+  it('renders framework-specific npm server commands', () => {
     expect(renderPlaywrightConfig('npm', frameworkAdapters.next.playwrightServer)).toBe(
       playwrightConfig,
     );
     expect(renderPlaywrightConfig('npm', frameworkAdapters.astro.playwrightServer)).toBe(
-      playwrightConfig,
+      playwrightConfig.replace(
+        'npm run dev -- --hostname 127.0.0.1 --port 3000',
+        'npm run dev -- --ignore-lock --host 127.0.0.1 --port 3000',
+      ),
     );
     expect(renderPlaywrightConfig('npm', frameworkAdapters.vite.playwrightServer)).toBe(
       playwrightConfig.replace(
@@ -38,6 +41,29 @@ describe('framework Playwright config', () => {
       ),
     );
     expect(playwrightConfig).not.toContain('PURRFOLD_E2E_SERVER_COMMAND');
+  });
+
+  it.each(['next', 'astro', 'vite', 'react-router'] as const)(
+    'omits the npm argument separator for %s with pnpm and bun',
+    (framework) => {
+      for (const packageManager of ['pnpm', 'bun']) {
+        const config = renderPlaywrightConfig(
+          packageManager,
+          frameworkAdapters[framework].playwrightServer,
+        );
+        expect(config).toContain(`${packageManager} run dev `);
+        expect(config).not.toContain(`${packageManager} run dev -- `);
+      }
+    },
+  );
+
+  it('passes Astro dev flags through npm and pnpm correctly', () => {
+    expect(renderPlaywrightConfig('pnpm', frameworkAdapters.astro.playwrightServer)).toContain(
+      'pnpm run dev --ignore-lock --host 127.0.0.1 --port 3000',
+    );
+    expect(renderPlaywrightConfig('npm', frameworkAdapters.astro.playwrightServer)).toContain(
+      'npm run dev -- --ignore-lock --host 127.0.0.1 --port 3000',
+    );
   });
 });
 
