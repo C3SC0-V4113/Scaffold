@@ -650,8 +650,10 @@ export function assertGeneratedApp(projectRoot, expected) {
     `\`${globalStylesheet}\``,
     'DESIGN.md'
   );
-  assertPath(projectRoot, '.claude/hooks/react-doctor.ps1');
-  assertPath(projectRoot, '.claude/hooks/project-min-evaluation.ps1');
+  assertPath(projectRoot, '.claude/hooks/react-doctor.mjs');
+  assertPath(projectRoot, '.claude/hooks/project-min-evaluation.mjs');
+  assertPath(projectRoot, '.claude/hooks/react-doctor.ps1', false);
+  assertPath(projectRoot, '.claude/hooks/project-min-evaluation.ps1', false);
   assertPath(projectRoot, '.claude/settings.json');
   assertPath(projectRoot, '.claude/skills');
   if (expected.externalSkills) {

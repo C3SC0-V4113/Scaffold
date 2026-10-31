@@ -1,4 +1,5 @@
 import { link, lstat, mkdtemp, mkdir, readFile, rm, symlink, writeFile } from 'node:fs/promises';
+import { execFileSync, spawnSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
@@ -13,6 +14,7 @@ import {
 } from '../src/installers/docs.js';
 import { renderAgents as renderAgentsTemplate, renderDesignDoc as renderDesignDocTemplate, renderReadme as renderReadmeTemplate } from '../src/templates/files.js';
 import { getFrameworkAdapter } from '../src/frameworks/registry.js';
+import { claudeReactDoctorHook, claudeSettings, renderClaudeProjectMinEvaluationHook } from '../src/templates/hooks.js';
 import type { CreateOptions, Framework } from '../src/types.js';
 
 const adapterFor = (framework: Framework) => getFrameworkAdapter(framework);
@@ -71,13 +73,56 @@ describe('generated documentation installer', () => {
     expect(await readFile(path.join(root, 'CLAUDE.md'), 'utf8')).toBe('@AGENTS.md\n');
     expect(await readFile(path.join(root, 'DESIGN.md'), 'utf8')).toBe(renderDesignDoc('next'));
     await expect(
-      readFile(path.join(root, '.claude', 'hooks', 'react-doctor.ps1'))
+      readFile(path.join(root, '.claude', 'hooks', 'react-doctor.mjs'))
     ).resolves.toBeTruthy();
     await expect(
-      readFile(path.join(root, '.claude', 'hooks', 'project-min-evaluation.ps1'))
+      readFile(path.join(root, '.claude', 'hooks', 'project-min-evaluation.mjs'))
     ).resolves.toBeTruthy();
     await expect(readFile(path.join(root, '.claude', 'settings.json'))).resolves.toBeTruthy();
     await expect(lstat(path.join(root, '.claude', 'skills'))).resolves.toBeTruthy();
+  });
+
+  it('runs the generated minimum-evaluation hook successfully for a clean Git tree', async () => {
+    const root = await project();
+    const hookDir = path.join(root, '.claude', 'hooks');
+    await mkdir(hookDir, { recursive: true });
+    const hookPath = path.join(hookDir, 'project-min-evaluation.mjs');
+    await writeFile(hookPath, renderClaudeProjectMinEvaluationHook('npm', true));
+    execFileSync('git', ['init', '--quiet'], { cwd: root });
+    execFileSync('git', ['add', '-A'], { cwd: root });
+    execFileSync(
+      'git',
+      ['-c', 'user.name=Test', '-c', 'user.email=test@example.com', 'commit', '--quiet', '-m', 'initial'],
+      { cwd: root },
+    );
+
+    const result = spawnSync(process.execPath, [hookPath], {
+      cwd: root,
+      encoding: 'utf8',
+      env: { ...process.env, CLAUDE_PROJECT_DIR: root },
+    });
+
+    expect(result.status).toBe(0);
+    expect(result.stdout).toBe('');
+  });
+
+  it('renders cross-platform Node hooks and package-manager-specific evaluation commands', () => {
+    expect(claudeReactDoctorHook).toContain("process.env.CLAUDE_PROJECT_DIR");
+    expect(claudeReactDoctorHook).toContain('spawnSync(command, { shell: true');
+    expect(claudeReactDoctorHook).toContain('react-doctor.cmd');
+    expect(claudeReactDoctorHook).toContain('--verbose --diff --blocking warning --no-score');
+    expect(claudeSettings).toContain('"command": "node"');
+    expect(claudeSettings).toContain('${CLAUDE_PROJECT_DIR}/.claude/hooks/react-doctor.mjs');
+    expect(claudeSettings).toContain('${CLAUDE_PROJECT_DIR}/.claude/hooks/project-min-evaluation.mjs');
+    expect(claudeSettings).not.toContain('powershell');
+
+    for (const [manager, prefix] of [['npm', 'npm run'], ['pnpm', 'pnpm run'], ['bun', 'bun run']]) {
+      const withoutUnit = renderClaudeProjectMinEvaluationHook(manager, false);
+      const withUnit = renderClaudeProjectMinEvaluationHook(manager, true);
+      expect(withoutUnit).toContain(`${prefix} \${scriptName}`);
+      expect(withoutUnit).not.toContain('"test"');
+      expect(withUnit).toContain('"test"');
+    }
   });
 
   it('creates .agents/skills before linking .claude/skills to it', async () => {
