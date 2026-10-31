@@ -1,21 +1,22 @@
-export const claudeReactDoctorHook = `Set-StrictMode -Version Latest
-$ErrorActionPreference = 'Stop'
+export const claudeReactDoctorHook = `import { existsSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-$projectRoot = $env:CLAUDE_PROJECT_DIR
-if ([string]::IsNullOrWhiteSpace($projectRoot)) {
-  $projectRoot = Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..\\..')
-}
+const projectRoot = process.env.CLAUDE_PROJECT_DIR || path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
+process.chdir(projectRoot);
 
-Set-Location -LiteralPath $projectRoot
-
-$reactDoctor = Join-Path $projectRoot 'node_modules\\.bin\\react-doctor.cmd'
-if (Test-Path -LiteralPath $reactDoctor) {
-  & cmd /c "\`"$reactDoctor\`" --verbose --diff --blocking warning --no-score"
-  exit $LASTEXITCODE
-}
-
-& cmd /c 'npx --yes react-doctor@latest --verbose --diff --blocking warning --no-score'
-exit $LASTEXITCODE
+const localReactDoctor = path.join(
+  projectRoot,
+  'node_modules',
+  '.bin',
+  process.platform === 'win32' ? 'react-doctor.cmd' : 'react-doctor',
+);
+const command = existsSync(localReactDoctor)
+  ? '"' + localReactDoctor + '" --verbose --diff --blocking warning --no-score'
+  : 'npx --yes react-doctor@latest --verbose --diff --blocking warning --no-score';
+const result = spawnSync(command, { shell: true, stdio: 'inherit', cwd: projectRoot });
+process.exit(result.status ?? 1);
 `;
 
 export function renderClaudeProjectMinEvaluationHook(packageManager: string, includeUnit: boolean) {
@@ -23,26 +24,33 @@ export function renderClaudeProjectMinEvaluationHook(packageManager: string, inc
   const runPrefix =
     packageManager === 'pnpm' ? 'pnpm run' : packageManager === 'bun' ? 'bun run' : 'npm run';
 
-  return `Set-StrictMode -Version Latest
-$ErrorActionPreference = 'Stop'
+  return `import { spawnSync } from 'node:child_process';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-$projectRoot = $env:CLAUDE_PROJECT_DIR
-if ([string]::IsNullOrWhiteSpace($projectRoot)) {
-  $projectRoot = Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..\\..')
+const projectRoot = process.env.CLAUDE_PROJECT_DIR || path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
+process.chdir(projectRoot);
+
+const status = spawnSync('git status --porcelain', {
+  shell: true,
+  cwd: projectRoot,
+  encoding: 'utf8',
+});
+if (status.status !== 0) {
+  process.exit(status.status ?? 1);
+}
+if (!status.stdout.trim()) {
+  process.exit(0);
 }
 
-Set-Location -LiteralPath $projectRoot
-
-$status = git status --porcelain
-if ([string]::IsNullOrWhiteSpace(($status | Out-String))) {
-  exit 0
-}
-
-$scripts = @(${scripts.map((script) => `'${script}'`).join(', ')})
-foreach ($scriptName in $scripts) {
-  & cmd /c "${runPrefix} $scriptName"
-  if ($LASTEXITCODE -ne 0) {
-    exit $LASTEXITCODE
+for (const scriptName of ${JSON.stringify(scripts)}) {
+  const result = spawnSync(\`${runPrefix} \${scriptName}\`, {
+    shell: true,
+    stdio: 'inherit',
+    cwd: projectRoot,
+  });
+  if (result.status !== 0) {
+    process.exit(result.status ?? 1);
   }
 }
 `;
@@ -55,7 +63,8 @@ export const claudeSettings = `{
         "hooks": [
           {
             "type": "command",
-            "command": "powershell -NoProfile -ExecutionPolicy Bypass -Command \\"& { $project = if ($env:CLAUDE_PROJECT_DIR) { $env:CLAUDE_PROJECT_DIR } else { (Get-Location).Path }; & (Join-Path $project '.claude/hooks/react-doctor.ps1') }\\""
+            "command": "node",
+            "args": ["\${CLAUDE_PROJECT_DIR}/.claude/hooks/react-doctor.mjs"]
           }
         ]
       }
@@ -65,7 +74,8 @@ export const claudeSettings = `{
         "hooks": [
           {
             "type": "command",
-            "command": "powershell -NoProfile -ExecutionPolicy Bypass -Command \\"& { $project = if ($env:CLAUDE_PROJECT_DIR) { $env:CLAUDE_PROJECT_DIR } else { (Get-Location).Path }; & (Join-Path $project '.claude/hooks/project-min-evaluation.ps1') }\\""
+            "command": "node",
+            "args": ["\${CLAUDE_PROJECT_DIR}/.claude/hooks/project-min-evaluation.mjs"]
           }
         ]
       }
