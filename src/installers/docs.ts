@@ -128,11 +128,11 @@ export async function installDocsAndClaude(
   }
 
   await executor.writeFile(
-    path.join(projectRoot, '.claude', 'hooks', 'react-doctor.ps1'),
+    path.join(projectRoot, '.claude', 'hooks', 'react-doctor.mjs'),
     claudeReactDoctorHook
   );
   await executor.writeFile(
-    path.join(projectRoot, '.claude', 'hooks', 'project-min-evaluation.ps1'),
+    path.join(projectRoot, '.claude', 'hooks', 'project-min-evaluation.mjs'),
     renderClaudeProjectMinEvaluationHook(options.packageManager, options.unit)
   );
   await executor.writeFile(path.join(projectRoot, '.claude', 'settings.json'), claudeSettings);
