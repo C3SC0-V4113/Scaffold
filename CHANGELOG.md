@@ -1,5 +1,13 @@
 # purrfold
 
+## 0.11.3
+
+### Patch Changes
+
+- cdbb2d6: Astro Playwright webServer uses `--host` and `--ignore-lock`; pnpm and bun no longer receive a literal `--`.
+- d66e69d: Update the dependency pins for generated apps: Astro 7.4.4, React Doctor and its ESLint plugin 0.9.22, TanStack Query 5.105.1, Motion 14.9, lucide-react 1.66, eslint-plugin-react-you-might-not-need-an-effect 1.1, and @types/node 26.6.6.
+- 80ea4ca: Generated Claude Code hooks are now cross-platform Node scripts.
+
 ## 0.11.2
 
 ### Patch Changes
