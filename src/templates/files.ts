@@ -787,11 +787,13 @@ export function renderPlaywrightConfig(
 ) {
   const run = packageManager === 'npm' ? 'npm run' : `${packageManager} run`;
   const hostArgs = `${server.hostFlag} 127.0.0.1 --port ${server.port}`;
+  const devArgs = [...(server.devArgs ?? []), hostArgs].join(' ');
+  const npmSeparator = packageManager === 'npm' ? '-- ' : '';
   const ssr = options.ssr ?? true;
   const command =
     !ssr && options.staticBuild
-      ? `${run} ${options.staticBuild.buildScript} && ${run} ${options.staticBuild.startScript} ${packageManager === 'npm' ? '-- ' : ''}${hostArgs}`
-      : `${run} dev -- ${hostArgs}`;
+      ? `${run} ${options.staticBuild.buildScript} && ${run} ${options.staticBuild.startScript} ${npmSeparator}${hostArgs}`
+      : `${run} dev ${npmSeparator}${devArgs}`;
 
   return playwrightConfig
     .replace("const baseUrl = 'http://127.0.0.1:3000';", `const baseUrl = 'http://127.0.0.1:${server.port}';`)

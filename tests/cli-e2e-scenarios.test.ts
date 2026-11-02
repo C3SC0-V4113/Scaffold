@@ -16,6 +16,7 @@ type CliE2eScenario = {
   quick?: boolean;
   requires?: string[];
   requiresTty?: boolean;
+  e2eEnv?: Record<string, string>;
   expect?: {
     unit: boolean;
     e2e: boolean;
@@ -38,6 +39,7 @@ type ScenarioMetadata = {
   quick: boolean;
   heavy: boolean;
   requiresTty: boolean;
+  e2eEnv?: Record<string, string>;
   execution: { requires: string[]; os: string[] };
 };
 
@@ -305,6 +307,7 @@ describe('CLI E2E scenario definitions', () => {
     expect(metadata.find((entry) => entry.name === 'astro-pnpm-ssg-e2e')).toMatchObject({
       packageManager: 'pnpm',
       framework: 'astro',
+      e2eEnv: { CLAUDECODE: '1' },
     });
     const names = metadata.map((entry) => entry.name);
     for (const name of [

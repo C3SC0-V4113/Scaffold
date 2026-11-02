@@ -155,6 +155,7 @@ export const cliE2eScenarios = [
     kind: 'real',
     framework: 'astro',
     packageManager: 'pnpm',
+    e2eEnv: { CLAUDECODE: '1' },
     execution: { requires: ['pnpm'] },
     args: ['--framework', 'astro', '--pm', 'pnpm', '--unit', '--e2e', '--no-commitlint', '--yes'],
     expect: { unit: true, e2e: true, commitlint: false, pnpm: true, mcp: false },
@@ -768,6 +769,7 @@ export function scenarioMetadata(scenarios = cliE2eScenarios) {
     quick: scenario.quick === true,
     heavy: scenario.heavy === true,
     requiresTty: scenario.requiresTty === true,
+    ...(scenario.e2eEnv ? { e2eEnv: scenario.e2eEnv } : {}),
     execution: {
       requires: scenario.execution?.requires ?? [],
       os: scenario.execution?.os ?? defaultRunners,

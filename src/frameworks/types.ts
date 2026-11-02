@@ -49,6 +49,7 @@ export interface FrameworkAdapter {
   playwrightServer: {
     hostFlag: '--hostname' | '--host';
     port: number;
+    devArgs?: readonly string[];
     staticBuild?: {
       buildScript: string;
       startScript: string;

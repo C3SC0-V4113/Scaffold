@@ -59,7 +59,7 @@ export const astroAdapter: FrameworkAdapter = {
   dependencyOverrides: ASTRO_DEPENDENCY_VERSION_OVERRIDES,
   developmentDependencies: FRAMEWORK_DEVELOPMENT_DEPENDENCIES.astro,
   packageScriptConfig: FRAMEWORK_PACKAGE_SCRIPT_CONFIG.astro,
-  playwrightServer: { hostFlag: '--hostname', port: 3000 },
+  playwrightServer: { hostFlag: '--host', port: 3000, devArgs: ['--ignore-lock'] },
   prettierConfig: {
     tailwindStylesheet: 'src/styles/global.css',
     extraPlugins: ['prettier-plugin-astro'],

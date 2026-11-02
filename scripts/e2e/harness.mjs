@@ -950,6 +950,14 @@ export function assertGeneratedApp(projectRoot, expected) {
     // https://github.com/withastro/astro/pull/18218
     assertAstroClaudeFile(projectRoot, agents, claude);
 
+    if (expected.e2e) {
+      const playwrightConfig = readFileSync(path.join(projectRoot, 'playwright.config.ts'), 'utf8');
+      const command = expected.pnpm
+        ? 'pnpm run dev --ignore-lock --host 127.0.0.1 --port 3000'
+        : 'npm run dev -- --ignore-lock --host 127.0.0.1 --port 3000';
+      assertIncludes(playwrightConfig, command, 'playwright.config.ts');
+    }
+
     if (expected.ssrAdapter) {
       assertIncludes(astroConfig, "output: 'server'", 'astro.config.mjs');
       assertIncludes(astroConfig, `@astrojs/${expected.ssrAdapter}`, 'astro.config.mjs');
@@ -1007,7 +1015,7 @@ export function assertGeneratedApp(projectRoot, expected) {
     if (expected.e2e) {
       const playwrightConfig = readFileSync(path.join(projectRoot, 'playwright.config.ts'), 'utf8');
       const devCommand = expected.pnpm
-        ? 'pnpm run dev -- --host 127.0.0.1 --port 3000'
+        ? 'pnpm run dev --host 127.0.0.1 --port 3000'
         : 'npm run dev -- --host 127.0.0.1 --port 3000';
       assertIncludes(playwrightConfig, devCommand, 'playwright.config.ts');
     }
@@ -1047,7 +1055,7 @@ export function assertGeneratedApp(projectRoot, expected) {
       const playwrightConfig = readFileSync(path.join(projectRoot, 'playwright.config.ts'), 'utf8');
       const run = expected.pnpm ? 'pnpm run' : 'npm run';
       const serverCommand = expected.ssr
-        ? `${run} dev -- --host 127.0.0.1 --port 5173`
+        ? `${run} dev ${expected.pnpm ? '' : '-- '}--host 127.0.0.1 --port 5173`
         : `${run} build && ${run} start ${expected.pnpm ? '' : '-- '}--host 127.0.0.1 --port 5173`;
       assertIncludes(playwrightConfig, serverCommand, 'playwright.config.ts');
     }
@@ -1454,12 +1462,13 @@ export async function runScenario(scenario, context, cliPath, options = {}) {
     const checkOutput = scenario.expect.skipInstall
       ? ''
       : runGeneratedCheck(projectRoot, scenario.packageManager, scenarioContext.env);
+    if (scenario.expect.e2e && !scenario.expect.skipInstall) {
+      const e2eEnv = { ...scenarioContext.env, ...scenario.e2eEnv };
+      runGeneratedE2e(projectRoot, scenario.packageManager, e2eEnv, {
+        checkBrowserErrors: scenario.checkBrowserErrors,
+      });
+    }
     if (scenario.framework === 'react-router' && !scenario.expect.skipInstall) {
-      if (scenario.expect.e2e) {
-        runGeneratedE2e(projectRoot, scenario.packageManager, scenarioContext.env, {
-          checkBrowserErrors: scenario.checkBrowserErrors,
-        });
-      }
       if (
         scenario.expect.e2e &&
         !scenario.expect.ssr &&
