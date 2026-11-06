@@ -157,12 +157,20 @@ describe('package.json quality config', () => {
         typecheck: 'astro check',
         scan: 'astro dev',
         'scan:init': 'astro dev --background',
-        doctor: 'astro check && react-doctor . --yes --blocking warning',
+        doctor: 'react-doctor . --yes --blocking warning',
         'doctor:design': 'react-doctor design . --yes --blocking warning',
-        'doctor:ci': 'astro check && react-doctor . --yes --blocking warning',
+        'doctor:ci': 'react-doctor . --yes --blocking warning',
+        'doctor:staged': 'astro check --noSync && react-doctor . --staged --blocking warning',
         check: 'pnpm run lint && pnpm run typecheck && pnpm run format:check && pnpm run test && pnpm run doctor:ci',
       }),
     });
+    const scripts = (executor.writtenJson as ProjectPackageJson).scripts as Record<string, string>;
+    const checkScripts = scripts.check.split(' && ').map((entry) => entry.replace(/^pnpm run /, ''));
+    const astroCheckCount = checkScripts.reduce(
+      (count, script) => count + (scripts[script].match(/astro check/g)?.length ?? 0),
+      0
+    );
+    expect(astroCheckCount).toBe(1);
   });
 
   // `packageManager` is what makes the local toolchain and CI agree: pnpm

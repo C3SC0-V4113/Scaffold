@@ -223,7 +223,9 @@ export const FRAMEWORK_PACKAGE_SCRIPT_CONFIG: Record<
     typecheck: 'tsc --noEmit',
   },
   astro: {
-    doctor: 'astro check && react-doctor . --yes --blocking warning',
+    // `typecheck` already runs astro check inside `check`; doctor must not
+    // repeat it. `doctorStaged` keeps it because the pre-commit hook has no typecheck.
+    doctor: 'react-doctor . --yes --blocking warning',
     doctorStaged:
       'astro check --noSync && react-doctor . --staged --blocking warning',
     scanInit: 'astro dev --background',
