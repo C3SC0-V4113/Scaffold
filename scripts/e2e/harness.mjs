@@ -940,8 +940,15 @@ export function assertGeneratedApp(projectRoot, expected) {
     if (packageJson.dependencies?.['@astrojs/mdx'] || packageJson.dependencies?.['canvas-confetti']) {
       throw new Error('Astro starter-only dependencies should be removed');
     }
-    assertIncludes(packageJson.scripts?.doctor ?? '', 'astro check && react-doctor', 'Astro doctor script');
-    assertIncludes(packageJson.scripts?.['doctor:ci'] ?? '', 'astro check && react-doctor', 'Astro doctor:ci script');
+    assertIncludes(packageJson.scripts?.doctor ?? '', 'react-doctor', 'Astro doctor script');
+    assertNotIncludes(packageJson.scripts?.doctor ?? '', 'astro check', 'Astro doctor script');
+    assertIncludes(packageJson.scripts?.['doctor:ci'] ?? '', 'react-doctor', 'Astro doctor:ci script');
+    assertNotIncludes(packageJson.scripts?.['doctor:ci'] ?? '', 'astro check', 'Astro doctor:ci script');
+    assertIncludes(
+      packageJson.scripts?.['doctor:staged'] ?? '',
+      'astro check --noSync && react-doctor',
+      'Astro doctor:staged script'
+    );
     assertIncludes(eslintConfig, '...reactDoctor.configs.recommended', eslintConfigPath);
     assertIncludes(agents, 'astro dev --background', 'AGENTS.md');
     if (readme.indexOf('<!-- BEGIN:purrfold-managed -->') <= 0) {

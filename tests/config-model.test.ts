@@ -158,13 +158,24 @@ describe('quality config model', () => {
     expect(scripts.typecheck).toBe('astro check');
     expect(scripts.scan).toBe('astro dev');
     expect(scripts['scan:init']).toBe('astro dev --background');
-    expect(scripts.doctor).toBe('astro check && react-doctor . --yes --blocking warning');
+    expect(scripts.doctor).toBe('react-doctor . --yes --blocking warning');
     expect(scripts['doctor:design']).toBe(
       'react-doctor design . --yes --blocking warning'
     );
-    expect(scripts['doctor:ci']).toBe('astro check && react-doctor . --yes --blocking warning');
+    expect(scripts['doctor:ci']).toBe('react-doctor . --yes --blocking warning');
+    expect(scripts['doctor:staged']).toBe(
+      'astro check --noSync && react-doctor . --staged --blocking warning'
+    );
     expect(scripts.check).toBe(
       'npm run lint && npm run typecheck && npm run format:check && npm run test && npm run doctor:ci'
     );
+    const checkScripts = scripts.check
+      .split(' && ')
+      .map((entry) => entry.replace(/^npm run /, '') as keyof typeof scripts);
+    const astroCheckCount = checkScripts.reduce(
+      (count, script) => count + (scripts[script]?.match(/astro check/g)?.length ?? 0),
+      0
+    );
+    expect(astroCheckCount).toBe(1);
   });
 });
