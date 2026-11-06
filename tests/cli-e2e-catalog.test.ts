@@ -268,9 +268,15 @@ describe('CLI E2E catalog boundary', () => {
     expect(workflow).toContain('name: e2e-ok');
     expect(workflow).toContain('needs: [changes, matrix, scenario]');
     expect(workflow).toContain('if: always()');
-    expect(workflow).toContain(
-      "if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')"
-    );
+    const e2eOkStart = workflow.indexOf('\n  e2e-ok:');
+    const e2eOkEnd = workflow.indexOf('\n  heavy:', e2eOkStart);
+    expect(e2eOkStart).toBeGreaterThan(-1);
+    expect(e2eOkEnd).toBeGreaterThan(e2eOkStart);
+    const e2eOkJob = workflow.slice(e2eOkStart, e2eOkEnd);
+
+    expect(e2eOkJob).toContain("RESULTS: ${{ join(needs.*.result, ' ') }}");
+    expect(e2eOkJob).toContain('success|skipped');
+    expect(e2eOkJob).not.toContain("contains(needs.*.result, 'failure')");
   });
 
   it(
