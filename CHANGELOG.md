@@ -1,5 +1,13 @@
 # purrfold
 
+## 0.11.4
+
+### Patch Changes
+
+- ee0fb06: Generated Astro apps no longer run `astro check` twice in `check`; `doctor` and `doctor:ci` now run only `react-doctor` because `typecheck` already runs `astro check`, while `doctor:staged` still type-checks staged Astro files before each commit.
+- 8f6bd00: Generated Astro apps now install `@emnapi/runtime` as a dev dependency so `astro check` can load `@astrojs/check` and actually typecheck with both npm and pnpm. Previously the typecheck was silently skipped, and on Astro 7.4.6+ `astro check` failed outright. This is a temporary workaround for withastro/compiler-rs#214, and existing apps can drop the dependency once `@astrojs/astro2tsx` declares it.
+- e291bd1: Generated apps with unit tests now install jsdom 31 for Vitest's DOM environment.
+
 ## 0.11.3
 
 ### Patch Changes
