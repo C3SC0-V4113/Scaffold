@@ -28,6 +28,7 @@ type RunContext = {
 };
 
 type HarnessModule = {
+  assertEmnapiWorkaroundStillNeeded: (manifest: Record<string, any>) => void;
   assertAstroCheckRan: (output: string) => void;
   assertAstroClaudeFile: (
     projectRoot: string,
@@ -54,6 +55,7 @@ type HarnessModule = {
     options?: { env?: Record<string, string | undefined>; pnpmExecutable?: string }
   ) => RunContext;
   readFlag: (argv: string[], flag: string) => string | undefined;
+  readAstro2tsxManifest: (projectRoot: string) => Record<string, any>;
   readListFlag: (argv: string[], flag: string) => string[];
   resolveCacheRoot: (env?: Record<string, string | undefined>) => string;
   resolvePnpmCacheDir: (options: {
@@ -91,6 +93,136 @@ async function loadHarness(): Promise<HarnessModule> {
 }
 
 describe('CLI E2E harness', () => {
+  it('keeps the workaround while astro2tsx only has the runtime as a dev dependency', async () => {
+    const { assertEmnapiWorkaroundStillNeeded } = await loadHarness();
+    const manifest = {
+      version: '0.1.3',
+      dependencies: { '@emnapi/core': '1.11.3', '@napi-rs/wasm-runtime': '1.2.4' },
+      devDependencies: { '@emnapi/runtime': '1.11.3' },
+    };
+
+    expect(() => assertEmnapiWorkaroundStillNeeded(manifest)).not.toThrow();
+  });
+
+  it('asks to remove the workaround when astro2tsx declares @emnapi/runtime', async () => {
+    const { assertEmnapiWorkaroundStillNeeded } = await loadHarness();
+
+    expect(() =>
+      assertEmnapiWorkaroundStillNeeded({
+        version: '0.2.0',
+        dependencies: { '@emnapi/runtime': '^1.11.3' },
+      })
+    ).toThrow(/@astrojs\/astro2tsx@0\.2\.0 now declares @emnapi\/runtime.*Remove the temporary/);
+  });
+
+  it('resolves astro2tsx through the installed npm-style dependency chain', async () => {
+    const { readAstro2tsxManifest } = await loadHarness();
+    const projectRoot = mkdtempSync(path.join(tmpdir(), 'purrfold astro2tsx chain '));
+    const checkDir = path.join(projectRoot, 'node_modules/@astrojs/check');
+    const languageServerDir = path.join(
+      projectRoot,
+      'node_modules/@astrojs/language-server'
+    );
+    const astro2tsxDir = path.join(
+      languageServerDir,
+      'node_modules/@astrojs/astro2tsx'
+    );
+
+    try {
+      mkdirSync(checkDir, { recursive: true });
+      mkdirSync(astro2tsxDir, { recursive: true });
+      writeFileSync(path.join(projectRoot, 'package.json'), '{}');
+      writeFileSync(
+        path.join(checkDir, 'package.json'),
+        JSON.stringify({ name: '@astrojs/check', exports: { '.': './index.js' } })
+      );
+      writeFileSync(
+        path.join(languageServerDir, 'package.json'),
+        JSON.stringify({ name: '@astrojs/language-server' })
+      );
+      writeFileSync(
+        path.join(astro2tsxDir, 'package.json'),
+        JSON.stringify({ name: '@astrojs/astro2tsx', version: '0.1.3' })
+      );
+
+      expect(readAstro2tsxManifest(projectRoot)).toEqual({
+        name: '@astrojs/astro2tsx',
+        version: '0.1.3',
+      });
+    } finally {
+      rmSync(projectRoot, { recursive: true, force: true });
+    }
+  });
+
+  it('resolves astro2tsx from pnpm store siblings after following symlinks', async () => {
+    const { readAstro2tsxManifest } = await loadHarness();
+    const projectRoot = mkdtempSync(path.join(tmpdir(), 'purrfold pnpm astro2tsx chain '));
+    const projectNodeModules = path.join(projectRoot, 'node_modules');
+    const checkEntryNodeModules = path.join(
+      projectNodeModules,
+      '.pnpm/@astrojs+check@0.9.12/node_modules'
+    );
+    const checkStoreDir = path.join(checkEntryNodeModules, '@astrojs/check');
+    const languageServerStoreDir = path.join(
+      projectNodeModules,
+      '.pnpm/@astrojs+language-server@2.0.0/node_modules/@astrojs/language-server'
+    );
+    const astro2tsxStoreDir = path.join(
+      projectNodeModules,
+      '.pnpm/@astrojs+language-server@2.0.0/node_modules/@astrojs/astro2tsx'
+    );
+    const checkLink = path.join(projectNodeModules, '@astrojs/check');
+    const languageServerLink = path.join(checkEntryNodeModules, '@astrojs/language-server');
+    const linkType = process.platform === 'win32' ? 'junction' : 'dir';
+
+    try {
+      mkdirSync(checkStoreDir, { recursive: true });
+      mkdirSync(languageServerStoreDir, { recursive: true });
+      mkdirSync(astro2tsxStoreDir, { recursive: true });
+      mkdirSync(path.dirname(checkLink), { recursive: true });
+      writeFileSync(path.join(projectRoot, 'package.json'), '{}');
+      writeFileSync(
+        path.join(checkStoreDir, 'package.json'),
+        JSON.stringify({ name: '@astrojs/check', exports: { '.': './index.js' } })
+      );
+      writeFileSync(
+        path.join(languageServerStoreDir, 'package.json'),
+        JSON.stringify({ name: '@astrojs/language-server' })
+      );
+      writeFileSync(
+        path.join(astro2tsxStoreDir, 'package.json'),
+        JSON.stringify({ name: '@astrojs/astro2tsx', version: '0.1.3' })
+      );
+      symlinkSync(checkStoreDir, checkLink, linkType);
+      symlinkSync(languageServerStoreDir, languageServerLink, linkType);
+
+      expect(readAstro2tsxManifest(projectRoot)).toEqual({
+        name: '@astrojs/astro2tsx',
+        version: '0.1.3',
+      });
+    } finally {
+      rmSync(projectRoot, { recursive: true, force: true });
+    }
+  });
+
+  it('explains when the astro2tsx dependency chain has changed', async () => {
+    const { readAstro2tsxManifest } = await loadHarness();
+    const projectRoot = mkdtempSync(path.join(tmpdir(), 'purrfold astro2tsx missing chain '));
+
+    try {
+      const checkDir = path.join(projectRoot, 'node_modules/@astrojs/check');
+      mkdirSync(checkDir, { recursive: true });
+      writeFileSync(path.join(projectRoot, 'package.json'), '{}');
+      writeFileSync(path.join(checkDir, 'package.json'), JSON.stringify({ name: '@astrojs/check' }));
+
+      expect(() => readAstro2tsxManifest(projectRoot)).toThrow(
+        /dependency chain targeted by the @emnapi\/runtime workaround has changed.*@astrojs\/language-server/
+      );
+    } finally {
+      rmSync(projectRoot, { recursive: true, force: true });
+    }
+  });
+
   it('accepts Astro check diagnostics, including ANSI-colored output', async () => {
     const { assertAstroCheckRan } = await loadHarness();
 
