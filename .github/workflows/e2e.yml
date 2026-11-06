@@ -205,17 +205,33 @@ jobs:
     needs: [changes, matrix, scenario]
     runs-on: ubuntu-latest
     steps:
-      # `success()` cannot be used here: it treats a legitimately skipped matrix
-      # as a non-success. Only failure and cancellation may block the merge.
-      - name: Fail when a required E2E job did not succeed
-        if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
+      # Use an allowlist so unknown results fail closed. PR #181 exposed that
+      # `abandoned` can occur when a scenario job never gets a runner; a denylist
+      # let e2e-ok pass while scenario jobs had failed.
+      - name: Require every E2E dependency to succeed or be skipped
+        shell: bash
+        env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
         run: |
-          echo "Dependency results: ${{ join(needs.*.result, ', ') }}"
-          echo 'A required E2E job failed or was cancelled.'
-          exit 1
+          set -euo pipefail
+          if [[ -z "${RESULTS//[[:space:]]/}" ]]; then
+            echo 'No E2E dependency results were provided.'
+            exit 1
+          fi
 
-      - name: Report gate satisfied
-        run: echo "E2E gate satisfied (${{ join(needs.*.result, ', ') }})."
+          read -r -a results <<< "$RESULTS"
+          for result in "${results[@]}"; do
+            echo "E2E dependency result: $result"
+            case "$result" in
+              success|skipped) ;;
+              *)
+                echo "Unexpected E2E dependency result: $result"
+                exit 1
+                ;;
+            esac
+          done
+
+          echo 'E2E gate satisfied: every dependency succeeded or was skipped.'
 
   heavy:
     name: heavy scenarios (network-bound interactive)
