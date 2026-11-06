@@ -176,6 +176,7 @@ describe('dry-run integration', () => {
     expect(output).not.toContain(' --git');
     expect(output).toContain('run pnpm dlx shadcn@latest init -t astro --defaults');
     expect(output).toContain(pinnedSpecifier('@astrojs/check'));
+    expect(output).toContain(pinnedSpecifier('@emnapi/runtime'));
     expect(output).toContain(pinnedSpecifier('@shadcn/lint', 'astro'));
     expect(output).toContain(pinnedSpecifier('@vitejs/plugin-react', 'astro'));
     expect(output).not.toContain(pinnedSpecifier('@vitejs/plugin-react'));

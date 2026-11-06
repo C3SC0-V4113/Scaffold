@@ -41,6 +41,7 @@
     "@tanstack/react-query-devtools": "5.105.1",
     "@tanstack/eslint-plugin-query": "5.105.1",
     "@astrojs/check": "0.9.12",
+    "@emnapi/runtime": "1.11.3",
     "@astrojs/node": "11.1.9",
     "@astrojs/vercel": "11.0.17",
     "@astrojs/netlify": "8.2.10",
