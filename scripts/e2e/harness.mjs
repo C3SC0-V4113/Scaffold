@@ -1289,7 +1289,7 @@ function astro2tsxChainError(step, cause) {
 export function assertEmnapiWorkaroundStillNeeded(manifest) {
   if (manifest.dependencies?.['@emnapi/runtime']) {
     throw new Error(
-      `@astrojs/astro2tsx@${manifest.version} now declares @emnapi/runtime itself (withastro/compiler-rs#214 fixed upstream). Remove the temporary @emnapi/runtime workaround: astroCoreDevDependencies in src/installers/config-model.ts, the pin in src/versions.json, its Renovate rule in renovate.json, the related tests, and this sentinel. Keep assertAstroCheckRan.`
+      `@astrojs/astro2tsx@${manifest.version} now declares @emnapi/runtime itself (withastro/compiler-rs#214 fixed upstream). Remove the temporary @emnapi/runtime workaround: astroCoreDevDependencies and its version-constraint bullet in src/installers/config-model.ts, the pin in src/versions.json, its Renovate rule in renovate.json, the related tests, and this sentinel. Keep assertAstroCheckRan.`
     );
   }
 }
