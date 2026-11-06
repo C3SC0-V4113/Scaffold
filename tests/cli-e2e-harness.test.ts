@@ -28,6 +28,7 @@ type RunContext = {
 };
 
 type HarnessModule = {
+  assertAstroCheckRan: (output: string) => void;
   assertAstroClaudeFile: (
     projectRoot: string,
     agents: string,
@@ -90,6 +91,39 @@ async function loadHarness(): Promise<HarnessModule> {
 }
 
 describe('CLI E2E harness', () => {
+  it('accepts Astro check diagnostics, including ANSI-colored output', async () => {
+    const { assertAstroCheckRan } = await loadHarness();
+
+    expect(() => assertAstroCheckRan('Getting diagnostics for Astro files in /app...')).not.toThrow();
+    expect(() =>
+      assertAstroCheckRan('\u001b[32mGetting diagnostics for Astro files\u001b[0m in /app...')
+    ).not.toThrow();
+  });
+
+  it('rejects Astro check output that reports a missing dependency even after a successful exit message', async () => {
+    const { assertAstroCheckRan } = await loadHarness();
+
+    expect(() =>
+      assertAstroCheckRan(
+        'To continue, Astro requires the following dependency to be installed: @astrojs/check\nDone in 1s'
+      )
+    ).toThrow(/astro check could not load @astrojs\/check.*typecheck never ran.*Astro requires/);
+  });
+
+  it('rejects Astro check output requiring both dependencies', async () => {
+    const { assertAstroCheckRan } = await loadHarness();
+
+    expect(() =>
+      assertAstroCheckRan('The `@astrojs/check` and `typescript` packages are required for this command to work.')
+    ).toThrow(/astro check could not load @astrojs\/check.*typecheck never ran.*packages are required/);
+  });
+
+  it('rejects Astro check output without the diagnostics line', async () => {
+    const { assertAstroCheckRan } = await loadHarness();
+
+    expect(() => assertAstroCheckRan('Done in 1s')).toThrow(/did not report diagnostics/);
+  });
+
   it('matches output paths consistently across Windows and POSIX separators', async () => {
     const { normalizeOutputPaths } = await loadHarness();
 

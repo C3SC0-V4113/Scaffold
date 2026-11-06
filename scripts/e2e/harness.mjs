@@ -1206,6 +1206,31 @@ function stripAnsi(text) {
 }
 
 /**
+ * Detect Astro's old successful exit when @astrojs/check could not load, which
+ * made the generated `check` script green without running its typecheck.
+ */
+export function assertAstroCheckRan(output) {
+  const cleanOutput = stripAnsi(output);
+  const missingDependencyLine = cleanOutput
+    .split(/\r?\n/)
+    .find(
+      (line) =>
+        line.includes('Astro requires the following dependency') ||
+        line.includes('packages are required for this command to work')
+    );
+
+  if (missingDependencyLine) {
+    throw new Error(
+      `astro check could not load @astrojs/check, so the typecheck never ran. ${missingDependencyLine}`
+    );
+  }
+
+  if (!cleanOutput.includes('Getting diagnostics for Astro files')) {
+    throw new Error('astro check did not report diagnostics for Astro files; the typecheck may not have run.');
+  }
+}
+
+/**
  * Terminate a node-pty child and its descendants. On Windows `IPty.kill()` over
  * ConPTY does not reliably tear down the whole process tree (the wedge that hung
  * the full suite), so follow up with `taskkill /T /F` on the pid. Best-effort:
@@ -1464,6 +1489,9 @@ export async function runScenario(scenario, context, cliPath, options = {}) {
     const checkOutput = scenario.expect.skipInstall
       ? ''
       : runGeneratedCheck(projectRoot, scenario.packageManager, scenarioContext.env);
+    if (scenario.framework === 'astro' && !scenario.expect.skipInstall) {
+      assertAstroCheckRan(checkOutput);
+    }
     if (scenario.expect.e2e && !scenario.expect.skipInstall) {
       const e2eEnv = { ...scenarioContext.env, ...scenario.e2eEnv };
       runGeneratedE2e(projectRoot, scenario.packageManager, e2eEnv, {
