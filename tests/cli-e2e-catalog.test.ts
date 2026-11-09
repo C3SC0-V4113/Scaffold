@@ -87,25 +87,6 @@ describe('CLI E2E catalog boundary', () => {
     }
   });
 
-  it('disables major Renovate updates for @emnapi/runtime', () => {
-    const renovate = JSON.parse(readFileSync(path.join(process.cwd(), 'renovate.json'), 'utf8')) as {
-      packageRules: Array<{
-        matchDepNames?: string[];
-        matchUpdateTypes?: string[];
-        enabled?: boolean;
-      }>;
-    };
-    const rule = renovate.packageRules.find(
-      (candidate) =>
-        candidate.matchDepNames?.includes('@emnapi/runtime') &&
-        candidate.matchUpdateTypes?.length === 1 &&
-        candidate.matchUpdateTypes[0] === 'major'
-    );
-
-    expect(rule).toBeDefined();
-    expect(rule?.enabled).toBe(false);
-  });
-
   it('rejects an override table the catalog does not know about', () => {
     const fixtureRoot = mkdtempSync(path.join(tmpdir(), 'purrfold unmapped overrides '));
     const fixtureScripts = path.join(fixtureRoot, 'scripts');

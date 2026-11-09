@@ -115,13 +115,6 @@
       "enabled": false
     },
     {
-      "description": "@emnapi/runtime must stay on the @emnapi/core line that @astrojs/astro2tsx pins (1.x); runtime 2.x against core 1.x is the mismatch that broke astro check (#182, withastro/astro#18642). The whole pin is a temporary workaround: remove it once astro2tsx declares @emnapi/runtime itself.",
-      "matchFileNames": ["src/versions.json"],
-      "matchDepNames": ["@emnapi/runtime"],
-      "matchUpdateTypes": ["major"],
-      "enabled": false
-    },
-    {
       "description": "vite is the unit-test toolchain of generated Next apps, and @vitejs/plugin-react 5.1.x peer-requires Vite 7. The Vite framework tracks its Vite 8 major in viteOverrides.",
       "matchFileNames": ["src/versions.json"],
       "matchDepNames": ["vite"],
