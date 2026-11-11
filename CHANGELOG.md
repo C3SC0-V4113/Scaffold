@@ -1,5 +1,13 @@
 # purrfold
 
+## 0.11.5
+
+### Patch Changes
+
+- 1ca5b24: Generated Astro apps no longer install `@emnapi/runtime` as a dev dependency. `@astrojs/astro2tsx` 0.1.4 now declares it itself (withastro/compiler-rs#214), so `astro check` loads `@astrojs/check` and typechecks without the workaround. Existing apps can remove `@emnapi/runtime` from their `devDependencies`.
+- 824c968: Update the dependency pins for generated apps: Astro 7.4.11 and its Node, Vercel, Netlify and Cloudflare adapters, Vite 8.3.8 (7.3.8 for Next unit tests), `@vitejs/plugin-react` 6.3, Vitest 5.1, Tailwind CSS 4.3.5, Playwright 1.65, Prettier 3.10, eslint-config-next 16.4.6, typescript-eslint 8.72.2, TanStack Query 5.107.1, Motion 14.12, lucide-react 1.72, @tabler/icons-react 3.51, @shadcn/lint 0.2.5, eslint-plugin-playwright 2.12.2, eslint-plugin-react-you-might-not-need-an-effect 1.2, and the pnpm fallback 12.18.0.
+- 9cd3cfb: Update the `pnpm/action-setup` action pinned into generated CI workflows (`--ci`) to v6.1.1.
+
 ## 0.11.4
 
 ### Patch Changes
