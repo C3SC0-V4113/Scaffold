@@ -60,7 +60,6 @@ describe('quality config model', () => {
           'typescript-eslint',
           'prettier-plugin-astro',
           '@astrojs/check',
-          '@emnapi/runtime',
           '@shadcn/lint',
         ].map((name) => pinnedSpecifier(name))
       )
@@ -73,19 +72,6 @@ describe('quality config model', () => {
     // astro depends on Vite directly; declaring it again would pin a second,
     // narrower range against the one Astro already resolved.
     expect(deps).not.toContain(pinnedSpecifier('vite'));
-  });
-
-  it('installs @emnapi/runtime only for Astro', () => {
-    for (const framework of ['next', 'vite', 'react-router'] as const) {
-      const deps = buildDevDependencies({
-        framework,
-        unit: true,
-        e2e: false,
-        commitlint: false,
-      });
-
-      expect(deps).not.toContain(pinnedSpecifier('@emnapi/runtime'));
-    }
   });
 
   it('uses the Vite 8 framework pins without installing a second Vite toolchain', () => {

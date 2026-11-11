@@ -28,8 +28,6 @@ import type { CreateOptions, Framework } from '../types.js';
  * - astroOverrides['@vitejs/plugin-react']: Astro 7 installs Vite 8 and
  *   @astrojs/react 6 requires plugin-react 5.2+, while Next unit tooling keeps
  *   using the shared pins above.
- * - `@emnapi/runtime` stays on the `@emnapi/core` line that
- *   `@astrojs/astro2tsx` pins (1.x today).
  *
  * Bumping a pin is a deliberate act: change the version, then run the CLI E2E
  * suite (`npm run test:e2e:cli`) so an incompatible upgrade is caught here, not
@@ -107,13 +105,6 @@ export const astroCoreDevDependencies = [
   'lint-staged',
   'react-doctor',
   '@astrojs/check',
-  // Temporary workaround: astro2tsx leaves the wasm runtime's peer undeclared;
-  // pnpm fills it with an incompatible 2.0 prerelease, while npm
-  // --legacy-peer-deps never installs it. Keep it on the 1.x line of the
-  // @emnapi/core pinned by astro2tsx until astro2tsx declares it itself.
-  // https://github.com/withastro/astro/issues/18642
-  // https://github.com/withastro/compiler-rs/issues/214
-  '@emnapi/runtime',
   '@shadcn/lint',
 ];
 

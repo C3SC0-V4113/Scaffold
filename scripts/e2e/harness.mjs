@@ -824,17 +824,6 @@ export function assertGeneratedApp(projectRoot, expected) {
     }
   }
 
-  if (framework === 'astro') {
-    const runtime = packageJson.devDependencies?.['@emnapi/runtime'];
-    if (expected.skipInstall) {
-      if (runtime) throw new Error('@emnapi/runtime should not be installed with --skip-install');
-    } else if (!runtime?.includes(generatedVersions.dependencies['@emnapi/runtime'])) {
-      throw new Error(
-        `@emnapi/runtime should be pinned to ${generatedVersions.dependencies['@emnapi/runtime']} in Astro devDependencies`
-      );
-    }
-  }
-
   if (expected.motion) {
     const motionVersion = generatedVersions.dependencies.motion;
     if (!packageJson.dependencies?.motion?.includes(motionVersion)) {
@@ -1248,59 +1237,6 @@ export function assertAstroCheckRan(output) {
   }
 }
 
-/** Resolve the installed Astro check -> language server -> astro2tsx manifest chain. */
-export function readAstro2tsxManifest(projectRoot) {
-  const checkManifestPath = resolvePackageManifest(
-    path.join(projectRoot, 'package.json'),
-    '@astrojs/check',
-    '@astrojs/check from the project'
-  );
-  const languageServerManifestPath = resolvePackageManifest(
-    checkManifestPath,
-    '@astrojs/language-server',
-    '@astrojs/language-server from @astrojs/check'
-  );
-  const astro2tsxManifestPath = resolvePackageManifest(
-    languageServerManifestPath,
-    '@astrojs/astro2tsx',
-    '@astrojs/astro2tsx from @astrojs/language-server'
-  );
-
-  try {
-    return readJson(astro2tsxManifestPath);
-  } catch (error) {
-    throw astro2tsxChainError('reading @astrojs/astro2tsx/package.json', error);
-  }
-}
-
-function resolvePackageManifest(fromFile, packageName, step) {
-  const lookupPaths = createRequire(fromFile).resolve.paths(packageName) ?? [];
-  for (const nodeModulesDir of lookupPaths) {
-    const manifestPath = path.join(nodeModulesDir, packageName, 'package.json');
-    if (existsSync(manifestPath)) {
-      const packageDir = realpathSync(path.dirname(manifestPath));
-      return path.join(packageDir, 'package.json');
-    }
-  }
-
-  throw astro2tsxChainError(step, new Error('package.json was not found in Node module lookup paths'));
-}
-
-function astro2tsxChainError(step, cause) {
-  return new Error(
-    `The dependency chain targeted by the @emnapi/runtime workaround has changed; re-evaluate the workaround in src/installers/config-model.ts astroCoreDevDependencies. Failed at ${step}: ${cause.message}`
-  );
-}
-
-/** Fail loudly when astro2tsx declares the peer and the temporary workaround can be removed. */
-export function assertEmnapiWorkaroundStillNeeded(manifest) {
-  if (manifest.dependencies?.['@emnapi/runtime']) {
-    throw new Error(
-      `@astrojs/astro2tsx@${manifest.version} now declares @emnapi/runtime itself (withastro/compiler-rs#214 fixed upstream). Remove the temporary @emnapi/runtime workaround: astroCoreDevDependencies and its version-constraint bullet in src/installers/config-model.ts, the pin in src/versions.json, its Renovate rule in renovate.json, the related tests, and this sentinel. Keep assertAstroCheckRan.`
-    );
-  }
-}
-
 /**
  * Terminate a node-pty child and its descendants. On Windows `IPty.kill()` over
  * ConPTY does not reliably tear down the whole process tree (the wedge that hung
@@ -1562,7 +1498,6 @@ export async function runScenario(scenario, context, cliPath, options = {}) {
       : runGeneratedCheck(projectRoot, scenario.packageManager, scenarioContext.env);
     if (scenario.framework === 'astro' && !scenario.expect.skipInstall) {
       assertAstroCheckRan(checkOutput);
-      assertEmnapiWorkaroundStillNeeded(readAstro2tsxManifest(projectRoot));
     }
     if (scenario.expect.e2e && !scenario.expect.skipInstall) {
       const e2eEnv = { ...scenarioContext.env, ...scenario.e2eEnv };
